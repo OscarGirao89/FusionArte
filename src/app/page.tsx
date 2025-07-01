@@ -1,15 +1,15 @@
+
+'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Overview } from '@/components/dashboard/overview';
 import { UpcomingClasses } from '@/components/dashboard/upcoming-classes';
 import { SmartSuggestion } from '@/components/dashboard/smart-suggestion';
-import { HandHelping, CalendarClock, Bot } from 'lucide-react';
+import { HandHelping, CalendarClock, Bot, Users } from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
 
-export default function DashboardPage() {
+function StudentDashboard() {
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight font-headline">Dashboard</h1>
-      </div>
+    <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -79,6 +79,111 @@ export default function DashboardPage() {
             </CardContent>
         </Card>
       </div>
+    </>
+  )
+}
+
+function TeacherDashboard() {
+  return (
+     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-full lg:col-span-4">
+          <CardHeader>
+            <CardTitle className="font-headline">Tu Rendimiento</CardTitle>
+            <CardDescription>
+              Clases que has impartido este mes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <Overview />
+          </CardContent>
+        </Card>
+        <Card className="col-span-full lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="font-headline">Tus Próximas Clases</CardTitle>
+            <CardDescription>Tienes 3 clases programadas esta semana.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <UpcomingClasses />
+          </CardContent>
+        </Card>
+      </div>
+  )
+}
+
+function AdminDashboard() {
+  return (
+    <>
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Estudiantes Activos</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">125</div>
+            <p className="text-xs text-muted-foreground">+5 que el mes pasado</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Clases Programadas</CardTitle>
+            <CalendarClock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">48</div>
+            <p className="text-xs text-muted-foreground">para esta semana</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Asistente IA</CardTitle>
+            <Bot className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Listo para ayudar</div>
+            <p className="text-xs text-muted-foreground">Gestiona la academia</p>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-4 md:grid-cols-1">
+        <Card className="col-span-full">
+          <CardHeader>
+            <CardTitle className="font-headline">Rendimiento General de Profesores</CardTitle>
+            <CardDescription>
+              Clases mensuales impartidas por cada profesor.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <Overview />
+          </CardContent>
+        </Card>
+      </div>
+    </>
+  )
+}
+
+export default function DashboardPage() {
+  const { userRole } = useAuth();
+
+  const renderDashboard = () => {
+    switch(userRole) {
+      case 'student':
+        return <StudentDashboard />;
+      case 'teacher':
+        return <TeacherDashboard />;
+      case 'admin':
+        return <AdminDashboard />;
+      default:
+        return <div>Cargando...</div>;
+    }
+  }
+
+  return (
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight font-headline">Dashboard</h1>
+      </div>
+      {renderDashboard()}
     </div>
   );
 }

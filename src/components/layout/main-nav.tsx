@@ -1,3 +1,4 @@
+
 'use client';
 import { usePathname } from 'next/navigation';
 import {
@@ -19,30 +20,53 @@ import {
   LogOut,
   Flame,
   Settings,
+  BookMarked,
+  User,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
+import { useAuth, UserRole } from '@/context/auth-context';
 
-const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/schedule', label: 'Horario de Clases', icon: Calendar },
-  { href: '/memberships', label: 'Membresías', icon: CreditCard },
-  { href: '/teachers', label: 'Profesores', icon: Users },
-];
+const navItems = {
+  student: [
+    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/schedule', label: 'Horario de Clases', icon: Calendar },
+    { href: '/memberships', label: 'Membresías', icon: CreditCard },
+    { href: '/teachers', label: 'Profesores', icon: Users },
+  ],
+  teacher: [
+    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/schedule', label: 'Horario General', icon: Calendar },
+    { href: '/my-classes', label: 'Mis Clases', icon: BookMarked },
+  ],
+  admin: [
+    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/schedule', label: 'Horario de Clases', icon: Calendar },
+    { href: '/memberships', label: 'Membresías', icon: CreditCard },
+    { href: '/teachers', label: 'Profesores', icon: Users },
+  ],
+};
 
 const adminNavItems = [
-    { href: '/admin/users', label: 'Gestión de Usuarios', icon: Users },
+    { href: '/admin/users', label: 'Gestión de Usuarios', icon: User },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];
 
-// Simulamos un rol de administrador para mostrar las opciones.
-const userRole = 'admin';
+const userProfiles: Record<UserRole, { name: string; role: string; avatar: string }> = {
+    student: { name: 'Alex Doe', role: 'Estudiante', avatar: 'https://placehold.co/100x100.png?text=A' },
+    teacher: { name: 'Elena Garcia', role: 'Profesora', avatar: 'https://placehold.co/100x100.png?text=E' },
+    admin: { name: 'Admin FusionArte', role: 'Administrador/a', avatar: 'https://placehold.co/100x100.png?text=AF' },
+};
 
 
 export function MainNav() {
   const pathname = usePathname();
   const { open, isMobile } = useSidebar();
+  const { userRole, logout } = useAuth();
+
+  const currentNavItems = userRole ? navItems[userRole] : [];
+  const currentUser = userRole ? userProfiles[userRole] : null;
   
   const logo = (
     <div className="flex items-center gap-2" aria-hidden="true">
@@ -59,7 +83,7 @@ export function MainNav() {
       </SidebarHeader>
 
       <SidebarMenu className="flex-1 p-2">
-        {navItems.map((item) => (
+        {currentNavItems.map((item) => (
           <SidebarMenuItem key={item.href}>
             <SidebarMenuButton
               asChild
@@ -102,24 +126,26 @@ export function MainNav() {
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{ children: 'Cerrar Sesión' }}>
+              <SidebarMenuButton onClick={logout} tooltip={{ children: 'Cerrar Sesión' }}>
                 <LogOut />
                 <span>Cerrar Sesión</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-          <div className="flex items-center gap-3 p-2">
-            <Avatar>
-              <AvatarImage src="https://placehold.co/100x100.png" alt="Admin" data-ai-hint="person face" />
-              <AvatarFallback>A</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col text-sm group-data-[collapsible=icon]:hidden">
-              <span className="font-semibold text-sidebar-foreground">
-                Admin
-              </span>
-              <span className="text-sidebar-foreground/70">Administrador/a</span>
+          {currentUser && (
+            <div className="flex items-center gap-3 p-2">
+                <Avatar>
+                <AvatarImage src={currentUser.avatar} alt={currentUser.name} data-ai-hint="person face" />
+                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col text-sm group-data-[collapsible=icon]:hidden">
+                <span className="font-semibold text-sidebar-foreground">
+                    {currentUser.name}
+                </span>
+                <span className="text-sidebar-foreground/70">{currentUser.role}</span>
+                </div>
             </div>
-          </div>
+          )}
         </SidebarGroup>
       </SidebarFooter>
     </>
