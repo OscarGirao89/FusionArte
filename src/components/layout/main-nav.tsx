@@ -8,6 +8,8 @@ import {
   SidebarFooter,
   SidebarTrigger,
   SidebarGroup,
+  SidebarSeparator,
+  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -16,6 +18,7 @@ import {
   Users,
   LogOut,
   Flame,
+  Settings,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -27,6 +30,15 @@ const navItems = [
   { href: '/memberships', label: 'Membresías', icon: CreditCard },
   { href: '/teachers', label: 'Profesores', icon: Users },
 ];
+
+const adminNavItems = [
+    { href: '/admin/users', label: 'Gestión de Usuarios', icon: Users },
+    { href: '/admin/settings', label: 'Configuración', icon: Settings },
+];
+
+// Simulamos un rol de administrador para mostrar las opciones.
+const userRole = 'admin';
+
 
 export function MainNav() {
   const pathname = usePathname();
@@ -61,6 +73,29 @@ export function MainNav() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}
+
+        {userRole === 'admin' && (
+            <>
+                <SidebarSeparator className="my-2"/>
+                <SidebarGroup>
+                    <SidebarGroupLabel>Administración</SidebarGroupLabel>
+                    {adminNavItems.map((item) => (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={pathname === item.href}
+                          tooltip={{ children: item.label }}
+                        >
+                          <Link href={item.href}>
+                            <item.icon />
+                            <span>{item.label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                </SidebarGroup>
+            </>
+        )}
       </SidebarMenu>
 
       <SidebarFooter>
@@ -75,14 +110,14 @@ export function MainNav() {
           </SidebarMenu>
           <div className="flex items-center gap-3 p-2">
             <Avatar>
-              <AvatarImage src="https://placehold.co/100x100" alt="@shadcn" data-ai-hint="person face" />
-              <AvatarFallback>U</AvatarFallback>
+              <AvatarImage src="https://placehold.co/100x100.png" alt="Admin" data-ai-hint="person face" />
+              <AvatarFallback>A</AvatarFallback>
             </Avatar>
             <div className="flex flex-col text-sm group-data-[collapsible=icon]:hidden">
               <span className="font-semibold text-sidebar-foreground">
-                Alex Doe
+                Admin
               </span>
-              <span className="text-sidebar-foreground/70">Estudiante</span>
+              <span className="text-sidebar-foreground/70">Administrador/a</span>
             </div>
           </div>
         </SidebarGroup>
