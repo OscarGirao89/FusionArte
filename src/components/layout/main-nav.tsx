@@ -22,6 +22,7 @@ import {
   Settings,
   BookMarked,
   User,
+  ClipboardList,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -50,6 +51,8 @@ const navItems = {
 
 const adminNavItems = [
     { href: '/admin/users', label: 'Gestión de Usuarios', icon: User },
+    { href: '/admin/classes', label: 'Gestión de Clases', icon: ClipboardList },
+    { href: '/admin/memberships', label: 'Gestión de Membresías', icon: CreditCard },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];
 
