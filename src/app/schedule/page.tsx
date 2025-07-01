@@ -31,7 +31,7 @@ function ClassCard({ danceClass }: { danceClass: DanceClass }) {
       </CardHeader>
       <CardContent className="flex-grow space-y-3 text-sm">
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Calendar className="h-4 w-4" /> <span>{danceClass.day} at {danceClass.time}</span>
+          <Calendar className="h-4 w-4" /> <span>{danceClass.day} a las {danceClass.time}</span>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
           <Clock className="h-4 w-4" /> <span>{danceClass.duration}</span>
@@ -41,30 +41,30 @@ function ClassCard({ danceClass }: { danceClass: DanceClass }) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full bg-primary hover:bg-primary/90">Enroll Now</Button>
+        <Button className="w-full bg-primary hover:bg-primary/90">Inscribirse Ahora</Button>
       </CardFooter>
     </Card>
   );
 }
 
 export default function SchedulePage() {
-  const [styleFilter, setStyleFilter] = useState('All');
-  const [levelFilter, setLevelFilter] = useState('All Levels');
+  const [styleFilter, setStyleFilter] = useState('Todos');
+  const [levelFilter, setLevelFilter] = useState('Todos los Niveles');
 
-  const styles = ['All', ...Array.from(new Set(danceClasses.map(c => c.style)))];
-  const levels = ['All Levels', ...Array.from(new Set(danceClasses.map(c => c.level)))];
+  const styles = ['Todos', ...Array.from(new Set(danceClasses.map(c => c.style)))];
+  const levels = ['Todos los Niveles', ...Array.from(new Set(danceClasses.map(c => c.level)))];
 
   const filteredClasses = danceClasses.filter(c => {
-    const styleMatch = styleFilter === 'All' || c.style === styleFilter;
-    const levelMatch = levelFilter === 'All Levels' || c.level === levelFilter;
+    const styleMatch = styleFilter === 'Todos' || c.style === styleFilter;
+    const levelMatch = levelFilter === 'Todos los Niveles' || c.level === levelFilter;
     return styleMatch && levelMatch;
   });
 
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="space-y-2 mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-headline">Class Schedule</h1>
-        <p className="text-lg text-muted-foreground">Find your rhythm. Book your next class.</p>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-headline">Horario de Clases</h1>
+        <p className="text-lg text-muted-foreground">Encuentra tu ritmo. Reserva tu próxima clase.</p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-8">
@@ -78,7 +78,7 @@ export default function SchedulePage() {
         <div className="w-full md:w-48">
           <Select value={levelFilter} onValueChange={setLevelFilter}>
             <SelectTrigger>
-              <SelectValue placeholder="Filter by level" />
+              <SelectValue placeholder="Filtrar por nivel" />
             </SelectTrigger>
             <SelectContent>
               {levels.map(level => (
@@ -98,9 +98,9 @@ export default function SchedulePage() {
       ) : (
         <div className="text-center py-16">
             <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium font-headline">No Classes Found</h3>
+            <h3 className="mt-4 text-lg font-medium font-headline">No se encontraron clases</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-                Try adjusting your filters to find other classes.
+                Intenta ajustar tus filtros para encontrar otras clases.
             </p>
         </div>
       )}

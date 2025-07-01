@@ -5,8 +5,8 @@ import { MainNav } from '@/components/layout/main-nav';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'DanceFlow',
-  description: 'Integral management system for a dance school.',
+  title: 'FusionArte',
+  description: 'Sistema de gestión integral para la escuela de baile FusionArte.',
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

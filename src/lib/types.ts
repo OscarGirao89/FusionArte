@@ -14,7 +14,7 @@ export type DanceClass = {
   id: string;
   name: string;
   style: string;
-  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
+  level: 'Principiante' | 'Intermedio' | 'Avanzado' | 'Todos los Niveles';
   teacher: string;
   teacherAvatar: string;
   day: string;

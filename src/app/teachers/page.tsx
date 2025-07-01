@@ -10,7 +10,7 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
             <CardHeader className="p-0">
                 <Image
                     src={teacher.avatar}
-                    alt={`Photo of ${teacher.name}`}
+                    alt={`Foto de ${teacher.name}`}
                     width={400}
                     height={400}
                     className="w-full h-auto object-cover"
@@ -34,9 +34,9 @@ export default function TeachersPage() {
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="space-y-2 mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-headline">Meet Our Instructors</h1>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-headline">Conoce a Nuestros Instructores</h1>
         <p className="text-lg text-muted-foreground">
-          Passionate, experienced, and dedicated to helping you grow as a dancer.
+          Apasionados, experimentados y dedicados a ayudarte a crecer como bailarín/a.
         </p>
       </div>
 

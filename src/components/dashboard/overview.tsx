@@ -11,12 +11,12 @@ const data = [
   { name: 'Carlos R.', total: 35 },
   { name: 'Aisha J.', total: 51 },
   { name: 'Liam S.', total: 28 },
-  { name: 'Studio', total: 12 },
+  { name: 'Estudio', total: 12 },
 ];
 
 const chartConfig = {
   total: {
-    label: 'Classes',
+    label: 'Clases',
     color: 'hsl(var(--primary))',
   },
 } satisfies ChartConfig;

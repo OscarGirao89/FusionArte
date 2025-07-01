@@ -15,7 +15,7 @@ import {
   CreditCard,
   Users,
   LogOut,
-  Dumbbell,
+  Flame,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -23,9 +23,9 @@ import { useSidebar } from '@/components/ui/sidebar';
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/schedule', label: 'Class Schedule', icon: Calendar },
-  { href: '/memberships', label: 'Memberships', icon: CreditCard },
-  { href: '/teachers', label: 'Teachers', icon: Users },
+  { href: '/schedule', label: 'Horario de Clases', icon: Calendar },
+  { href: '/memberships', label: 'Membresías', icon: CreditCard },
+  { href: '/teachers', label: 'Profesores', icon: Users },
 ];
 
 export function MainNav() {
@@ -34,8 +34,8 @@ export function MainNav() {
   
   const logo = (
     <div className="flex items-center gap-2" aria-hidden="true">
-        <Dumbbell className="h-8 w-8 text-primary" />
-        <span className="font-bold text-lg font-headline">DanceFlow</span>
+        <Flame className="h-8 w-8 text-primary" />
+        <span className="font-bold text-lg font-headline">FusionArte</span>
     </div>
   )
 
@@ -67,22 +67,22 @@ export function MainNav() {
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={{ children: 'Logout' }}>
+              <SidebarMenuButton tooltip={{ children: 'Cerrar Sesión' }}>
                 <LogOut />
-                <span>Logout</span>
+                <span>Cerrar Sesión</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
           <div className="flex items-center gap-3 p-2">
             <Avatar>
-              <AvatarImage src="https://placehold.co/100x100" alt="@shadcn" />
+              <AvatarImage src="https://placehold.co/100x100" alt="@shadcn" data-ai-hint="person face" />
               <AvatarFallback>U</AvatarFallback>
             </Avatar>
             <div className="flex flex-col text-sm group-data-[collapsible=icon]:hidden">
               <span className="font-semibold text-sidebar-foreground">
                 Alex Doe
               </span>
-              <span className="text-sidebar-foreground/70">Student</span>
+              <span className="text-sidebar-foreground/70">Estudiante</span>
             </div>
           </div>
         </SidebarGroup>

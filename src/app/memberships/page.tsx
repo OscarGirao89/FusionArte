@@ -36,7 +36,7 @@ function PlanCard({ plan }: { plan: MembershipPlan }) {
       </CardContent>
       <CardFooter>
         <Button className="w-full" variant={plan.isPopular ? 'default' : 'outline'}>
-          {plan.isPopular ? 'Get Started' : 'Choose Plan'}
+          {plan.isPopular ? 'Comenzar Ahora' : 'Elegir Plan'}
         </Button>
       </CardFooter>
     </Card>
@@ -47,9 +47,9 @@ export default function MembershipsPage() {
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="text-center space-y-2 mb-12">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-headline">Our Membership Plans</h1>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-headline">Nuestros Planes de Membresía</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Choose the perfect plan to start your dance journey with us. Flexible options for every level and goal.
+          Elige el plan perfecto para comenzar tu viaje en el baile con nosotros. Opciones flexibles para cada nivel y objetivo.
         </p>
       </div>
 

@@ -21,13 +21,13 @@ import { Bot, Loader2, Sparkles } from 'lucide-react';
 
 const formSchema = z.object({
   studentPreferences: z.string().min(10, {
-    message: 'Please describe your preferences in a bit more detail.',
+    message: 'Por favor, describe tus preferencias con un poco más de detalle.',
   }),
   classSchedule: z.string().min(10, {
-    message: 'Please provide some details about the available schedule.',
+    message: 'Por favor, proporciona algunos detalles sobre el horario disponible.',
   }),
   conflictDetails: z.string().min(10, {
-    message: 'Please explain the conflict or why you need an alternative.',
+    message: 'Por favor, explica el conflicto o por qué necesitas una alternativa.',
   }),
 });
 
@@ -39,9 +39,9 @@ export function SmartSuggestion() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      studentPreferences: 'I love energetic styles like Salsa and Hip Hop. I am an intermediate dancer.',
-      classSchedule: 'Mondays: Salsa Beginner 7pm, Bachata Intermediate 8pm. Tuesdays: Hip Hop Advanced 6:30pm. Wednesdays: Salsa Intermediate 7pm.',
-      conflictDetails: 'I have a work meeting next Wednesday and will miss my 7pm Intermediate Salsa class.',
+      studentPreferences: 'Me encantan los estilos enérgicos como Salsa y Hip Hop. Soy un bailarín de nivel intermedio.',
+      classSchedule: 'Lunes: Salsa Principiante 19h, Bachata Intermedio 20h. Martes: Hip Hop Avanzado 18:30h. Miércoles: Salsa Intermedio 19h.',
+      conflictDetails: 'Tengo una reunión de trabajo el próximo miércoles y me perderé mi clase de Salsa Intermedia de las 19h.',
     },
   });
 
@@ -53,7 +53,7 @@ export function SmartSuggestion() {
       const res = await suggestClassesAction(values);
       setResult(res);
     } catch (e: any) {
-      setError(e.message || 'An unexpected error occurred.');
+      setError(e.message || 'Ocurrió un error inesperado.');
     } finally {
       setIsLoading(false);
     }
@@ -69,16 +69,16 @@ export function SmartSuggestion() {
                 name="studentPreferences"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Your Preferences</FormLabel>
+                    <FormLabel>Tus Preferencias</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="e.g., I like high-energy Latin dances, intermediate level."
+                        placeholder="Ej: Me gustan los bailes latinos de alta energía, nivel intermedio."
                         className="resize-y"
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      Tell us what you like (styles, level, energy).
+                      Dinos qué te gusta (estilos, nivel, energía).
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -89,16 +89,16 @@ export function SmartSuggestion() {
                 name="classSchedule"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Class Schedule</FormLabel>
+                    <FormLabel>Horario de Clases</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Provide the relevant part of the schedule."
+                        placeholder="Proporciona la parte relevante del horario."
                         className="resize-y"
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      What classes are available?
+                      ¿Qué clases están disponibles?
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -109,16 +109,16 @@ export function SmartSuggestion() {
                 name="conflictDetails"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Conflict Details</FormLabel>
+                    <FormLabel>Detalles del Conflicto</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="e.g., I will miss my usual Wednesday Salsa class due to a work event."
+                        placeholder="Ej: Me perderé mi clase habitual de Salsa del miércoles por un evento de trabajo."
                         className="resize-y"
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      Why do you need an alternative class?
+                      ¿Por qué necesitas una clase alternativa?
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -126,16 +126,16 @@ export function SmartSuggestion() {
               />
           </div>
 
-          <Button type="submit" disabled={isLoading} className="bg-accent hover:bg-accent/90">
+          <Button type="submit" disabled={isLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground">
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Thinking...
+                Pensando...
               </>
             ) : (
                 <>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Find Alternatives
+                    Buscar Alternativas
                 </>
             )}
           </Button>
@@ -154,7 +154,7 @@ export function SmartSuggestion() {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-headline">
                     <Sparkles className="h-6 w-6 text-primary"/>
-                    AI-Powered Suggestions
+                    Sugerencias con IA
                 </CardTitle>
                 <CardDescription>{result.reasoning}</CardDescription>
             </CardHeader>

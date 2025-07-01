@@ -14,7 +14,7 @@ export function UpcomingClasses() {
           </Avatar>
           <div className="ml-4 space-y-1">
             <p className="text-sm font-medium leading-none">{c.name} - {c.level}</p>
-            <p className="text-sm text-muted-foreground">{c.day} at {c.time} with {c.teacher}</p>
+            <p className="text-sm text-muted-foreground">{c.day} a las {c.time} con {c.teacher}</p>
           </div>
           <div className="ml-auto font-medium text-sm">{c.room}</div>
         </div>
