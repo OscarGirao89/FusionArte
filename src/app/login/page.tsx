@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -44,6 +45,7 @@ export default function LoginPage() {
                   <SelectItem value="teacher">Profesor</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
                   <SelectItem value="administrativo">Administrativo</SelectItem>
+                  <SelectItem value="socio">Socio</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -57,5 +59,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    

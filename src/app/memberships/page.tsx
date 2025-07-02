@@ -30,9 +30,9 @@ function PlanCard({ plan }: { plan: MembershipPlan }) {
   const getButtonInfo = () => {
     switch(plan.accessType) {
       case 'unlimited':
-        return { text: 'Elige tus Clases', action: () => router.push('/schedule') };
+        return { text: 'Ver Horario y Elegir Clases', action: () => router.push('/schedule') };
       case 'class_pack':
-        return { text: 'Selecciona tus Clases', action: () => router.push('/schedule') };
+        return { text: 'Ver Horario y Seleccionar Clases', action: () => router.push('/schedule') };
       default:
         return { text: 'Comprar Ahora', action: () => alert('Proceso de compra no implementado en este prototipo.') };
     }

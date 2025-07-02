@@ -61,6 +61,12 @@ const navItems = {
     { href: '/admin/students', label: 'Gestión de Alumnos', icon: GraduationCap },
     { href: '/admin/payments', label: 'Pagos', icon: Wallet },
   ],
+  socio: [
+    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/schedule', label: 'Horario de Clases', icon: Calendar },
+    { href: '/memberships', label: 'Membresías', icon: CreditCard },
+    { href: '/teachers', label: 'Profesores', icon: Users },
+  ],
 };
 
 const adminNavItems = [
@@ -78,6 +84,7 @@ export const userProfiles: Record<UserRole, { id: number; name: string; role: st
     teacher: { id: 2, name: 'Oscar Girao', role: 'Profesor', avatar: 'https://placehold.co/100x100.png?text=OG' },
     admin: { id: 4, name: 'Admin FusionArte', role: 'Administrador/a', avatar: 'https://placehold.co/100x100.png?text=AF' },
     administrativo: { id: 7, name: 'Laura Martinez', role: 'Recepción', avatar: 'https://placehold.co/100x100.png?text=LM' },
+    socio: { id: 2, name: 'Oscar Girao', role: 'Socio', avatar: 'https://placehold.co/100x100.png?text=OG' },
 };
 
 
@@ -119,7 +126,7 @@ export function MainNav() {
           </SidebarMenuItem>
         ))}
 
-        {userRole === 'admin' && (
+        {(userRole === 'admin' || userRole === 'socio') && (
             <>
                 <SidebarSeparator className="my-2"/>
                 <SidebarGroup>

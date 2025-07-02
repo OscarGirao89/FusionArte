@@ -49,7 +49,7 @@ const userFormSchema = z.object({
     id: z.number().optional(),
     name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
     email: z.string().email("Email inválido."),
-    role: z.enum(['Estudiante', 'Profesor', 'Administrador', 'Administrativo']),
+    role: z.enum(['Estudiante', 'Profesor', 'Administrador', 'Administrativo', 'Socio']),
     bio: z.string().optional(),
     specialties: z.string().optional(),
     paymentDetails: paymentDetailsSchema.optional(),
@@ -70,12 +70,13 @@ type UserFormValues = z.infer<typeof userFormSchema>;
 
 const roleVariant: { [key: string]: "default" | "secondary" | "destructive" } = {
     'Administrador': 'destructive',
+    'Socio': 'destructive',
     'Profesor': 'default',
     'Estudiante': 'secondary',
     'Administrativo': 'secondary'
 }
 
-const userRoles: User['role'][] = ['Estudiante', 'Profesor', 'Administrador', 'Administrativo'];
+const userRoles: User['role'][] = ['Estudiante', 'Profesor', 'Administrador', 'Administrativo', 'Socio'];
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<User[]>(initialUsers);
@@ -146,7 +147,7 @@ export default function AdminUsersPage() {
             avatar: data.avatar || `https://placehold.co/100x100.png?text=${data.name.split(' ').map(n=>n[0]).join('')}`,
         };
 
-        if (data.role === 'Profesor') {
+        if (data.role === 'Profesor' || data.role === 'Socio') {
             dataToSave.bio = data.bio;
             dataToSave.specialties = data.specialties?.split(',').map(s => s.trim());
             dataToSave.paymentDetails = data.paymentDetails;
@@ -362,9 +363,9 @@ export default function AdminUsersPage() {
                     )} />
                 </div>
 
-                {watchedRole === 'Profesor' && (
+                {(watchedRole === 'Profesor' || watchedRole === 'Socio') && (
                     <div className="space-y-4 p-4 border rounded-md">
-                        <h3 className="text-lg font-medium">Detalles del Profesor</h3>
+                        <h3 className="text-lg font-medium">Detalles del Profesor/Socio</h3>
                         <FormField control={form.control} name="bio" render={({ field }) => (
                             <FormItem><FormLabel>Biografía</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
                         )} />

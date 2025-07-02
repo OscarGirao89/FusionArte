@@ -102,8 +102,8 @@ function StudentDashboard() {
 
 function TeacherDashboard() {
   const { userRole } = useAuth();
-  const teacherName = userRole ? userProfiles[userRole]?.name : '';
-  const myClasses = danceClasses.filter(c => c.teacher === teacherName);
+  const currentUserId = userRole ? userProfiles[userRole]?.id : null;
+  const myClasses = danceClasses.filter(c => c.teacherIds.includes(currentUserId!));
 
   const classesByDay = myClasses.reduce((acc, currentClass) => {
       const day = currentClass.day;
@@ -152,10 +152,10 @@ function TeacherDashboard() {
 }
 
 function AdminDashboard() {
-   const teacherData = allUsers.filter(u => u.role === 'Profesor').map(teacher => {
+   const teacherData = allUsers.filter(u => u.role === 'Profesor' || u.role === 'Socio').map(teacher => {
         return {
             name: teacher.name.split(' ')[0], // Use first name
-            total: danceClasses.filter(c => c.teacher === teacher.name && c.status === 'completed').length,
+            total: danceClasses.filter(c => c.teacherIds.includes(teacher.id) && c.status === 'completed').length,
         }
     });
    const teacherPerformanceConfig = {
@@ -225,6 +225,8 @@ export default function DashboardPage() {
       case 'admin':
         return <AdminDashboard />;
       case 'administrativo':
+        return <AdminDashboard />; // Same as admin for now
+      case 'socio':
         return <AdminDashboard />; // Same as admin for now
       default:
         return <div>Cargando...</div>;

@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useRouter, usePathname } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export type UserRole = 'admin' | 'teacher' | 'student' | 'administrativo';
+export type UserRole = 'admin' | 'teacher' | 'student' | 'administrativo' | 'socio';
 
 export interface AuthContextType {
   userRole: UserRole | null;

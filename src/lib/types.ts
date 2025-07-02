@@ -79,7 +79,7 @@ export type User = {
     id: number;
     name: string;
     email: string;
-    role: 'Estudiante' | 'Profesor' | 'Administrador' | 'Administrativo';
+    role: 'Estudiante' | 'Profesor' | 'Administrador' | 'Administrativo' | 'Socio';
     joined: string;
     avatar: string;
     dob?: string; // YYYY-MM-DD
@@ -148,4 +148,3 @@ export type Role = {
   name: string;
   permissions: Permission[];
 };
-    
