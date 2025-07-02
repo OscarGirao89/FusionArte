@@ -82,6 +82,9 @@ export type User = {
     role: 'Estudiante' | 'Profesor' | 'Administrador' | 'Administrativo';
     joined: string;
     avatar: string;
+    dob?: string; // YYYY-MM-DD
+    mobile?: string;
+    isVisibleToStudents?: boolean;
     // Student-specific fields
     attendanceHistory?: AttendanceRecord[];
     // Teacher-specific fields

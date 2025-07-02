@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { danceClasses as initialClasses, users, danceStyles, danceLevels } from '@/lib/data';
-import type { DanceClass, ClassType } from '@/lib/types';
+import type { DanceClass, ClassType, User } from '@/lib/types';
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -128,6 +128,7 @@ export default function AdminClassesPage() {
   });
 
   const eventType = form.watch('type');
+  const workshopPaymentType = form.watch('workshopPaymentType');
 
   const getStyleName = (id: string) => danceStyles.find(s => s.id === id)?.name || id;
   const getLevelName = (id: string) => danceLevels.find(l => l.id === id)?.name || id;
@@ -467,7 +468,11 @@ export default function AdminClassesPage() {
                             </Select><FormMessage /></FormItem>
                         )} />
                         <FormField control={form.control} name="workshopPaymentValue" render={({ field }) => (
-                            <FormItem><FormLabel>Valor del Pago</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem>
+                              <FormLabel>{workshopPaymentType === 'fixed' ? 'Monto Fijo (€)' : 'Porcentaje (%)'}</FormLabel>
+                              <FormControl><Input type="number" min="0" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
                         )} />
                     </div>
                 )}

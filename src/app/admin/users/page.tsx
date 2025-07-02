@@ -20,6 +20,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { MoreVertical, UserPlus, Pencil, Trash2 } from 'lucide-react';
 
@@ -45,6 +46,8 @@ const userFormSchema = z.object({
     bio: z.string().optional(),
     specialties: z.string().optional(),
     paymentDetails: paymentDetailsSchema.optional(),
+    avatar: z.string().url({ message: "Introduce una URL de imagen válida." }).optional(),
+    isVisibleToStudents: z.boolean().default(false).optional(),
   }).refine(data => {
     if (data.role === 'Profesor' && !data.paymentDetails) {
       return false; // Professor must have payment details
@@ -79,7 +82,8 @@ export default function AdminUsersPage() {
                 type: 'per_class',
                 payRate: 20,
                 cancelledClassPay: 8,
-            }
+            },
+            isVisibleToStudents: false,
         }
     });
 
@@ -96,7 +100,9 @@ export default function AdminUsersPage() {
             role: user.role,
             bio: user.bio,
             specialties: user.specialties?.join(', '),
-            paymentDetails: user.paymentDetails || { type: 'per_class', payRate: 20, cancelledClassPay: 8 }
+            paymentDetails: user.paymentDetails || { type: 'per_class', payRate: 20, cancelledClassPay: 8 },
+            avatar: user.avatar,
+            isVisibleToStudents: user.isVisibleToStudents
           });
         } else {
           form.reset({
@@ -105,7 +111,9 @@ export default function AdminUsersPage() {
             role: 'Estudiante',
             bio: '',
             specialties: '',
-            paymentDetails: { type: 'per_class', payRate: 20, cancelledClassPay: 8 }
+            paymentDetails: { type: 'per_class', payRate: 20, cancelledClassPay: 8 },
+            avatar: '',
+            isVisibleToStudents: false,
           });
         }
         setIsDialogOpen(true);
@@ -117,16 +125,18 @@ export default function AdminUsersPage() {
           description: `El usuario "${data.name}" ha sido guardado (simulación).`,
         });
 
-        const dataToSave: Omit<User, 'id' | 'joined' | 'avatar'> = {
+        const dataToSave: Omit<User, 'id' | 'joined'> & { id?: number } = {
             name: data.name,
             email: data.email,
             role: data.role,
+            avatar: data.avatar || `https://placehold.co/100x100.png?text=${data.name.split(' ').map(n=>n[0]).join('')}`,
         };
 
         if (data.role === 'Profesor') {
             dataToSave.bio = data.bio;
             dataToSave.specialties = data.specialties?.split(',').map(s => s.trim());
             dataToSave.paymentDetails = data.paymentDetails;
+            dataToSave.isVisibleToStudents = data.isVisibleToStudents;
         }
 
         if (editingUser) {
@@ -136,7 +146,6 @@ export default function AdminUsersPage() {
                 id: Math.max(...users.map(u => u.id)) + 1,
                 ...dataToSave,
                 joined: new Date().toISOString().split('T')[0],
-                avatar: `https://placehold.co/100x100.png?text=${data.name.split(' ').map(n=>n[0]).join('')}`
             };
             setUsers([...users, newUser]);
         }
@@ -256,6 +265,9 @@ export default function AdminUsersPage() {
                     <FormField control={form.control} name="email" render={({ field }) => (
                     <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
+                     <FormField control={form.control} name="avatar" render={({ field }) => (
+                        <FormItem className="md:col-span-2"><FormLabel>URL de la Foto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
                     <FormField control={form.control} name="role" render={({ field }) => (
                     <FormItem className="md:col-span-2"><FormLabel>Rol</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un rol" /></SelectTrigger></FormControl>
@@ -299,6 +311,19 @@ export default function AdminUsersPage() {
                                 <FormItem><FormLabel>Pago por Clase Cancelada (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>Poner 0 si no se paga.</FormDescription><FormMessage /></FormItem>
                             )} />
                         </div>
+                        <FormField control={form.control} name="isVisibleToStudents" render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                <div className="space-y-0.5">
+                                    <FormLabel>Visible para Alumnos</FormLabel>
+                                    <FormDescription>
+                                        Si se activa, el perfil de este profesor aparecerá en la página pública de profesores.
+                                    </FormDescription>
+                                </div>
+                                <FormControl>
+                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                </FormControl>
+                            </FormItem>
+                        )} />
                          <FormMessage>{form.formState.errors.paymentDetails?.message}</FormMessage>
                     </div>
                 )}

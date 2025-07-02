@@ -16,13 +16,13 @@ function TeacherCard({ teacher }: { teacher: User }) {
                     alt={`Foto de ${teacher.name}`}
                     width={400}
                     height={400}
-                    className="w-full h-auto object-cover"
+                    className="w-full h-auto object-cover aspect-square"
                     data-ai-hint="portrait professional"
                 />
             </CardHeader>
             <CardContent className="p-6">
                 <CardTitle className="font-headline text-2xl mb-2">{teacher.name}</CardTitle>
-                <CardDescription className="mb-4">{teacher.bio || 'Biografía no disponible.'}</CardDescription>
+                <CardDescription className="mb-4 min-h-[60px]">{teacher.bio || 'Biografía no disponible.'}</CardDescription>
                 <div className="flex flex-wrap gap-2">
                     {teacher.specialties?.map(specialty => (
                         <Badge key={specialty} variant="secondary">{specialty}</Badge>
@@ -34,18 +34,18 @@ function TeacherCard({ teacher }: { teacher: User }) {
 }
 
 export default function TeachersPage() {
-  const teachers = users.filter(user => user.role === 'Profesor');
+  const teachers = users.filter(user => user.role === 'Profesor' && user.isVisibleToStudents);
     
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <div className="space-y-2 mb-8">
+      <div className="space-y-2 mb-8 text-center">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-headline">Conoce a Nuestros Instructores</h1>
-        <p className="text-lg text-muted-foreground">
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Apasionados, experimentados y dedicados a ayudarte a crecer como bailarín/a.
         </p>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         {teachers.map(teacher => (
           <TeacherCard key={teacher.id} teacher={teacher} />
         ))}

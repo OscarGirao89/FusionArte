@@ -21,6 +21,7 @@ export const danceLevels: DanceLevel[] = [
 export const users: User[] = [
   { 
     id: 1, name: 'Ana López', email: 'ana.lopez@example.com', role: 'Estudiante', joined: '2023-09-01', avatar: 'https://placehold.co/100x100.png?text=AL',
+    dob: '1998-07-12', mobile: '600111222',
     attendanceHistory: [
       { classId: 'clase-1', date: '2024-07-01', status: 'presente' },
       { classId: 'clase-2', date: '2024-07-01', status: 'presente' },
@@ -32,10 +33,12 @@ export const users: User[] = [
     id: 2, name: 'Carlos Ruiz', email: 'carlos.ruiz@example.com', role: 'Profesor', joined: '2022-05-20', avatar: 'https://placehold.co/100x100.png?text=CR',
     bio: 'Carlos trae el corazón de la República Dominicana a sus clases de Bachata. Se enfoca en la conexión, la musicalidad y los movimientos suaves y sensuales de la Bachata moderna y tradicional.',
     specialties: ['Bachata Sensual', 'Bachata Dominicana', 'Trabajo en Pareja'],
-    paymentDetails: { type: 'per_class', payRate: 30, cancelledClassPay: 8 }
+    paymentDetails: { type: 'per_class', payRate: 30, cancelledClassPay: 8 },
+    isVisibleToStudents: true,
   },
   { 
     id: 3, name: 'Beatriz Sanz', email: 'beatriz.sanz@example.com', role: 'Estudiante', joined: '2024-01-15', avatar: 'https://placehold.co/100x100.png?text=BS',
+    dob: '2001-08-25', mobile: '600333444',
     attendanceHistory: [
       { classId: 'clase-1', date: '2024-07-01', status: 'presente' },
       { classId: 'clase-3', date: '2024-07-02', status: 'presente' },
@@ -48,22 +51,25 @@ export const users: User[] = [
     id: 5, name: 'Elena Garcia', email: 'elena.garcia@example.com', role: 'Profesor', joined: '2022-03-10', avatar: 'https://placehold.co/100x100.png?text=EG',
     bio: 'Con más de 15 años de experiencia, Elena es una maestra del baile latino. Su pasión por la Salsa es contagiosa y crea una atmósfera vibrante y de apoyo en sus clases.',
     specialties: ['Salsa On1', 'Salsa On2', 'Salsa Cubana', 'Estilo'],
-    paymentDetails: { type: 'monthly', monthlySalary: 2200, cancelledClassPay: 0 }
+    paymentDetails: { type: 'monthly', monthlySalary: 2200, cancelledClassPay: 0 },
+    isVisibleToStudents: true,
   },
   { 
     id: 6, name: 'Liam Smith', email: 'liam.smith@example.com', role: 'Profesor', joined: '2023-08-11', avatar: 'https://placehold.co/100x100.png?text=LS',
     bio: "El enfoque de Liam hacia la danza contemporánea es contar historias a través del movimiento. Combina la precisión técnica con la expresión emocional, animando a los estudiantes a encontrar su voz única.",
     specialties: ['Lírico', 'Trabajo de Suelo', 'Improvisación', 'Técnica'],
-    paymentDetails: { type: 'per_class', payRate: 32, cancelledClassPay: 10 }
+    paymentDetails: { type: 'per_class', payRate: 32, cancelledClassPay: 10 },
+    isVisibleToStudents: false, // Intentionally false for demonstration
   },
   { id: 7, name: 'Laura Martinez', email: 'laura.martinez@example.com', role: 'Administrativo', joined: '2023-11-10', avatar: 'https://placehold.co/100x100.png?text=LM' },
-  { id: 8, name: 'David Chen', email: 'david.chen@example.com', role: 'Estudiante', joined: '2023-10-05', avatar: 'https://placehold.co/100x100.png?text=DC', attendanceHistory: [] },
-  { id: 9, name: 'Sophia Rodriguez', email: 'sophia.r@example.com', role: 'Estudiante', joined: '2022-11-12', avatar: 'https://placehold.co/100x100.png?text=SR', attendanceHistory: [] },
+  { id: 8, name: 'David Chen', email: 'david.chen@example.com', role: 'Estudiante', joined: '2023-10-05', avatar: 'https://placehold.co/100x100.png?text=DC', dob: '1995-07-30', attendanceHistory: [] },
+  { id: 9, name: 'Sophia Rodriguez', email: 'sophia.r@example.com', role: 'Estudiante', joined: '2022-11-12', avatar: 'https://placehold.co/100x100.png?text=SR', dob: '1999-02-14', attendanceHistory: [] },
   { 
     id: 10, name: 'Aisha Jones', email: 'aisha.jones@example.com', role: 'Profesor', joined: '2023-02-18', avatar: 'https://placehold.co/100x100.png?text=AJ',
     bio: 'Aisha es una fuerza dinámica en el mundo del Hip Hop. Desde las bases de la vieja escuela hasta las últimas tendencias comerciales, sus clases de alta energía te desafiarán y aumentarán tu confianza.',
     specialties: ['Popping', 'Locking', 'Coreografía', 'Freestyle'],
-    paymentDetails: { type: 'per_class', payRate: 35, cancelledClassPay: 10 }
+    paymentDetails: { type: 'per_class', payRate: 35, cancelledClassPay: 10 },
+    isVisibleToStudents: true,
   },
 ];
 
