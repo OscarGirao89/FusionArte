@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -22,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { MoreVertical, UserPlus, Pencil, Trash2 } from 'lucide-react';
+import { MoreVertical, UserPlus, Pencil, Trash2, ShieldCheck } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 
 const paymentDetailsSchema = z.discriminatedUnion("type", [
@@ -80,6 +81,7 @@ export default function AdminUsersPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const { toast } = useToast();
+    const router = useRouter();
 
     const form = useForm<UserFormValues>({
         resolver: zodResolver(userFormSchema),
@@ -174,10 +176,16 @@ export default function AdminUsersPage() {
     <div className="p-4 md:p-8">
         <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Usuarios</h1>
-            <Button onClick={() => handleOpenDialog()}>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Añadir Usuario
-            </Button>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => router.push('/admin/roles')}>
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    Gestionar Roles
+                </Button>
+                <Button onClick={() => handleOpenDialog()}>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Añadir Usuario
+                </Button>
+            </div>
         </div>
       <Card>
         <CardHeader>
