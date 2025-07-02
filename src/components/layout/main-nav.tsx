@@ -59,8 +59,6 @@ const navItems = {
   ],
   administrativo: [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/schedule', label: 'Horario General', icon: Calendar },
-    { href: '/admin/students', label: 'Gestión de Alumnos', icon: GraduationCap },
     { href: '/admin/payments', label: 'Pagos de Alumnos', icon: Wallet },
   ],
   socio: [
@@ -76,7 +74,6 @@ const adminNavItems = [
     { href: '/admin/students', label: 'Gestión de Alumnos', icon: GraduationCap },
     { href: '/admin/classes', label: 'Gestión de Clases', icon: ClipboardList },
     { href: '/admin/memberships', label: 'Gestión de Membresías', icon: CreditCard },
-    { href: '/admin/payments', label: 'Pagos de Alumnos', icon: Wallet },
     { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];

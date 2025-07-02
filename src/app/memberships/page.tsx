@@ -2,14 +2,14 @@
 'use client';
 
 import { membershipPlans } from '@/lib/data';
-import type { MembershipPlan } from '@/lib/types';
+import type { MembershipPlan, StudentPayment } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Star, TicketPercent } from 'lucide-react';
+import { Check, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
+import { userProfiles } from '@/components/layout/main-nav';
 
 const getPlanPriceDisplay = (plan: MembershipPlan) => {
   if (plan.accessType === 'unlimited') {
@@ -28,12 +28,51 @@ const getPlanPriceDisplay = (plan: MembershipPlan) => {
 
 function PlanCard({ plan }: { plan: MembershipPlan }) {
   const { toast } = useToast();
+  const { userRole, addStudentPayment, updateStudentMembership } = useAuth();
   
   const handleAcquirePlan = () => {
-      toast({
-          title: "Solicitud Recibida",
-          description: "Tu solicitud de membresía ha sido enviada. El administrador creará tu factura y te aparecerá en tu perfil.",
-      });
+    if (userRole !== 'student') {
+        toast({
+            title: "Acción no permitida",
+            description: "Solo los estudiantes pueden adquirir membresías.",
+            variant: "destructive",
+        });
+        return;
+    }
+    
+    const student = userProfiles[userRole];
+    if (!student) return;
+
+    // 1. Create the invoice
+    const newPayment: StudentPayment = {
+        id: `inv-${Date.now()}`,
+        studentId: student.id,
+        planId: plan.id,
+        invoiceDate: new Date().toISOString(),
+        totalAmount: plan.price,
+        status: 'pending',
+        amountPaid: 0,
+        amountDue: plan.price,
+        lastUpdatedBy: 'Sistema',
+        lastUpdatedDate: new Date().toISOString(),
+    };
+    addStudentPayment(newPayment);
+
+    // 2. Create the membership
+    const membershipEndDate = new Date();
+    membershipEndDate.setMonth(membershipEndDate.getMonth() + plan.durationValue);
+    
+    updateStudentMembership(student.id, {
+        planId: plan.id,
+        startDate: new Date().toISOString(),
+        endDate: membershipEndDate.toISOString(),
+        classesRemaining: plan.accessType === 'class_pack' ? plan.classCount : undefined,
+    });
+      
+    toast({
+        title: "Solicitud Recibida",
+        description: "Tu factura ha sido creada con estado 'Pendiente'. Ve a tu perfil para ver los detalles.",
+    });
   };
 
   return (

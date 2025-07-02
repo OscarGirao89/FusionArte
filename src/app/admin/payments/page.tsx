@@ -2,15 +2,14 @@
 'use client';
 
 import { useState } from 'react';
-import { studentPayments as initialPayments } from '@/lib/finances-data';
+import { useAuth } from '@/context/auth-context';
 import { users, membershipPlans } from '@/lib/data';
-import type { StudentPayment, User } from '@/lib/types';
+import type { StudentPayment } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useAuth } from '@/context/auth-context';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { DollarSign, Download, Edit, Printer, TrendingDown, TrendingUp, Wallet, PlusCircle } from 'lucide-react';
+import { userProfiles } from '@/components/layout/main-nav';
 
 const paymentEditSchema = z.object({
   id: z.string(),
@@ -38,12 +38,13 @@ const newInvoiceSchema = z.object({
 type NewInvoiceFormValues = z.infer<typeof newInvoiceSchema>;
 
 export default function AdminPaymentsPage() {
-  const [payments, setPayments] = useState<StudentPayment[]>(initialPayments);
+  const { studentPayments: payments, addStudentPayment, updateStudentMembership, userRole } = useAuth();
   const [editingPayment, setEditingPayment] = useState<StudentPayment | null>(null);
   const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
   const { toast } = useToast();
-  const { userRole, updateStudentMembership, addStudentPayment } = useAuth();
-  const isAdmin = userRole === 'admin';
+  
+  const canEdit = userRole === 'admin' || userRole === 'administrativo' || userRole === 'socio';
+  const canCreate = userRole === 'admin' || userRole === 'administrativo' || userRole === 'socio';
 
   const students = users.filter(u => u.role === 'Estudiante');
 
@@ -57,8 +58,9 @@ export default function AdminPaymentsPage() {
   
   const getStudentName = (id: number) => users.find(u => u.id === id)?.name || 'Desconocido';
   const getPlanName = (id: string) => membershipPlans.find(p => p.id === id)?.title || 'Desconocido';
+  const getEditorName = () => userRole ? userProfiles[userRole].name : 'Sistema';
 
-  const handleOpenDialog = (payment: StudentPayment) => {
+  const handleOpenEditDialog = (payment: StudentPayment) => {
     setEditingPayment(payment);
     editForm.reset({
       id: payment.id,
@@ -81,16 +83,11 @@ export default function AdminPaymentsPage() {
         status: data.status,
         amountPaid: data.amountPaid,
         amountDue: totalAmount - data.amountPaid,
-        lastUpdatedBy: users.find(u => u.role === 'Administrador')?.name || 'Admin', // Simulación
+        lastUpdatedBy: getEditorName(),
         lastUpdatedDate: new Date().toISOString()
     };
     
-    // Update local state and global context if available
-    setPayments(prev => prev.map(p => p.id === data.id ? updatedPayment : p));
-    if (addStudentPayment) { // This is a check for the new context function
-        addStudentPayment(updatedPayment, true); // true to indicate update
-    }
-
+    addStudentPayment(updatedPayment, true); // true to indicate update
 
     toast({ title: "Pago actualizado", description: "El estado del pago ha sido guardado." });
     setEditingPayment(null);
@@ -114,11 +111,10 @@ export default function AdminPaymentsPage() {
           status: 'pending',
           amountPaid: 0,
           amountDue: plan.price,
-          lastUpdatedBy: users.find(u => u.role === 'Administrador')?.name || 'Admin',
+          lastUpdatedBy: getEditorName(),
           lastUpdatedDate: new Date().toISOString(),
       };
 
-      setPayments(prev => [newPayment, ...prev]);
       addStudentPayment(newPayment);
 
       const membershipEndDate = new Date();
@@ -223,6 +219,7 @@ export default function AdminPaymentsPage() {
                     <Button variant="outline" size="sm" onClick={handlePrint}>
                         <Printer className="mr-2 h-4 w-4" /> Imprimir
                     </Button>
+                    {canCreate && (
                     <Dialog open={isNewInvoiceOpen} onOpenChange={setIsNewInvoiceOpen}>
                         <DialogTrigger asChild>
                             <Button size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Crear Factura</Button>
@@ -258,6 +255,7 @@ export default function AdminPaymentsPage() {
                             </Form>
                         </DialogContent>
                     </Dialog>
+                    )}
                 </div>
             </div>
         </CardHeader>
@@ -296,11 +294,48 @@ export default function AdminPaymentsPage() {
                     <TableCell className="text-right font-mono text-green-600">€{p.amountPaid.toFixed(2)}</TableCell>
                     <TableCell className="text-right font-mono text-red-600">€{p.amountDue.toFixed(2)}</TableCell>
                     <TableCell className="no-print">
-                      {isAdmin && (
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(p)}>
-                          <Edit className="h-4 w-4" />
-                          <span className="sr-only">Editar</span>
-                        </Button>
+                      {canEdit && (
+                          <Dialog open={editingPayment?.id === p.id} onOpenChange={(isOpen) => !isOpen && setEditingPayment(null)}>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(p)}>
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Editar</span>
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Editar Estado de Pago</DialogTitle>
+                                    <DialogDescription>
+                                        Actualiza el estado del pago para {getStudentName(p.studentId)}.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <Form {...editForm}>
+                                    <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4 py-4">
+                                         <FormField control={editForm.control} name="status" render={({ field }) => (
+                                          <FormItem><FormLabel>Estado del Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                              <SelectItem value="pending">Pendiente</SelectItem>
+                                              <SelectItem value="deposit">Adelanto</SelectItem>
+                                              <SelectItem value="paid">Pagado</SelectItem>
+                                            </SelectContent>
+                                          </Select><FormMessage /></FormItem>
+                                        )} />
+                                         <FormField control={editForm.control} name="amountPaid" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Monto Pagado (€)</FormLabel>
+                                                <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <DialogFooter>
+                                            <Button type="button" variant="ghost" onClick={() => setEditingPayment(null)}>Cancelar</Button>
+                                            <Button type="submit">Guardar</Button>
+                                        </DialogFooter>
+                                    </form>
+                                </Form>
+                            </DialogContent>
+                          </Dialog>
                       )}
                     </TableCell>
                   </TableRow>
@@ -310,42 +345,6 @@ export default function AdminPaymentsPage() {
           </div>
         </CardContent>
       </Card>
-      
-      <Dialog open={!!editingPayment} onOpenChange={(isOpen) => !isOpen && setEditingPayment(null)}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Editar Estado de Pago</DialogTitle>
-                <DialogDescription>
-                    Actualiza el estado del pago para {getStudentName(editingPayment?.studentId ?? 0)}.
-                </DialogDescription>
-            </DialogHeader>
-            <Form {...editForm}>
-                <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4 py-4">
-                     <FormField control={editForm.control} name="status" render={({ field }) => (
-                      <FormItem><FormLabel>Estado del Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="pending">Pendiente</SelectItem>
-                          <SelectItem value="deposit">Adelanto</SelectItem>
-                          <SelectItem value="paid">Pagado</SelectItem>
-                        </SelectContent>
-                      </Select><FormMessage /></FormItem>
-                    )} />
-                     <FormField control={editForm.control} name="amountPaid" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Monto Pagado (€)</FormLabel>
-                            <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <DialogFooter>
-                        <Button type="button" variant="ghost" onClick={() => setEditingPayment(null)}>Cancelar</Button>
-                        <Button type="submit">Guardar</Button>
-                    </DialogFooter>
-                </form>
-            </Form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -2,14 +2,17 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { TeacherPayroll } from '@/components/admin/teacher-payroll';
 import { IncomeExpenseLedger } from '@/components/admin/income-expense-ledger';
-import { DollarSign, TrendingUp, TrendingDown, Scale } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Scale, Wallet } from 'lucide-react';
 import { studentPayments, extraTransactions } from '@/lib/finances-data';
 import { danceClasses } from '@/lib/data';
 import { useAuth } from '@/context/auth-context';
 import { userProfiles } from '@/components/layout/main-nav';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 export default function AdminFinancesPage() {
   const { userRole } = useAuth();
+  const router = useRouter();
   const currentUserId = userRole ? userProfiles[userRole]?.id : null;
 
   const studentIncome = studentPayments.reduce((acc, p) => acc + p.amountPaid, 0);
@@ -27,7 +30,14 @@ export default function AdminFinancesPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <h1 className="text-3xl font-bold tracking-tight font-headline mb-8">{pageTitle}</h1>
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
+        <h1 className="text-3xl font-bold tracking-tight font-headline">{pageTitle}</h1>
+        <Button onClick={() => router.push('/admin/payments')}>
+            <Wallet className="mr-2 h-4 w-4" />
+            Gestionar Pagos de Alumnos
+        </Button>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
