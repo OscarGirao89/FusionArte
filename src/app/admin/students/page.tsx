@@ -65,6 +65,8 @@ export default function AdminStudentsPage() {
         resolver: zodResolver(studentEditFormSchema),
     });
     
+    const getTeacherNames = (ids: number[]) => allUsers.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
+
     const watchedPlanId = form.watch('membershipPlanId');
     const selectedPlanDetails = membershipPlans.find(p => p.id === watchedPlanId);
 
