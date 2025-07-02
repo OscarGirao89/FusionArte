@@ -26,12 +26,12 @@ import {
   DollarSign,
   Banknote,
   GraduationCap,
-  UsersRound,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAuth, UserRole } from '@/context/auth-context';
+import { LogoIcon } from '@/components/icons/logo-icon';
 
 const navItems = {
   student: [
@@ -87,7 +87,7 @@ export function MainNav() {
   
   const logo = (
     <div className="flex items-center gap-2" aria-hidden="true">
-        <UsersRound className="h-8 w-8 text-primary" />
+        <LogoIcon className="h-8 w-8 text-primary" />
         <span className="font-bold text-lg font-headline">FusionArte</span>
     </div>
   )
@@ -168,3 +168,5 @@ export function MainNav() {
     </>
   );
 }
+
+    

@@ -4,9 +4,13 @@ import type { MembershipPlan, DanceClass, User, DanceStyle, DanceLevel, StudentM
 export const danceStyles: DanceStyle[] = [
   { id: 'salsa', name: 'Salsa', description: 'Ritmos latinos vibrantes y enérgicos. Origen cubano y puertorriqueño.' },
   { id: 'bachata', name: 'Bachata', description: 'Baile sensual y romántico de la República Dominicana.' },
+  { id: 'm-zouk', name: 'M-Zouk', description: 'Un estilo de Zouk brasileño moderno y fluido.' },
+  { id: 'elongacion', name: 'Elongación', description: 'Técnicas para mejorar la flexibilidad y el rango de movimiento.' },
+  { id: 'gimnasia-ritmica', name: 'Gimnasia Rítmica', description: 'Disciplina que combina ballet, gimnasia y danza.' },
+  { id: 'aeroyoga', name: 'Aeroyoga', description: 'Yoga en suspensión que combina posturas con acrobacias.' },
+  { id: 'practica', name: 'Práctica', description: 'Espacio libre para practicar y perfeccionar tus movimientos.' },
   { id: 'hip-hop', name: 'Hip Hop', description: 'Cultura y baile urbano con diversos estilos como popping, locking y breakdance.' },
   { id: 'contemporaneo', name: 'Contemporáneo', description: 'Expresión libre que combina elementos de ballet, jazz y danza moderna.' },
-  { id: 'practica', name: 'Práctica', description: 'Espacio libre para practicar y perfeccionar tus movimientos.' },
   { id: 'tango', name: 'Tango', description: 'Baile apasionado y elegante originario de Argentina.' },
   { id: 'flamenco', name: 'Flamenco', description: 'Arte español que combina cante, toque y baile con una fuerte expresión emocional.' },
 ];
@@ -30,10 +34,10 @@ export const users: User[] = [
     ]
   },
   { 
-    id: 2, name: 'Carlos Ruiz', email: 'carlos.ruiz@example.com', role: 'Profesor', joined: '2022-05-20', avatar: 'https://placehold.co/100x100.png?text=CR',
-    bio: 'Carlos trae el corazón de la República Dominicana a sus clases de Bachata. Se enfoca en la conexión, la musicalidad y los movimientos suaves y sensuales de la Bachata moderna y tradicional.',
-    specialties: ['Bachata Sensual', 'Bachata Dominicana', 'Trabajo en Pareja'],
-    paymentDetails: { type: 'per_class', payRate: 30, cancelledClassPay: 8 },
+    id: 2, name: 'Oscar Girao', email: 'oscar.girao@example.com', role: 'Profesor', joined: '2022-05-20', avatar: 'https://placehold.co/100x100.png?text=OG',
+    bio: 'Profesor experto en ritmos latinos con una pasión por la enseñanza.',
+    specialties: ['Bachata', 'Salsa', 'M-Zouk'],
+    paymentDetails: { type: 'per_class', payRate: 25, cancelledClassPay: 10 },
     isVisibleToStudents: true,
   },
   { 
@@ -48,27 +52,27 @@ export const users: User[] = [
   },
   { id: 4, name: 'Admin FusionArte', email: 'admin@fusionarte.com', role: 'Administrador', joined: '2022-01-01', avatar: 'https://placehold.co/100x100.png?text=AF' },
   { 
-    id: 5, name: 'Elena Garcia', email: 'elena.garcia@example.com', role: 'Profesor', joined: '2022-03-10', avatar: 'https://placehold.co/100x100.png?text=EG',
-    bio: 'Con más de 15 años de experiencia, Elena es una maestra del baile latino. Su pasión por la Salsa es contagiosa y crea una atmósfera vibrante y de apoyo en sus clases.',
-    specialties: ['Salsa On1', 'Salsa On2', 'Salsa Cubana', 'Estilo'],
-    paymentDetails: { type: 'monthly', monthlySalary: 2200, cancelledClassPay: 0 },
+    id: 5, name: 'Flor Diaz', email: 'flor.diaz@example.com', role: 'Profesor', joined: '2022-03-10', avatar: 'https://placehold.co/100x100.png?text=FD',
+    bio: 'Bailarina profesional con años de experiencia en escenarios internacionales.',
+    specialties: ['Bachata', 'Salsa', 'M-Zouk'],
+    paymentDetails: { type: 'monthly', monthlySalary: 2500, cancelledClassPay: 0 },
     isVisibleToStudents: true,
   },
   { 
-    id: 6, name: 'Liam Smith', email: 'liam.smith@example.com', role: 'Profesor', joined: '2023-08-11', avatar: 'https://placehold.co/100x100.png?text=LS',
-    bio: "El enfoque de Liam hacia la danza contemporánea es contar historias a través del movimiento. Combina la precisión técnica con la expresión emocional, animando a los estudiantes a encontrar su voz única.",
-    specialties: ['Lírico', 'Trabajo de Suelo', 'Improvisación', 'Técnica'],
-    paymentDetails: { type: 'per_class', payRate: 32, cancelledClassPay: 10 },
-    isVisibleToStudents: false, // Intentionally false for demonstration
+    id: 6, name: 'Joana Garcia', email: 'joana.garcia@example.com', role: 'Profesor', joined: '2023-08-11', avatar: 'https://placehold.co/100x100.png?text=JG',
+    bio: 'Especialista en técnicas de elongación y flexibilidad para bailarines.',
+    specialties: ['Elongación', 'Stretching', 'Gimnasia Rítmica'],
+    paymentDetails: { type: 'per_class', payRate: 20, cancelledClassPay: 5 },
+    isVisibleToStudents: true,
   },
   { id: 7, name: 'Laura Martinez', email: 'laura.martinez@example.com', role: 'Administrativo', joined: '2023-11-10', avatar: 'https://placehold.co/100x100.png?text=LM' },
   { id: 8, name: 'David Chen', email: 'david.chen@example.com', role: 'Estudiante', joined: '2023-10-05', avatar: 'https://placehold.co/100x100.png?text=DC', dob: '1995-07-30', attendanceHistory: [] },
   { id: 9, name: 'Sophia Rodriguez', email: 'sophia.r@example.com', role: 'Estudiante', joined: '2022-11-12', avatar: 'https://placehold.co/100x100.png?text=SR', dob: '1999-02-14', attendanceHistory: [] },
   { 
-    id: 10, name: 'Aisha Jones', email: 'aisha.jones@example.com', role: 'Profesor', joined: '2023-02-18', avatar: 'https://placehold.co/100x100.png?text=AJ',
-    bio: 'Aisha es una fuerza dinámica en el mundo del Hip Hop. Desde las bases de la vieja escuela hasta las últimas tendencias comerciales, sus clases de alta energía te desafiarán y aumentarán tu confianza.',
-    specialties: ['Popping', 'Locking', 'Coreografía', 'Freestyle'],
-    paymentDetails: { type: 'per_class', payRate: 35, cancelledClassPay: 10 },
+    id: 10, name: 'Alexandra', email: 'alexandra@example.com', role: 'Profesor', joined: '2023-02-18', avatar: 'https://placehold.co/100x100.png?text=A',
+    bio: 'Instructora certificada de Aeroyoga, combinando danza y acrobacia aérea.',
+    specialties: ['Aeroyoga'],
+    paymentDetails: { type: 'per_class', payRate: 30, cancelledClassPay: 10 },
     isVisibleToStudents: true,
   },
 ];
@@ -129,17 +133,30 @@ export const studentMemberships: StudentMembership[] = [
 ];
 
 export const danceClasses: DanceClass[] = [
-    { id: 'clase-1', name: 'Salsa On1', type: 'recurring', styleId: 'salsa', levelId: 'principiante', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 3, 8] },
-    { id: 'clase-2', name: 'Bachata Sensual', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '20:00', room: 'Estudio 2', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 9] },
-    { id: 'clase-3', name: 'Hip Hop Old School', type: 'recurring', styleId: 'hip-hop', levelId: 'avanzado', teacher: 'Aisha Jones', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '18:30', room: 'Estudio 1', duration: '90 min', capacity: 25, recurrenceMonths: 6, status: 'completed', enrolledStudentIds: [3] },
-    { id: 'clase-4', name: 'Taller de Contemporáneo', type: 'workshop', styleId: 'contemporaneo', levelId: 'principiante', teacher: 'Liam Smith', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '19:30', room: 'Estudio 3', duration: '75 min', capacity: 15, date: '2024-08-13', status: 'scheduled', enrolledStudentIds: [8, 9], workshopPaymentType: 'fixed', workshopPaymentValue: 120 },
-    { id: 'clase-5', name: 'Salsa Caleña', type: 'one-time', styleId: 'salsa', levelId: 'intermedio', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 20, date: '2024-08-21', status: 'scheduled', enrolledStudentIds: [1, 3] },
-    { id: 'clase-6', name: 'Bachata Dominicana', type: 'recurring', styleId: 'bachata', levelId: 'principiante', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '20:00', room: 'Estudio 2', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'cancelled-low-attendance', enrolledStudentIds: [9] },
-    { id: 'clase-7', name: 'Hip Hop Commercial', type: 'recurring', styleId: 'hip-hop', levelId: 'principiante', teacher: 'Aisha Jones', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 25, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [3, 8] },
-    { id: 'clase-8', name: 'Contemporáneo Floorwork', type: 'recurring', styleId: 'contemporaneo', levelId: 'intermedio', teacher: 'Liam Smith', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '20:15', room: 'Estudio 3', duration: '75 min', capacity: 15, recurrenceMonths: 2, status: 'completed', enrolledStudentIds: [1] },
-    { id: 'clase-9', name: 'Taller de Salsa On2', type: 'workshop', styleId: 'salsa', levelId: 'avanzado', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '19:00', room: 'Estudio 1', duration: '90 min', capacity: 20, date: '2024-08-30', status: 'scheduled', enrolledStudentIds: [1, 9], workshopPaymentType: 'percentage', workshopPaymentValue: 50 },
-    { id: 'clase-10', name: 'Práctica Libre', type: 'recurring', styleId: 'practica', levelId: 'todos', teacher: 'Estudio', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min', capacity: 50, recurrenceMonths: 12, status: 'completed', enrolledStudentIds: [1, 3, 8, 9] },
-    { id: 'clase-11', name: 'Tango Salón', type: 'one-time', styleId: 'tango', levelId: 'principiante', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Sábado', time: '12:00', room: 'Estudio 2', duration: '90 min', capacity: 16, date: '2024-09-07', status: 'scheduled', enrolledStudentIds: [] },
-    { id: 'clase-12', name: 'Flamenco', type: 'recurring', styleId: 'flamenco', levelId: 'intermedio', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Sábado', time: '14:00', room: 'Estudio 1', duration: '75 min', capacity: 15, recurrenceMonths: 4, status: 'cancelled-teacher', enrolledStudentIds: [1, 3] },
-    { id: 'rental-1', name: 'Alquiler: Ensayo Teatro', type: 'rental', styleId: 'practica', levelId: 'todos', teacher: 'Compañía Hilo Negro', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Domingo', time: '10:00', room: 'Estudio 3', duration: '180 min', capacity: 30, date: '2024-09-01', status: 'scheduled', enrolledStudentIds: [], isVisibleToStudents: false, rentalPrice: 150 },
+    // Lunes
+    { id: 'clase-1', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacher: 'Flor Diaz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 3, 8] },
+    { id: 'clase-2', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacher: 'Oscar Girao', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 9] },
+    { id: 'clase-3', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'principiante', teacher: 'Oscar Girao', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 25, recurrenceMonths: 6, status: 'completed', enrolledStudentIds: [3] },
+    
+    // Martes
+    { id: 'clase-4', name: 'Elongación', type: 'recurring', styleId: 'elongacion', levelId: 'todos', teacher: 'Joana Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 15, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [8, 9] },
+    { id: 'clase-5', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'principiante', teacher: 'Flor Diaz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [1, 3] },
+    { id: 'clase-6', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'principiante', teacher: 'Oscar Girao', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'cancelled-low-attendance', enrolledStudentIds: [9] },
+    
+    // Miercoles
+    { id: 'clase-7', name: 'Aeroyoga', type: 'recurring', styleId: 'aeroyoga', levelId: 'todos', teacher: 'Alexandra', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '18:00', room: 'Estudio 3', duration: '60 min', capacity: 10, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [3, 8] },
+    { id: 'clase-8', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacher: 'Flor Diaz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 2, status: 'completed', enrolledStudentIds: [1] },
+    { id: 'clase-9', name: 'Taller de Salsa On2', type: 'workshop', styleId: 'salsa', levelId: 'avanzado', teacher: 'Oscar Girao', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '21:00', room: 'Estudio 1', duration: '90 min', capacity: 20, date: '2024-08-30', status: 'scheduled', enrolledStudentIds: [1, 9], workshopPaymentType: 'percentage', workshopPaymentValue: 50 },
+
+    // Jueves
+    { id: 'clase-10', name: 'Gimnasia Rítmica', type: 'recurring', styleId: 'gimnasia-ritmica', levelId: 'principiante', teacher: 'Joana Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 20, recurrenceMonths: 4, status: 'completed', enrolledStudentIds: [1, 3, 8] },
+    { id: 'clase-11', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'intermedio', teacher: 'Oscar Girao', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 16, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [] },
+    { id: 'clase-12', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacher: 'Flor Diaz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 4, status: 'cancelled-teacher', enrolledStudentIds: [1, 3] },
+    
+    // Viernes
+    { id: 'rental-1', name: 'Alquiler: Ensayo Teatro', type: 'rental', styleId: 'practica', levelId: 'todos', teacher: 'Compañía Hilo Negro', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '10:00', room: 'Estudio 3', duration: '180 min', capacity: 30, date: '2024-09-01', status: 'scheduled', enrolledStudentIds: [], isVisibleToStudents: false, rentalPrice: 150 },
+    { id: 'clase-13', name: 'Práctica Libre', type: 'recurring', styleId: 'practica', levelId: 'todos', teacher: 'Estudio', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min', capacity: 50, recurrenceMonths: 12, status: 'completed', enrolledStudentIds: [1, 3, 8, 9] },
+
 ];
+
+    

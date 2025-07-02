@@ -23,6 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { MoreVertical, UserPlus, Pencil, Trash2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 const paymentDetailsSchema = z.discriminatedUnion("type", [
   z.object({
@@ -35,6 +36,11 @@ const paymentDetailsSchema = z.discriminatedUnion("type", [
     monthlySalary: z.coerce.number().min(0, "El salario mensual debe ser un número positivo."),
     cancelledClassPay: z.coerce.number().min(0, "El valor no puede ser negativo."),
   }),
+  z.object({
+    type: z.literal("percentage"),
+    payRate: z.coerce.number().min(0, "El porcentaje debe ser un número positivo."),
+    cancelledClassPay: z.coerce.number().min(0, "El valor no puede ser negativo."),
+  })
 ]);
 
 
@@ -46,7 +52,7 @@ const userFormSchema = z.object({
     bio: z.string().optional(),
     specialties: z.string().optional(),
     paymentDetails: paymentDetailsSchema.optional(),
-    avatar: z.string().url({ message: "Introduce una URL de imagen válida." }).optional(),
+    avatar: z.string().optional(),
     isVisibleToStudents: z.boolean().default(false).optional(),
   }).refine(data => {
     if (data.role === 'Profesor' && !data.paymentDetails) {
@@ -89,6 +95,8 @@ export default function AdminUsersPage() {
 
     const watchedRole = form.watch('role');
     const watchedPaymentType = form.watch('paymentDetails.type');
+    const watchedAvatar = form.watch('avatar');
+    const watchedName = form.watch('name');
     
     const handleOpenDialog = (user: User | null = null) => {
         setEditingUser(user);
@@ -265,9 +273,37 @@ export default function AdminUsersPage() {
                     <FormField control={form.control} name="email" render={({ field }) => (
                     <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                     <FormField control={form.control} name="avatar" render={({ field }) => (
-                        <FormItem className="md:col-span-2"><FormLabel>URL de la Foto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
+                     <div className="md:col-span-2 space-y-2">
+                        <Label>Foto de Perfil</Label>
+                        <div className="flex items-center gap-4">
+                            <Avatar className="h-20 w-20">
+                                <AvatarImage src={watchedAvatar || undefined} data-ai-hint="person face" />
+                                <AvatarFallback>
+                                    {(watchedName || ' ').split(' ').map(n => n[0]).join('')}
+                                </AvatarFallback>
+                            </Avatar>
+                            <FormItem className="flex-grow">
+                                <FormLabel className="sr-only">Subir foto</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="file"
+                                        accept="image/png, image/jpeg, image/gif"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => {
+                                                    form.setValue('avatar', reader.result as string);
+                                                };
+                                                reader.readAsDataURL(file);
+                                            }
+                                        }}
+                                    />
+                                </FormControl>
+                                <FormMessage>{form.formState.errors.avatar?.message}</FormMessage>
+                            </FormItem>
+                        </div>
+                    </div>
                     <FormField control={form.control} name="role" render={({ field }) => (
                     <FormItem className="md:col-span-2"><FormLabel>Rol</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un rol" /></SelectTrigger></FormControl>
@@ -292,8 +328,9 @@ export default function AdminUsersPage() {
                                 <FormItem><FormLabel>Tipo de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                     <SelectContent>
-                                        <SelectItem value="per_class">Por Clase</SelectItem>
+                                        <SelectItem value="per_class">Por Clase/Hora</SelectItem>
                                         <SelectItem value="monthly">Mensual</SelectItem>
+                                        <SelectItem value="percentage">Porcentaje</SelectItem>
                                     </SelectContent>
                                 </Select><FormMessage /></FormItem>
                             )} />
@@ -305,6 +342,11 @@ export default function AdminUsersPage() {
                              {watchedPaymentType === 'monthly' && (
                                 <FormField control={form.control} name="paymentDetails.monthlySalary" render={({ field }) => (
                                     <FormItem><FormLabel>Salario Mensual (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                            )}
+                             {watchedPaymentType === 'percentage' && (
+                                <FormField control={form.control} name="paymentDetails.payRate" render={({ field }) => (
+                                    <FormItem><FormLabel>Porcentaje (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                             )}
                              <FormField control={form.control} name="paymentDetails.cancelledClassPay" render={({ field }) => (
@@ -340,3 +382,5 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+
+    

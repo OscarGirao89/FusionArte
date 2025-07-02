@@ -91,8 +91,8 @@ export type User = {
     bio?: string;
     specialties?: string[];
     paymentDetails?: {
-        type: 'per_class' | 'monthly';
-        payRate?: number; // per hour for 'per_class'
+        type: 'per_class' | 'monthly' | 'percentage';
+        payRate?: number; // per hour for 'per_class' or percentage for 'percentage'
         monthlySalary?: number; // for 'monthly'
         cancelledClassPay: number; // Can be 0
     };
@@ -115,3 +115,5 @@ export type StudentMembership = {
   endDate: string;
   classesRemaining?: number;
 }
+
+    

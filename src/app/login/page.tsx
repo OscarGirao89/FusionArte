@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UsersRound, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
+import { LogoIcon } from '@/components/icons/logo-icon';
 
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<UserRole>('student');
@@ -24,7 +25,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <UsersRound className="h-10 w-10 text-primary" />
+            <LogoIcon className="h-10 w-10 text-primary" />
             <span className="font-bold text-3xl font-headline">FusionArte</span>
           </div>
           <CardTitle className="text-2xl">Bienvenido/a</CardTitle>
@@ -56,3 +57,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
