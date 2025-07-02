@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -636,8 +637,7 @@ export default function AdminClassesPage() {
                     <SelectTrigger id="cancel-reason"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="cancelled-low-attendance">Cancelada por baja asistencia</SelectItem>
-                        <SelectItem value="cancelled-teacher">Cancelada por el profesor</e
->
+                        <SelectItem value="cancelled-teacher">Cancelada por el profesor</SelectItem>
                     </SelectContent>
                 </Select>
                  <p className="text-xs text-muted-foreground">
