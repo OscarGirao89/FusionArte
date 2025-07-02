@@ -63,6 +63,7 @@ const classFormSchema = z.object({
   room: z.string().min(1, "La sala es obligatoria."),
   duration: z.string().min(1, "La duración es obligatoria."),
   enrolledStudentIds: z.array(z.number()).default([]),
+  cancellationPolicyHours: z.coerce.number().optional(),
 }).refine(data => {
     if (['recurring', 'one-time', 'workshop'].includes(data.type)) {
         return !!data.styleId && !!data.levelId && !!data.teacherIds && data.teacherIds.length > 0 && data.capacity !== undefined && data.capacity > 0;
@@ -132,6 +133,7 @@ export default function AdminClassesPage() {
       teacherIds: [],
       isVisibleToStudents: false,
       workshopPaymentType: 'fixed',
+      cancellationPolicyHours: 24,
     },
   });
 
@@ -153,6 +155,7 @@ export default function AdminClassesPage() {
         rentalContact: danceClass.rentalContact,
         rentalPrice: danceClass.rentalPrice || undefined,
         workshopPaymentValue: danceClass.workshopPaymentValue || undefined,
+        cancellationPolicyHours: danceClass.cancellationPolicyHours || 24,
       });
     } else {
       form.reset({
@@ -167,6 +170,7 @@ export default function AdminClassesPage() {
         teacherIds: [],
         isVisibleToStudents: false,
         workshopPaymentType: 'fixed',
+        cancellationPolicyHours: 24,
       });
     }
     setIsDialogOpen(true);
@@ -601,16 +605,23 @@ export default function AdminClassesPage() {
                     </div>
                 )}
 
-                <div className="md:col-span-2 grid grid-cols-3 gap-4">
+                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     <FormField control={form.control} name="time" render={({ field }) => (
-                    <FormItem><FormLabel>Hora (HH:MM)</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Hora (HH:MM)</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="room" render={({ field }) => (
-                    <FormItem><FormLabel>Sala</FormLabel><FormControl><Input {...field} placeholder="Ej: Estudio 1" /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Sala</FormLabel><FormControl><Input {...field} placeholder="Ej: Estudio 1" /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="duration" render={({ field }) => (
-                    <FormItem><FormLabel>Duración</FormLabel><FormControl><Input {...field} placeholder="Ej: 60 min" /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Duración</FormLabel><FormControl><Input {...field} placeholder="Ej: 60 min" /></FormControl><FormMessage /></FormItem>
                     )} />
+                    <FormField control={form.control} name="cancellationPolicyHours" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Cancelar antes de (h)</FormLabel>
+                            <FormControl><Input type="number" min="0" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                     )} />
                 </div>
               </div>
               <DialogFooter>

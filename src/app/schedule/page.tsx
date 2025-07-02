@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const timeSlots = Array.from({ length: (22 - 9) * 2 }, (_, i) => {
@@ -23,6 +24,7 @@ const timeSlots = Array.from({ length: (22 - 9) * 2 }, (_, i) => {
 
 function TimeGridClassCard({ danceClass }: { danceClass: DanceClass }) {
     const style = allStyles.find(s => s.id === danceClass.styleId);
+    const level = allLevels.find(l => l.id === danceClass.levelId);
     const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
     
     const getCardColor = () => {
@@ -40,11 +42,24 @@ function TimeGridClassCard({ danceClass }: { danceClass: DanceClass }) {
     }
     
     return (
-        <div className={cn("rounded p-1 text-[11px] overflow-hidden border h-full m-0.5", getCardColor())}>
-            <p className="font-bold text-foreground truncate">{danceClass.name}</p>
-            <p className="text-muted-foreground truncate">{getTeacherNames(danceClass.teacherIds)}</p>
-            <p className="text-muted-foreground truncate font-semibold">{danceClass.room}</p>
-        </div>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div className={cn("rounded-md p-1.5 text-xs overflow-hidden border h-full m-0.5 cursor-pointer", getCardColor())}>
+                        <p className="font-bold text-foreground truncate">{danceClass.name}</p>
+                        <p className="text-muted-foreground truncate">{danceClass.room}</p>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <div className="p-1 space-y-1.5 text-sm">
+                        <p className="font-bold">{danceClass.name}</p>
+                        <div className="flex items-center gap-2 text-muted-foreground"><User className="h-4 w-4" /> {getTeacherNames(danceClass.teacherIds) || 'N/A'}</div>
+                        <div className="flex items-center gap-2 text-muted-foreground"><Award className="h-4 w-4" /> {level?.name || 'N/A'}</div>
+                        <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /> {danceClass.time} ({danceClass.duration})</div>
+                    </div>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     )
 }
 

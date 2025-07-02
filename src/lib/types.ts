@@ -17,6 +17,7 @@ export type CouponDetails = {
   discountType: 'percentage' | 'fixed';
   discountValue: number;
   expirationDate?: string; // YYYY-MM-DD
+  usageLimit?: number;
 };
 
 type MembershipPlanBase = {
@@ -66,6 +67,7 @@ export type DanceClass = {
   capacity: number;
   status: 'completed' | 'scheduled' | 'cancelled-low-attendance' | 'cancelled-teacher';
   enrolledStudentIds: number[];
+  cancellationPolicyHours?: number;
   
   // Type-specific fields
   recurrenceMonths?: number; // For 'recurring'

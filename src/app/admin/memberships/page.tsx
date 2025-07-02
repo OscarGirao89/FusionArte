@@ -31,6 +31,7 @@ const couponSchema = z.object({
     discountType: z.enum(['percentage', 'fixed']),
     discountValue: z.coerce.number(),
     expirationDate: z.string().optional(),
+    usageLimit: z.coerce.number().optional(),
 }).optional().nullable();
 
 
@@ -69,7 +70,7 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
     ...plan,
     features: plan.features.join('\n'),
     visibility: plan.visibility || 'public',
-    coupon: plan.coupon ? { ...plan.coupon, expirationDate: plan.coupon.expirationDate || '' } : undefined,
+    coupon: plan.coupon ? { ...plan.coupon, expirationDate: plan.coupon.expirationDate || '', usageLimit: plan.coupon.usageLimit || undefined } : undefined,
   };
   switch (plan.accessType) {
     case 'unlimited':
@@ -483,6 +484,9 @@ export default function AdminMembershipsPage() {
                         </div>
                         <FormField control={form.control} name="coupon.expirationDate" render={({ field }) => (
                             <FormItem><FormLabel>Fecha de Caducidad</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="coupon.usageLimit" render={({ field }) => (
+                            <FormItem><FormLabel>Límite de Usos</FormLabel><FormControl><Input type="number" min="1" {...field} placeholder="Ej: 15" /></FormControl><FormDescription>Dejar vacío para usos ilimitados.</FormDescription><FormMessage /></FormItem>
                         )} />
                     </div>
                 </CollapsibleContent>
