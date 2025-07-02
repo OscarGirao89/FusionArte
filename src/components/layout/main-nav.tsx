@@ -23,6 +23,8 @@ import {
   BookMarked,
   User,
   ClipboardList,
+  Palette,
+  Signal,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -53,6 +55,8 @@ const adminNavItems = [
     { href: '/admin/users', label: 'Gestión de Usuarios', icon: User },
     { href: '/admin/classes', label: 'Gestión de Clases', icon: ClipboardList },
     { href: '/admin/memberships', label: 'Gestión de Membresías', icon: CreditCard },
+    { href: '/admin/styles', label: 'Estilos de Baile', icon: Palette },
+    { href: '/admin/levels', label: 'Niveles', icon: Signal },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];
 
@@ -110,7 +114,7 @@ export function MainNav() {
                       <SidebarMenuItem key={item.href}>
                         <SidebarMenuButton
                           asChild
-                          isActive={pathname === item.href}
+                          isActive={pathname.startsWith(item.href)}
                           tooltip={{ children: item.label }}
                         >
                           <Link href={item.href}>

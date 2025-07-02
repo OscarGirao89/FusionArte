@@ -1,19 +1,37 @@
+
+'use client';
+
+import { useState } from 'react';
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { users as initialUsers } from '@/lib/data';
+import type { User } from '@/lib/types';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { MoreVertical, UserPlus } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { MoreVertical, UserPlus, Pencil, Trash2 } from 'lucide-react';
 
-const users = [
-  { id: 1, name: 'Ana López', email: 'ana.lopez@example.com', role: 'Estudiante', joined: '2023-09-01', avatar: 'https://placehold.co/100x100.png?text=AL' },
-  { id: 2, name: 'Carlos Ruiz', email: 'carlos.ruiz@example.com', role: 'Profesor', joined: '2022-05-20', avatar: 'https://placehold.co/100x100.png?text=CR' },
-  { id: 3, name: 'Beatriz Sanz', email: 'beatriz.sanz@example.com', role: 'Estudiante', joined: '2024-01-15', avatar: 'https://placehold.co/100x100.png?text=BS' },
-  { id: 4, name: 'Admin FusionArte', email: 'admin@fusionarte.com', role: 'Administrador', joined: '2022-01-01', avatar: 'https://placehold.co/100x100.png?text=AF' },
-  { id: 5, name: 'Elena Garcia', email: 'elena.garcia@example.com', role: 'Profesor', joined: '2022-03-10', avatar: 'https://placehold.co/100x100.png?text=EG' },
-  { id: 6, name: 'Liam Smith', email: 'liam.smith@example.com', role: 'Profesor', joined: '2023-08-11', avatar: 'https://placehold.co/100x100.png?text=LS' },
-];
+const userFormSchema = z.object({
+  name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
+  email: z.string().email("Email inválido."),
+  role: z.enum(['Estudiante', 'Profesor', 'Administrador'], {
+    required_error: "Debes seleccionar un rol."
+  }),
+});
+
+type UserFormValues = z.infer<typeof userFormSchema>;
+
 
 const roleVariant: { [key: string]: "default" | "secondary" | "destructive" } = {
     'Administrador': 'destructive',
@@ -21,14 +39,73 @@ const roleVariant: { [key: string]: "default" | "secondary" | "destructive" } = 
     'Estudiante': 'secondary'
 }
 
+const userRoles: User['role'][] = ['Estudiante', 'Profesor', 'Administrador'];
+
 export default function AdminUsersPage() {
+    const [users, setUsers] = useState<User[]>(initialUsers);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const { toast } = useToast();
+
+    const form = useForm<UserFormValues>({
+        resolver: zodResolver(userFormSchema),
+    });
+    
+    const handleOpenDialog = (user: User | null = null) => {
+        setEditingUser(user);
+        if (user) {
+          form.reset({
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          });
+        } else {
+          form.reset({
+            name: '',
+            email: '',
+            role: 'Estudiante',
+          });
+        }
+        setIsDialogOpen(true);
+      };
+
+    const onSubmit = (data: UserFormValues) => {
+        toast({
+          title: `Usuario ${editingUser ? 'actualizado' : 'creado'}`,
+          description: `El usuario "${data.name}" ha sido guardado (simulación).`,
+        });
+
+        if (editingUser) {
+            setUsers(users.map(u => u.id === editingUser.id ? { ...editingUser, ...data } : u));
+        } else {
+            const newUser: User = {
+                id: Math.max(...users.map(u => u.id)) + 1,
+                ...data,
+                joined: new Date().toISOString().split('T')[0],
+                avatar: `https://placehold.co/100x100.png?text=${data.name.split(' ').map(n=>n[0]).join('')}`
+            };
+            setUsers([...users, newUser]);
+        }
+        setIsDialogOpen(false);
+        setEditingUser(null);
+    };
+
+    const handleDelete = (userId: number) => {
+        setUsers(users.filter(u => u.id !== userId));
+        toast({
+            title: "Usuario eliminado",
+            description: `El usuario ha sido eliminado exitosamente (simulación).`,
+            variant: "destructive"
+        });
+    }
+
   return (
     <div className="p-4 md:p-8">
         <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Usuarios</h1>
-            <Button>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Añadir Usuario
+            <Button onClick={() => handleOpenDialog()}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Añadir Usuario
             </Button>
         </div>
       <Card>
@@ -76,8 +153,28 @@ export default function AdminUsersPage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Editar</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">Eliminar</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleOpenDialog(user)}>
+                                <Pencil className="mr-2 h-4 w-4" /> Editar
+                            </DropdownMenuItem>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                   <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta acción no se puede deshacer. Esto eliminará permanentemente al usuario.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(user.id)}>Eliminar</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                         </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -87,6 +184,38 @@ export default function AdminUsersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+            <DialogTitle>{editingUser ? 'Editar Usuario' : 'Añadir Nuevo Usuario'}</DialogTitle>
+            <DialogDescription>
+              {editingUser ? 'Modifica los detalles del usuario.' : 'Rellena los detalles para crear un nuevo usuario.'}
+            </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="role" render={({ field }) => (
+                  <FormItem><FormLabel>Rol</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un rol" /></SelectTrigger></FormControl>
+                    <SelectContent>{userRoles.map(role => <SelectItem key={role} value={role}>{role}</SelectItem>)}</SelectContent>
+                  </Select><FormMessage /></FormItem>
+                )} />
+
+                <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                    <Button type="submit">Guardar</Button>
+                </DialogFooter>
+            </form>
+            </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

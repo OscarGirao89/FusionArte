@@ -1,0 +1,171 @@
+
+'use client';
+
+import { useState } from 'react';
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { danceStyles as initialStyles } from '@/lib/data';
+import type { DanceStyle } from '@/lib/types';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { MoreHorizontal, PlusCircle, Pencil, Trash2 } from 'lucide-react';
+
+const styleFormSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "El nombre es obligatorio."),
+});
+
+type StyleFormValues = z.infer<typeof styleFormSchema>;
+
+export default function AdminStylesPage() {
+  const [styles, setStyles] = useState<DanceStyle[]>(initialStyles);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingStyle, setEditingStyle] = useState<DanceStyle | null>(null);
+  const { toast } = useToast();
+
+  const form = useForm<StyleFormValues>({
+    resolver: zodResolver(styleFormSchema),
+    defaultValues: { name: '' },
+  });
+
+  const handleOpenDialog = (style: DanceStyle | null = null) => {
+    setEditingStyle(style);
+    if (style) {
+      form.reset(style);
+    } else {
+      form.reset({ name: '' });
+    }
+    setIsDialogOpen(true);
+  };
+
+  const onSubmit = (data: StyleFormValues) => {
+    toast({
+      title: `Estilo ${editingStyle ? 'actualizado' : 'creado'} con éxito`,
+      description: `El estilo "${data.name}" ha sido guardado (simulación).`,
+    });
+    
+    if (editingStyle) {
+      setStyles(styles.map(s => s.id === editingStyle.id ? { ...editingStyle, ...data } : s));
+    } else {
+      const newStyle: DanceStyle = {
+        ...data,
+        id: data.name.toLowerCase().replace(/\s+/g, '-'),
+      };
+      setStyles([...styles, newStyle]);
+    }
+    
+    setIsDialogOpen(false);
+    setEditingStyle(null);
+  };
+  
+  const handleDelete = (styleId: string) => {
+    setStyles(styles.filter(s => s.id !== styleId));
+    toast({
+      title: "Estilo eliminado",
+      description: `El estilo de baile ha sido eliminado exitosamente (simulación).`,
+      variant: "destructive"
+    });
+  }
+
+  return (
+    <div className="p-4 md:p-8">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Estilos de Baile</h1>
+        <Button onClick={() => handleOpenDialog()}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Añadir Estilo
+        </Button>
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Estilos de Baile Ofrecidos</CardTitle>
+          <CardDescription>Añade, edita o elimina los estilos de baile de la academia.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre del Estilo</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {styles.map((style) => (
+                  <TableRow key={style.id}>
+                    <TableCell className="font-medium">{style.name}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Acciones</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleOpenDialog(style)}>
+                            <Pencil className="mr-2 h-4 w-4" /> Editar
+                          </DropdownMenuItem>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                               <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta acción no se puede deshacer. Esto eliminará permanentemente el estilo de baile.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(style.id)}>Eliminar</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingStyle ? 'Editar Estilo' : 'Añadir Nuevo Estilo'}</DialogTitle>
+            <DialogDescription>
+              {editingStyle ? 'Modifica el nombre del estilo.' : 'Añade un nuevo estilo de baile.'}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem><FormLabel>Nombre del Estilo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                <Button type="submit">Guardar</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

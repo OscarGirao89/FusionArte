@@ -1,25 +1,59 @@
-import type { MembershipPlan, DanceClass, Teacher } from './types';
+
+import type { MembershipPlan, DanceClass, Teacher, User, DanceStyle, DanceLevel } from './types';
+
+export const danceStyles: DanceStyle[] = [
+  { id: 'salsa', name: 'Salsa' },
+  { id: 'bachata', name: 'Bachata' },
+  { id: 'hip-hop', name: 'Hip Hop' },
+  { id: 'contemporaneo', name: 'Contemporáneo' },
+  { id: 'practica', name: 'Práctica' },
+  { id: 'tango', name: 'Tango' },
+  { id: 'flamenco', name: 'Flamenco' },
+];
+
+export const danceLevels: DanceLevel[] = [
+    { id: 'principiante', name: 'Principiante', description: 'Para quienes están dando sus primeros pasos.' },
+    { id: 'intermedio', name: 'Intermedio', description: 'Para bailarines con una base sólida que buscan perfeccionar.' },
+    { id: 'avanzado', name: 'Avanzado', description: 'Para bailarines experimentados listos para un desafío.' },
+    { id: 'todos', name: 'Todos los Niveles', description: 'Clases abiertas para cualquier nivel de experiencia.' },
+];
+
+export const users: User[] = [
+  { id: 1, name: 'Ana López', email: 'ana.lopez@example.com', role: 'Estudiante', joined: '2023-09-01', avatar: 'https://placehold.co/100x100.png?text=AL' },
+  { id: 2, name: 'Carlos Ruiz', email: 'carlos.ruiz@example.com', role: 'Profesor', joined: '2022-05-20', avatar: 'https://placehold.co/100x100.png?text=CR' },
+  { id: 3, name: 'Beatriz Sanz', email: 'beatriz.sanz@example.com', role: 'Estudiante', joined: '2024-01-15', avatar: 'https://placehold.co/100x100.png?text=BS' },
+  { id: 4, name: 'Admin FusionArte', email: 'admin@fusionarte.com', role: 'Administrador', joined: '2022-01-01', avatar: 'https://placehold.co/100x100.png?text=AF' },
+  { id: 5, name: 'Elena Garcia', email: 'elena.garcia@example.com', role: 'Profesor', joined: '2022-03-10', avatar: 'https://placehold.co/100x100.png?text=EG' },
+  { id: 6, name: 'Liam Smith', email: 'liam.smith@example.com', role: 'Profesor', joined: '2023-08-11', avatar: 'https://placehold.co/100x100.png?text=LS' },
+];
 
 export const membershipPlans: MembershipPlan[] = [
   {
+    id: 'trial-1',
     title: 'Clase de Prueba',
-    price: '15',
+    description: 'Una clase para que pruebes la que más te guste.',
+    price: 15,
     pricePeriod: 'única vez',
     features: ['1 clase a tu elección', 'Válido por 7 días', 'Experimenta nuestra comunidad'],
     accessType: 'trial_class',
   },
   {
+    id: 'pack-10',
     title: 'Paquete de 10 Clases',
-    price: '120',
+    description: 'Un paquete flexible para que uses cuando quieras.',
+    price: 120,
     pricePeriod: 'por paquete',
     features: ['10 clases de cualquier estilo', 'Válido por 3 meses', 'Horario flexible'],
     accessType: 'pack_classes',
-    initialClasses: 10,
+    classCount: 10,
+    allowedStyles: [],
     isPopular: true,
   },
   {
+    id: 'unlimited-1',
     title: 'Ilimitado Mensual',
-    price: '99',
+    description: 'Baila todo lo que quieras durante un mes.',
+    price: 99,
     pricePeriod: 'por mes',
     features: ['Clases ilimitadas', 'Acceso a todos los estilos y niveles', 'Reserva prioritaria en talleres'],
     accessType: 'unlimited',
@@ -27,25 +61,29 @@ export const membershipPlans: MembershipPlan[] = [
     durationValue: 1,
   },
   {
+    id: 'beginner-pass',
     title: 'Pase de Principiante',
-    price: '75',
+    description: 'Acceso a todas las clases para principiantes.',
+    price: 75,
     pricePeriod: 'por mes',
     features: ['Acceso a todas las clases de principiantes', 'Perfecto para nuevos bailarines', 'Únete a un grupo de apoyo'],
     accessType: 'unlimited',
+    durationUnit: 'months',
+    durationValue: 1,
   },
 ];
 
 export const danceClasses: DanceClass[] = [
-    { id: 'salsa-b-1', name: 'Salsa', style: 'Salsa', level: 'Principiante', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min' },
-    { id: 'bachata-i-1', name: 'Bachata', style: 'Bachata', level: 'Intermedio', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '20:00', room: 'Estudio 2', duration: '60 min' },
-    { id: 'hiphop-a-1', name: 'Hip Hop', style: 'HipHop', level: 'Avanzado', teacher: 'Aisha Jones', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '18:30', room: 'Estudio 1', duration: '90 min' },
-    { id: 'contemporary-b-1', name: 'Contemporáneo', style: 'Contemporary', level: 'Principiante', teacher: 'Liam Smith', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '19:30', room: 'Estudio 3', duration: '75 min' },
-    { id: 'salsa-i-1', name: 'Salsa', style: 'Salsa', level: 'Intermedio', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '19:00', room: 'Estudio 1', duration: '60 min' },
-    { id: 'bachata-b-1', name: 'Bachata', style: 'Bachata', level: 'Principiante', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '20:00', room: 'Estudio 2', duration: '60 min' },
-    { id: 'hiphop-b-1', name: 'Hip Hop', style: 'HipHop', level: 'Principiante', teacher: 'Aisha Jones', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '19:00', room: 'Estudio 1', duration: '60 min' },
-    { id: 'contemporary-i-1', name: 'Contemporáneo', style: 'Contemporary', level: 'Intermedio', teacher: 'Liam Smith', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '20:15', room: 'Estudio 3', duration: '75 min' },
-    { id: 'salsa-a-1', name: 'Salsa', style: 'Salsa', level: 'Avanzado', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '19:00', room: 'Estudio 1', duration: '90 min' },
-    { id: 'open-practice-1', name: 'Práctica Libre', style: 'Practice', level: 'Todos los Niveles', teacher: 'Estudio', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min' },
+    { id: 'clase-1', name: 'Salsa On1', styleId: 'salsa', levelId: 'principiante', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min', recurrence: 'recurring', recurrenceMonths: 3 },
+    { id: 'clase-2', name: 'Bachata Sensual', styleId: 'bachata', levelId: 'intermedio', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '20:00', room: 'Estudio 2', duration: '60 min', recurrence: 'recurring', recurrenceMonths: 3 },
+    { id: 'clase-3', name: 'Hip Hop Old School', styleId: 'hip-hop', levelId: 'avanzado', teacher: 'Aisha Jones', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '18:30', room: 'Estudio 1', duration: '90 min', recurrence: 'recurring', recurrenceMonths: 6 },
+    { id: 'clase-4', name: 'Contemporáneo Lirical', styleId: 'contemporaneo', levelId: 'principiante', teacher: 'Liam Smith', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '19:30', room: 'Estudio 3', duration: '75 min', recurrence: 'one-time' },
+    { id: 'clase-5', name: 'Taller de Salsa Caleña', styleId: 'salsa', levelId: 'intermedio', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '19:00', room: 'Estudio 1', duration: '60 min', recurrence: 'one-time' },
+    { id: 'clase-6', name: 'Bachata Dominicana', styleId: 'bachata', levelId: 'principiante', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '20:00', room: 'Estudio 2', duration: '60 min', recurrence: 'recurring', recurrenceMonths: 3 },
+    { id: 'clase-7', name: 'Hip Hop Commercial', styleId: 'hip-hop', levelId: 'principiante', teacher: 'Aisha Jones', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '19:00', room: 'Estudio 1', duration: '60 min', recurrence: 'recurring', recurrenceMonths: 3 },
+    { id: 'clase-8', name: 'Contemporáneo Floorwork', styleId: 'contemporaneo', levelId: 'intermedio', teacher: 'Liam Smith', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '20:15', room: 'Estudio 3', duration: '75 min', recurrence: 'recurring', recurrenceMonths: 2 },
+    { id: 'clase-9', name: 'Salsa On2', styleId: 'salsa', levelId: 'avanzado', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '19:00', room: 'Estudio 1', duration: '90 min', recurrence: 'one-time' },
+    { id: 'clase-10', name: 'Práctica Libre', styleId: 'practica', levelId: 'todos', teacher: 'Estudio', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min', recurrence: 'recurring', recurrenceMonths: 12 },
 ];
 
 export const teachers: Teacher[] = [
