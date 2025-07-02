@@ -1,4 +1,5 @@
 
+
 import type { MembershipPlan, DanceClass, User, DanceStyle, DanceLevel, StudentMembership, Role } from './types';
 
 export const danceStyles: DanceStyle[] = [
@@ -93,6 +94,7 @@ export const membershipPlans: MembershipPlan[] = [
     allowedClasses: [],
     durationUnit: 'days',
     durationValue: 7,
+    visibility: 'public',
   },
   {
     id: 'pack-10',
@@ -106,6 +108,13 @@ export const membershipPlans: MembershipPlan[] = [
     durationUnit: 'months',
     durationValue: 3,
     isPopular: true,
+    visibility: 'public',
+    coupon: {
+        code: 'VERANO24',
+        discountType: 'percentage',
+        discountValue: 10,
+        expirationDate: '2024-08-31'
+    }
   },
   {
     id: 'unlimited-1',
@@ -116,6 +125,7 @@ export const membershipPlans: MembershipPlan[] = [
     accessType: 'unlimited',
     durationUnit: 'months',
     durationValue: 1,
+    visibility: 'public',
   },
   {
     id: 'beginner-pass',
@@ -126,6 +136,7 @@ export const membershipPlans: MembershipPlan[] = [
     accessType: 'unlimited',
     durationUnit: 'months',
     durationValue: 1,
+    visibility: 'unlisted',
   },
 ];
 

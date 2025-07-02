@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { membershipPlans as initialPlans, danceClasses } from '@/lib/data';
-import type { MembershipPlan, DanceClass } from '@/lib/types';
+import type { MembershipPlan, CouponDetails } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,9 +21,18 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { MoreHorizontal, PlusCircle, Pencil, Trash2, Ticket, InfinityIcon } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Pencil, Trash2, Ticket, InfinityIcon, Settings } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+const couponSchema = z.object({
+    code: z.string(),
+    discountType: z.enum(['percentage', 'fixed']),
+    discountValue: z.coerce.number(),
+    expirationDate: z.string().optional(),
+}).optional().nullable();
+
 
 const baseSchema = z.object({
   id: z.string().optional(),
@@ -34,6 +43,8 @@ const baseSchema = z.object({
   isPopular: z.boolean().default(false),
   durationUnit: z.enum(['days', 'weeks', 'months'], { required_error: "Debes seleccionar una unidad." }),
   durationValue: z.coerce.number().int().min(1, "La duración debe ser al menos 1."),
+  visibility: z.enum(['public', 'unlisted']).default('public'),
+  coupon: couponSchema,
 });
 
 const formSchema = z.discriminatedUnion("accessType", [
@@ -57,6 +68,8 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
   const common = {
     ...plan,
     features: plan.features.join('\n'),
+    visibility: plan.visibility || 'public',
+    coupon: plan.coupon ? { ...plan.coupon, expirationDate: plan.coupon.expirationDate || '' } : undefined,
   };
   switch (plan.accessType) {
     case 'unlimited':
@@ -97,6 +110,8 @@ export default function AdminMembershipsPage() {
       isPopular: false,
       durationUnit: 'months',
       durationValue: 1,
+      visibility: 'public',
+      coupon: undefined,
     },
   });
 
@@ -119,6 +134,8 @@ export default function AdminMembershipsPage() {
         durationValue: 1,
         classCount: 10,
         allowedClasses: [],
+        visibility: 'public',
+        coupon: undefined,
       });
     }
     setIsDialogOpen(true);
@@ -131,6 +148,9 @@ export default function AdminMembershipsPage() {
     });
     
     let planToSave: MembershipPlan;
+    
+    const couponData = data.coupon && data.coupon.code ? data.coupon : undefined;
+
     const commonData = {
         id: editingPlan?.id || `plan-${Date.now()}`,
         title: data.title,
@@ -139,7 +159,9 @@ export default function AdminMembershipsPage() {
         features: data.features.split('\n').filter(f => f.trim() !== ''),
         isPopular: data.isPopular,
         durationUnit: data.durationUnit,
-        durationValue: data.durationValue
+        durationValue: data.durationValue,
+        visibility: data.visibility,
+        coupon: couponData as CouponDetails | undefined,
     };
 
     switch(data.accessType) {
@@ -195,7 +217,7 @@ export default function AdminMembershipsPage() {
                   <TableHead>Plan</TableHead>
                   <TableHead className="hidden sm:table-cell">Tipo de Acceso</TableHead>
                   <TableHead className="hidden md:table-cell">Precio</TableHead>
-                  <TableHead className="hidden lg:table-cell">Validez</TableHead>
+                  <TableHead className="hidden lg:table-cell">Visibilidad</TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -204,7 +226,10 @@ export default function AdminMembershipsPage() {
                   <TableRow key={plan.id}>
                     <TableCell>
                       <p className="font-medium">{plan.title}</p>
-                      {plan.isPopular && <Badge variant="secondary" className="mt-1">Popular</Badge>}
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {plan.isPopular && <Badge variant="secondary" className="mt-1">Popular</Badge>}
+                        {plan.coupon && <Badge variant="destructive" className="mt-1 flex items-center gap-1"><Ticket className="h-3 w-3"/>{plan.coupon.code}</Badge>}
+                      </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                         <div className="flex items-center gap-2">
@@ -220,8 +245,12 @@ export default function AdminMembershipsPage() {
                         </span>
                         </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">${plan.price}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{formatDuration(plan.durationValue, plan.durationUnit)}</TableCell>
+                    <TableCell className="hidden md:table-cell">€{plan.price}</TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                        <Badge variant={plan.visibility === 'public' ? 'default' : 'outline'}>
+                            {plan.visibility === 'public' ? 'Público' : 'No Listado'}
+                        </Badge>
+                    </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -294,7 +323,7 @@ export default function AdminMembershipsPage() {
                 <FormItem><FormLabel>Descripción Corta</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="price" render={({ field }) => (
-                <FormItem><FormLabel>Precio ($)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               
               <div className="p-4 border rounded-md space-y-4">
@@ -408,6 +437,57 @@ export default function AdminMembershipsPage() {
                     <FormDescription>Resalta este plan en la página de membresías.</FormDescription>
                 </div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
               )} />
+              
+              <Collapsible className="space-y-4">
+                <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="w-full flex items-center justify-start p-0 h-auto hover:bg-transparent">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Configuración Avanzada
+                    </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-4 pt-4 border-t">
+                    <FormField control={form.control} name="visibility" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Visibilidad del Plan</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="public">Público</SelectItem>
+                                    <SelectItem value="unlisted">No Listado</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormDescription>
+                                "No Listado" oculta el plan de la página pública, pero puede ser asignado por un admin.
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <div className="p-4 border rounded-md space-y-4">
+                        <h4 className="font-medium text-base">Cupón de Descuento (Opcional)</h4>
+                        <FormField control={form.control} name="coupon.code" render={({ field }) => (
+                          <FormItem><FormLabel>Código del Cupón</FormLabel><FormControl><Input {...field} placeholder="EJ: VERANO20" /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="coupon.discountType" render={({ field }) => (
+                                <FormItem><FormLabel>Tipo de Descuento</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="percentage">Porcentaje (%)</SelectItem>
+                                        <SelectItem value="fixed">Monto Fijo (€)</SelectItem>
+                                    </SelectContent>
+                                </Select><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="coupon.discountValue" render={({ field }) => (
+                                <FormItem><FormLabel>Valor</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                        </div>
+                        <FormField control={form.control} name="coupon.expirationDate" render={({ field }) => (
+                            <FormItem><FormLabel>Fecha de Caducidad</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    </div>
+                </CollapsibleContent>
+              </Collapsible>
+
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
                 <Button type="submit">Guardar Cambios</Button>
