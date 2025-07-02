@@ -23,8 +23,6 @@ import {
   BookMarked,
   User,
   ClipboardList,
-  Palette,
-  Signal,
   ClipboardCheck,
   DollarSign,
   Banknote,
@@ -67,8 +65,6 @@ const adminNavItems = [
     { href: '/admin/students', label: 'Gestión de Alumnos', icon: GraduationCap },
     { href: '/admin/classes', label: 'Gestión de Clases', icon: ClipboardList },
     { href: '/admin/memberships', label: 'Gestión de Membresías', icon: CreditCard },
-    { href: '/admin/styles', label: 'Estilos de Baile', icon: Palette },
-    { href: '/admin/levels', label: 'Niveles', icon: Signal },
     { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];

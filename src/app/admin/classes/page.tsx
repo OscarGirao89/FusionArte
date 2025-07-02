@@ -21,7 +21,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon, Users, ClipboardCheck } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon, Users, ClipboardCheck, Palette, Signal } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -170,8 +170,22 @@ export default function AdminClassesPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Listado de Clases</CardTitle>
-          <CardDescription>Añade, edita o elimina las clases ofrecidas en la academia.</CardDescription>
+          <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+            <div>
+              <CardTitle>Listado de Clases</CardTitle>
+              <CardDescription>Añade, edita o elimina las clases ofrecidas en la academia.</CardDescription>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+                <Button variant="outline" size="sm" onClick={() => router.push('/admin/styles')}>
+                  <Palette className="mr-2 h-4 w-4" />
+                  Gestionar Estilos
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => router.push('/admin/levels')}>
+                  <Signal className="mr-2 h-4 w-4" />
+                  Gestionar Niveles
+                </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
