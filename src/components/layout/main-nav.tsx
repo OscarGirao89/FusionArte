@@ -27,6 +27,7 @@ import {
   Signal,
   ClipboardCheck,
   DollarSign,
+  Banknote,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -66,6 +67,7 @@ const adminNavItems = [
     { href: '/admin/memberships', label: 'Gestión de Membresías', icon: CreditCard },
     { href: '/admin/styles', label: 'Estilos de Baile', icon: Palette },
     { href: '/admin/levels', label: 'Niveles', icon: Signal },
+    { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];
 

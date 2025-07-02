@@ -32,7 +32,7 @@ type ClassPackPlan = MembershipPlanBase & {
   allowedClasses: string[];
 };
 
-type TrialClassPlan = MembershipPlan-Base & {
+type TrialClassPlan = MembershipPlanBase & {
   accessType: 'trial_class';
   classCount: number;
   allowedClasses: string[];
@@ -48,13 +48,14 @@ export type DanceClass = {
   teacher: string;
   teacherAvatar: string;
   day: string;
-  time: string;
+  time: string; // "HH:MM"
   room: string;
   duration: string; // e.g. '60 min'
   capacity: number;
   recurrence: 'one-time' | 'recurring';
   recurrenceMonths?: number;
-  date?: string;
+  date?: string; // "YYYY-MM-DD"
+  status: 'completed' | 'scheduled' | 'cancelled-low-attendance' | 'cancelled-teacher';
 };
 
 export type Teacher = {
@@ -62,6 +63,7 @@ export type Teacher = {
   avatar: string;
   bio: string;
   specialties: string[];
+  payRate: number; // Pay per hour
 };
 
 export type User = {
@@ -71,4 +73,14 @@ export type User = {
     role: 'Estudiante' | 'Profesor' | 'Administrador' | 'Administrativo';
     joined: string;
     avatar: string;
+};
+
+export type Transaction = {
+  id: string;
+  type: 'ingreso' | 'egreso';
+  category: string;
+  description: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  receiptUrl?: string;
 }
