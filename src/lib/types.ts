@@ -49,8 +49,7 @@ export type DanceClass = {
   type: ClassType;
   styleId: string;
   levelId: string;
-  teacher: string;
-  teacherAvatar: string;
+  teacherIds: number[];
   day: string;
   time: string; // "HH:MM"
   room: string;
@@ -116,6 +115,20 @@ export type StudentMembership = {
   endDate: string;
   classesRemaining?: number;
 }
+
+export type StudentPayment = {
+    id: string;
+    studentId: number;
+    planId: string;
+    invoiceDate: string; // YYYY-MM-DD
+    totalAmount: number;
+    status: 'paid' | 'pending' | 'deposit';
+    amountPaid: number;
+    amountDue: number;
+    lastUpdatedBy?: string;
+    lastUpdatedDate?: string; // ISO 8601
+}
+
 
 export type Permission = 
   | 'view_dashboard'

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { danceClasses } from '@/lib/data';
+import { danceClasses, users } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, Users, BookCheck } from 'lucide-react';
@@ -39,9 +39,10 @@ const isWithinAttendanceWindow = (day: string, time: string, duration: string): 
 export default function MyClassesPage() {
   const router = useRouter();
   const { userRole } = useAuth();
+  const currentUserId = userRole ? userProfiles[userRole]?.id : null;
   const teacherName = userRole ? userProfiles[userRole]?.name : '';
-  
-  const myClasses = danceClasses.filter(c => c.teacher === teacherName);
+
+  const myClasses = danceClasses.filter(c => c.teacherIds.includes(currentUserId!));
   
   const completedClassesCount = useMemo(() => {
     return myClasses.filter(c => c.status === 'completed').length;

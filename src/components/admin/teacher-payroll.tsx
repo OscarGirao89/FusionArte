@@ -27,7 +27,7 @@ export function TeacherPayroll() {
         const teachers = users.filter(u => u.role === 'Profesor');
 
         const payroll = teachers.map(teacher => {
-            const classesTaught = danceClasses.filter(c => c.teacher === teacher.name);
+            const classesTaught = danceClasses.filter(c => c.teacherIds.includes(teacher.id));
             let totalPay = 0;
             const paymentDetails = teacher.paymentDetails;
             
@@ -37,9 +37,12 @@ export function TeacherPayroll() {
 
                 if (!paymentDetails) return { ...c, classPay, payDescription };
 
+                // Pay is divided among teachers for per_class payment type
+                const numTeachers = c.teacherIds.length || 1;
+
                 if (c.type === 'workshop') {
                     if (c.workshopPaymentType === 'fixed') {
-                        classPay = c.workshopPaymentValue || 0;
+                        classPay = (c.workshopPaymentValue || 0) / numTeachers;
                         payDescription = 'Tarifa fija de taller';
                     } else { // percentage
                         payDescription = `Porcentaje (${c.workshopPaymentValue}%)`;
@@ -47,10 +50,10 @@ export function TeacherPayroll() {
                 } else if (paymentDetails.type === 'per_class') {
                     if (c.status === 'completed') {
                         const durationHours = parseInt(c.duration.replace(' min', '')) / 60;
-                        classPay = durationHours * (paymentDetails.payRate || 0);
+                        classPay = (durationHours * (paymentDetails.payRate || 0)) / numTeachers;
                         payDescription = `${durationHours}h a €${paymentDetails.payRate}/h`;
                     } else if (c.status === 'cancelled-low-attendance') {
-                        classPay = paymentDetails.cancelledClassPay;
+                        classPay = paymentDetails.cancelledClassPay / numTeachers;
                         payDescription = 'Compensación por cancelación';
                     }
                 }

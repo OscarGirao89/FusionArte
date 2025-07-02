@@ -95,7 +95,7 @@ export const membershipPlans: MembershipPlan[] = [
     title: 'Bono de 10 Clases',
     description: 'Un bono flexible para que uses cuando quieras.',
     price: 120,
-    features: ['10 clases de cualquier estilo', 'Horario flexible'],
+    features: ['10 clases de cualquier estilo', 'Horario flexible', 'Vence a los 3 meses', 'Puedes cambiar tu selección hasta 24h antes de la clase.'],
     accessType: 'class_pack',
     classCount: 10,
     allowedClasses: [],
@@ -108,7 +108,7 @@ export const membershipPlans: MembershipPlan[] = [
     title: 'Ilimitado Mensual',
     description: 'Baila todo lo que quieras durante un mes.',
     price: 99,
-    features: ['Clases ilimitadas', 'Acceso a todos los estilos y niveles', 'Reserva prioritaria en talleres'],
+    features: ['Clases ilimitadas', 'Acceso a todos los estilos y niveles', 'Reserva prioritaria en talleres', 'Válido para el mes en curso o el próximo.'],
     accessType: 'unlimited',
     durationUnit: 'months',
     durationValue: 1,
@@ -134,28 +134,28 @@ export const studentMemberships: StudentMembership[] = [
 
 export const danceClasses: DanceClass[] = [
     // Lunes
-    { id: 'clase-1', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacher: 'Flor Diaz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 3, 8] },
-    { id: 'clase-2', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacher: 'Oscar Girao', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 9] },
-    { id: 'clase-3', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'principiante', teacher: 'Oscar Girao', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 25, recurrenceMonths: 6, status: 'completed', enrolledStudentIds: [3] },
+    { id: 'clase-1', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacherIds: [5], day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 3, 8] },
+    { id: 'clase-2', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacherIds: [2], day: 'Lunes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 9] },
+    { id: 'clase-3', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'principiante', teacherIds: [2], day: 'Lunes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 25, recurrenceMonths: 6, status: 'completed', enrolledStudentIds: [3] },
     
     // Martes
-    { id: 'clase-4', name: 'Elongación', type: 'recurring', styleId: 'elongacion', levelId: 'todos', teacher: 'Joana Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 15, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [8, 9] },
-    { id: 'clase-5', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'principiante', teacher: 'Flor Diaz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [1, 3] },
-    { id: 'clase-6', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'principiante', teacher: 'Oscar Girao', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'cancelled-low-attendance', enrolledStudentIds: [9] },
+    { id: 'clase-4', name: 'Elongación', type: 'recurring', styleId: 'elongacion', levelId: 'todos', teacherIds: [6], day: 'Martes', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 15, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [8, 9] },
+    { id: 'clase-5', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'principiante', teacherIds: [5], day: 'Martes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [1, 3] },
+    { id: 'clase-6', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'principiante', teacherIds: [2], day: 'Martes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'cancelled-low-attendance', enrolledStudentIds: [9] },
     
     // Miercoles
-    { id: 'clase-7', name: 'Aeroyoga', type: 'recurring', styleId: 'aeroyoga', levelId: 'todos', teacher: 'Alexandra', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '18:00', room: 'Estudio 3', duration: '60 min', capacity: 10, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [3, 8] },
-    { id: 'clase-8', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacher: 'Flor Diaz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 2, status: 'completed', enrolledStudentIds: [1] },
-    { id: 'clase-9', name: 'Taller de Salsa On2', type: 'workshop', styleId: 'salsa', levelId: 'avanzado', teacher: 'Oscar Girao', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '21:00', room: 'Estudio 1', duration: '90 min', capacity: 20, date: '2024-08-30', status: 'scheduled', enrolledStudentIds: [1, 9], workshopPaymentType: 'percentage', workshopPaymentValue: 50 },
+    { id: 'clase-7', name: 'Aeroyoga', type: 'recurring', styleId: 'aeroyoga', levelId: 'todos', teacherIds: [10], day: 'Miércoles', time: '18:00', room: 'Estudio 3', duration: '60 min', capacity: 10, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [3, 8] },
+    { id: 'clase-8', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacherIds: [5], day: 'Miércoles', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 2, status: 'completed', enrolledStudentIds: [1] },
+    { id: 'clase-9', name: 'Taller de Salsa On2', type: 'workshop', styleId: 'salsa', levelId: 'avanzado', teacherIds: [2], day: 'Miércoles', time: '21:00', room: 'Estudio 1', duration: '90 min', capacity: 20, date: '2024-08-30', status: 'scheduled', enrolledStudentIds: [1, 9], workshopPaymentType: 'percentage', workshopPaymentValue: 50 },
 
     // Jueves
-    { id: 'clase-10', name: 'Gimnasia Rítmica', type: 'recurring', styleId: 'gimnasia-ritmica', levelId: 'principiante', teacher: 'Joana Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 20, recurrenceMonths: 4, status: 'completed', enrolledStudentIds: [1, 3, 8] },
-    { id: 'clase-11', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'intermedio', teacher: 'Oscar Girao', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 16, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [] },
-    { id: 'clase-12', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacher: 'Flor Diaz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 4, status: 'cancelled-teacher', enrolledStudentIds: [1, 3] },
+    { id: 'clase-10', name: 'Gimnasia Rítmica', type: 'recurring', styleId: 'gimnasia-ritmica', levelId: 'principiante', teacherIds: [6], day: 'Jueves', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 20, recurrenceMonths: 4, status: 'completed', enrolledStudentIds: [1, 3, 8] },
+    { id: 'clase-11', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'intermedio', teacherIds: [2], day: 'Jueves', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 16, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [] },
+    { id: 'clase-12', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacherIds: [5], day: 'Jueves', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 4, status: 'cancelled-teacher', enrolledStudentIds: [1, 3] },
     
     // Viernes
-    { id: 'rental-1', name: 'Alquiler: Ensayo Teatro', type: 'rental', styleId: 'practica', levelId: 'todos', teacher: 'Compañía Hilo Negro', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '10:00', room: 'Estudio 3', duration: '180 min', capacity: 30, date: '2024-09-01', status: 'scheduled', enrolledStudentIds: [], isVisibleToStudents: false, rentalPrice: 150 },
-    { id: 'clase-13', name: 'Práctica Libre', type: 'recurring', styleId: 'practica', levelId: 'todos', teacher: 'Estudio', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min', capacity: 50, recurrenceMonths: 12, status: 'completed', enrolledStudentIds: [1, 3, 8, 9] },
+    { id: 'rental-1', name: 'Alquiler: Ensayo Teatro', type: 'rental', styleId: 'practica', levelId: 'todos', teacherIds: [], day: 'Viernes', time: '10:00', room: 'Estudio 3', duration: '180 min', capacity: 30, date: '2024-09-01', status: 'scheduled', enrolledStudentIds: [], isVisibleToStudents: false, rentalPrice: 150 },
+    { id: 'clase-13', name: 'Práctica Libre', type: 'recurring', styleId: 'practica', levelId: 'todos', teacherIds: [], day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min', capacity: 50, recurrenceMonths: 12, status: 'completed', enrolledStudentIds: [1, 3, 8, 9] },
 
 ];
 

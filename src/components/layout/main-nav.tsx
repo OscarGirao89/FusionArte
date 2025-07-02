@@ -27,12 +27,15 @@ import {
   Banknote,
   GraduationCap,
   ShieldCheck,
+  Wallet,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAuth, UserRole } from '@/context/auth-context';
+import { users } from '@/lib/data';
 import { LogoIcon } from '@/components/icons/logo-icon';
+
 
 const navItems = {
   student: [
@@ -55,9 +58,8 @@ const navItems = {
   administrativo: [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/schedule', label: 'Horario General', icon: Calendar },
-    { href: '/admin/users', label: 'Ver Usuarios', icon: Users },
-    { href: '/attendance', label: 'Asistencia', icon: ClipboardCheck },
-    { href: '/payments', label: 'Pagos', icon: DollarSign },
+    { href: '/admin/students', label: 'Gestión de Alumnos', icon: GraduationCap },
+    { href: '/admin/payments', label: 'Pagos', icon: Wallet },
   ],
 };
 
@@ -66,15 +68,16 @@ const adminNavItems = [
     { href: '/admin/students', label: 'Gestión de Alumnos', icon: GraduationCap },
     { href: '/admin/classes', label: 'Gestión de Clases', icon: ClipboardList },
     { href: '/admin/memberships', label: 'Gestión de Membresías', icon: CreditCard },
+    { href: '/admin/payments', label: 'Pagos', icon: Wallet },
     { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];
 
-export const userProfiles: Record<UserRole, { name: string; role: string; avatar: string }> = {
-    student: { name: 'Alex Doe', role: 'Estudiante', avatar: 'https://placehold.co/100x100.png?text=A' },
-    teacher: { name: 'Oscar Girao', role: 'Profesor', avatar: 'https://placehold.co/100x100.png?text=OG' },
-    admin: { name: 'Admin FusionArte', role: 'Administrador/a', avatar: 'https://placehold.co/100x100.png?text=AF' },
-    administrativo: { name: 'Laura Martinez', role: 'Recepción', avatar: 'https://placehold.co/100x100.png?text=LM' },
+export const userProfiles: Record<UserRole, { id: number; name: string; role: string; avatar: string }> = {
+    student: { id: 1, name: 'Alex Doe', role: 'Estudiante', avatar: 'https://placehold.co/100x100.png?text=A' },
+    teacher: { id: 2, name: 'Oscar Girao', role: 'Profesor', avatar: 'https://placehold.co/100x100.png?text=OG' },
+    admin: { id: 4, name: 'Admin FusionArte', role: 'Administrador/a', avatar: 'https://placehold.co/100x100.png?text=AF' },
+    administrativo: { id: 7, name: 'Laura Martinez', role: 'Recepción', avatar: 'https://placehold.co/100x100.png?text=LM' },
 };
 
 
@@ -95,12 +98,12 @@ export function MainNav() {
 
   return (
     <>
-      <SidebarHeader className="h-14 justify-between">
+      <SidebarHeader className="h-14 justify-between no-print">
         {open || isMobile ? logo : <Link href="/">{logo}</Link>}
         <SidebarTrigger className="md:hidden" />
       </SidebarHeader>
 
-      <SidebarMenu className="flex-1 p-2">
+      <SidebarMenu className="flex-1 p-2 no-print">
         {currentNavItems.map((item) => (
           <SidebarMenuItem key={item.href}>
             <SidebarMenuButton
@@ -140,7 +143,7 @@ export function MainNav() {
         )}
       </SidebarMenu>
 
-      <SidebarFooter>
+      <SidebarFooter className="no-print">
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -169,5 +172,3 @@ export function MainNav() {
     </>
   );
 }
-
-    

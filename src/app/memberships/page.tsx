@@ -1,10 +1,13 @@
 
+'use client';
+
 import { membershipPlans } from '@/lib/data';
 import type { MembershipPlan } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 const getPlanPriceDisplay = (plan: MembershipPlan) => {
   if (plan.accessType === 'unlimited') {
@@ -22,6 +25,21 @@ const getPlanPriceDisplay = (plan: MembershipPlan) => {
 };
 
 function PlanCard({ plan }: { plan: MembershipPlan }) {
+  const router = useRouter();
+  
+  const getButtonInfo = () => {
+    switch(plan.accessType) {
+      case 'unlimited':
+        return { text: 'Elige tus Clases', action: () => router.push('/schedule') };
+      case 'class_pack':
+        return { text: 'Selecciona tus Clases', action: () => router.push('/schedule') };
+      default:
+        return { text: 'Comprar Ahora', action: () => alert('Proceso de compra no implementado en este prototipo.') };
+    }
+  }
+
+  const { text, action } = getButtonInfo();
+
   return (
     <Card className={cn(
       "flex flex-col",
@@ -51,8 +69,8 @@ function PlanCard({ plan }: { plan: MembershipPlan }) {
         </ul>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" variant={plan.isPopular ? 'default' : 'outline'}>
-          {plan.isPopular ? 'Comenzar Ahora' : 'Elegir Plan'}
+        <Button className="w-full" variant={plan.isPopular ? 'default' : 'outline'} onClick={action}>
+          {text}
         </Button>
       </CardFooter>
     </Card>
@@ -77,5 +95,3 @@ export default function MembershipsPage() {
     </div>
   );
 }
-
-    

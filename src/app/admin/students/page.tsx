@@ -221,6 +221,39 @@ export default function AdminStudentsPage() {
         window.print();
     };
 
+    const handlePrintReceipt = () => {
+        const printWindow = window.open('', '', 'height=600,width=800');
+        if (printWindow && selectedStudent && currentPlan && currentMembership) {
+            printWindow.document.write('<html><head><title>Comprobante de Membresía</title>');
+            printWindow.document.write('<style>body { font-family: sans-serif; margin: 2rem; } .receipt { border: 1px solid #ccc; padding: 1.5rem; border-radius: 8px; } h1 { text-align: center; } table { width: 100%; border-collapse: collapse; margin-top: 1rem; } td { padding: 0.5rem; border-bottom: 1px solid #eee; }</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write('<div class="receipt">');
+            printWindow.document.write('<h1>Comprobante de Membresía - FusionArte</h1>');
+            printWindow.document.write('<hr>');
+            printWindow.document.write('<table>');
+            printWindow.document.write(`<tr><td><strong>Alumno:</strong></td><td>${selectedStudent.name}</td></tr>`);
+            printWindow.document.write(`<tr><td><strong>Plan:</strong></td><td>${currentPlan.title}</td></tr>`);
+            printWindow.document.write(`<tr><td><strong>Precio:</strong></td><td>€${currentPlan.price.toFixed(2)}</td></tr>`);
+            printWindow.document.write(`<tr><td><strong>Fecha de Inicio:</strong></td><td>${format(parseISO(currentMembership.startDate), 'PPP', { locale: es })}</td></tr>`);
+            printWindow.document.write(`<tr><td><strong>Fecha de Vencimiento:</strong></td><td>${format(parseISO(currentMembership.endDate), 'PPP', { locale: es })}</td></tr>`);
+            if (currentPlan.accessType === 'class_pack') {
+                printWindow.document.write(`<tr><td><strong>Clases Incluidas:</strong></td><td>${currentMembership.classesRemaining || 0}</td></tr>`);
+            }
+            printWindow.document.write('</table>');
+            printWindow.document.write('<p style="margin-top: 2rem; text-align: center; font-size: 0.8rem; color: #666;">¡Gracias por ser parte de nuestra comunidad!</p>');
+            printWindow.document.write('</div>');
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        } else {
+            toast({
+                title: "Error al imprimir",
+                description: "No se pudo generar el comprobante. Asegúrate de que el alumno tenga una membresía activa.",
+                variant: "destructive",
+            });
+        }
+    };
+
   return (
     <div className="p-4 md:p-8">
         <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
@@ -233,10 +266,6 @@ export default function AdminStudentsPage() {
                 <Button variant="outline" onClick={handlePrint}>
                     <Printer className="mr-2 h-4 w-4" />
                     Imprimir
-                </Button>
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Añadir Membresía
                 </Button>
             </div>
         </div>
@@ -414,8 +443,12 @@ export default function AdminStudentsPage() {
                                 </CardContent>
                             </Card>
                             <Card>
-                                <CardHeader>
+                                <CardHeader className="flex flex-row justify-between items-center">
                                     <CardTitle className="text-lg flex items-center gap-2"><Ticket className="h-5 w-5"/>Membresía Actual</CardTitle>
+                                    <Button variant="outline" size="sm" onClick={handlePrintReceipt}>
+                                        <Printer className="mr-2 h-4 w-4" />
+                                        Imprimir Comprobante
+                                    </Button>
                                 </CardHeader>
                                 {currentPlan && currentMembership ? (
                                     <CardContent className="text-sm space-y-2">
@@ -442,7 +475,7 @@ export default function AdminStudentsPage() {
                                         <ul className="space-y-3">
                                             {enrolledClasses.map(c => (
                                                 <li key={c.id} className="text-sm flex justify-between items-center">
-                                                    <div><p className="font-medium">{c.name}</p><p className="text-muted-foreground">{c.day} - {c.time} con {c.teacher}</p></div>
+                                                    <div><p className="font-medium">{c.name}</p><p className="text-muted-foreground">{c.day} - {c.time} con {getTeacherNames(c.teacherIds)}</p></div>
                                                     <Badge variant="outline">{c.levelId}</Badge>
                                                 </li>
                                             ))}

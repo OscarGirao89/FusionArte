@@ -1,0 +1,260 @@
+
+'use client';
+
+import { useState } from 'react';
+import { studentPayments as initialPayments } from '@/lib/finances-data';
+import { users, membershipPlans } from '@/lib/data';
+import type { StudentPayment } from '@/lib/types';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { useAuth } from '@/context/auth-context';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { DollarSign, Download, Edit, Printer, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+
+const paymentEditSchema = z.object({
+  id: z.string(),
+  status: z.enum(['paid', 'pending', 'deposit']),
+  amountPaid: z.coerce.number().min(0, "El monto no puede ser negativo."),
+});
+
+type PaymentEditFormValues = z.infer<typeof paymentEditSchema>;
+
+export default function AdminPaymentsPage() {
+  const [payments, setPayments] = useState<StudentPayment[]>(initialPayments);
+  const [editingPayment, setEditingPayment] = useState<StudentPayment | null>(null);
+  const { toast } = useToast();
+  const { userRole } = useAuth();
+  const isAdmin = userRole === 'admin';
+
+  const form = useForm<PaymentEditFormValues>({
+    resolver: zodResolver(paymentEditSchema),
+  });
+  
+  const getStudentName = (id: number) => users.find(u => u.id === id)?.name || 'Desconocido';
+  const getPlanName = (id: string) => membershipPlans.find(p => p.id === id)?.title || 'Desconocido';
+
+  const handleOpenDialog = (payment: StudentPayment) => {
+    setEditingPayment(payment);
+    form.reset({
+      id: payment.id,
+      status: payment.status,
+      amountPaid: payment.amountPaid,
+    });
+  };
+  
+  const onSubmit = (data: PaymentEditFormValues) => {
+    if (!editingPayment) return;
+    
+    const totalAmount = editingPayment.totalAmount;
+    if (data.amountPaid > totalAmount) {
+        form.setError("amountPaid", { type: "manual", message: "El monto pagado no puede exceder el total."});
+        return;
+    }
+
+    setPayments(prev => prev.map(p => 
+        p.id === data.id
+        ? {
+            ...p,
+            status: data.status,
+            amountPaid: data.amountPaid,
+            amountDue: totalAmount - data.amountPaid,
+            lastUpdatedBy: users.find(u => u.role === 'Administrador')?.name || 'Admin', // Simulación
+            lastUpdatedDate: new Date().toISOString()
+        }
+        : p
+    ));
+
+    toast({ title: "Pago actualizado", description: "El estado del pago ha sido guardado." });
+    setEditingPayment(null);
+  }
+
+  const totals = payments.reduce((acc, p) => {
+      acc.collected += p.amountPaid;
+      acc.pending += p.amountDue;
+      acc.total += p.totalAmount;
+      return acc;
+  }, { collected: 0, pending: 0, total: 0 });
+
+  const handleExportCSV = () => {
+    const headers = ["ID", "Alumno", "Plan", "Monto Total", "Monto Pagado", "Monto Pendiente", "Estado", "Fecha Factura"];
+    const csvRows = [headers.join(',')];
+    
+    payments.forEach(p => {
+      const row = [
+        p.id,
+        `"${getStudentName(p.studentId)}"`,
+        `"${getPlanName(p.planId)}"`,
+        p.totalAmount,
+        p.amountPaid,
+        p.amountDue,
+        p.status,
+        p.invoiceDate,
+      ].join(',');
+      csvRows.push(row);
+    });
+    
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'pagos_alumnos.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  const handlePrint = () => window.print();
+
+  return (
+    <div className="p-4 md:p-8">
+      <h1 className="text-3xl font-bold tracking-tight font-headline mb-8">Pagos de Alumnos</h1>
+      
+      <div className="grid gap-4 md:grid-cols-3 mb-8 no-print">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Cobrado (Mes)</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">€{totals.collected.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pendiente de Cobro (Mes)</CardTitle>
+            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">€{totals.pending.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Facturación Total (Mes)</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">€{totals.total.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div>
+                    <CardTitle>Listado de Pagos</CardTitle>
+                    <CardDescription>Gestiona los pagos de las membresías de los alumnos.</CardDescription>
+                </div>
+                 <div className="flex gap-2 flex-shrink-0 flex-wrap no-print">
+                    <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                        <Download className="mr-2 h-4 w-4" /> Exportar CSV
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handlePrint}>
+                        <Printer className="mr-2 h-4 w-4" /> Imprimir
+                    </Button>
+                </div>
+            </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Alumno</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right">Pagado</TableHead>
+                  <TableHead className="text-right">Pendiente</TableHead>
+                  <TableHead className="no-print">Acción</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payments.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell>
+                        <p className="font-medium">{getStudentName(p.studentId)}</p>
+                        <p className="text-xs text-muted-foreground">{format(parseISO(p.invoiceDate), 'dd/MM/yyyy')}</p>
+                    </TableCell>
+                    <TableCell>{getPlanName(p.planId)}</TableCell>
+                    <TableCell>
+                      <Badge variant={p.status === 'paid' ? 'default' : p.status === 'pending' ? 'destructive' : 'secondary'}>
+                        {{
+                          paid: 'Pagado',
+                          pending: 'Pendiente',
+                          deposit: 'Adelanto'
+                        }[p.status]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">€{p.totalAmount.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono text-green-600">€{p.amountPaid.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono text-red-600">€{p.amountDue.toFixed(2)}</TableCell>
+                    <TableCell className="no-print">
+                      {isAdmin && (
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(p)}>
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">Editar</span>
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Dialog open={!!editingPayment} onOpenChange={(isOpen) => !isOpen && setEditingPayment(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Editar Estado de Pago</DialogTitle>
+                <DialogDescription>
+                    Actualiza el estado del pago para {getStudentName(editingPayment?.studentId ?? 0)}.
+                </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                     <FormField control={form.control} name="status" render={({ field }) => (
+                      <FormItem><FormLabel>Estado del Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="pending">Pendiente</SelectItem>
+                          <SelectItem value="deposit">Adelanto</SelectItem>
+                          <SelectItem value="paid">Pagado</SelectItem>
+                        </SelectContent>
+                      </Select><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="amountPaid" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Monto Pagado (€)</FormLabel>
+                            <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <DialogFooter>
+                        <Button type="button" variant="ghost" onClick={() => setEditingPayment(null)}>Cancelar</Button>
+                        <Button type="submit">Guardar</Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

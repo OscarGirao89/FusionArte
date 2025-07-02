@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { danceClasses as initialClasses, users, danceStyles, danceLevels } from '@/lib/data';
-import type { DanceClass, ClassType, User } from '@/lib/types';
+import type { DanceClass, ClassType } from '@/lib/types';
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -27,6 +27,8 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const classFormSchema = z.object({
   id: z.string().optional(),
@@ -36,7 +38,7 @@ const classFormSchema = z.object({
   // Fields for classes/workshops
   styleId: z.string().optional(),
   levelId: z.string().optional(),
-  teacher: z.string().optional(),
+  teacherIds: z.array(z.number()).min(1, "Debes seleccionar al menos un profesor.").optional(),
   capacity: z.coerce.number().optional(),
 
   // Fields for recurring
@@ -51,6 +53,7 @@ const classFormSchema = z.object({
   workshopPaymentValue: z.coerce.number().optional(),
 
   // Fields for rental
+  rentalContact: z.string().optional(),
   rentalPrice: z.coerce.number().optional(),
   isVisibleToStudents: z.boolean().default(false),
   
@@ -61,7 +64,7 @@ const classFormSchema = z.object({
   enrolledStudentIds: z.array(z.number()).default([]),
 }).refine(data => {
     if (['recurring', 'one-time', 'workshop'].includes(data.type)) {
-        return !!data.styleId && !!data.levelId && !!data.teacher && data.capacity !== undefined && data.capacity > 0;
+        return !!data.styleId && !!data.levelId && !!data.teacherIds && data.teacherIds.length > 0 && data.capacity !== undefined && data.capacity > 0;
     }
     return true;
 }, { message: "Estilo, nivel, profesor y capacidad son obligatorios.", path: ["styleId"] })
@@ -85,10 +88,10 @@ const classFormSchema = z.object({
 }, { message: "El tipo y valor de pago son obligatorios para talleres.", path: ["workshopPaymentType"] })
 .refine(data => {
     if (data.type === 'rental') {
-        return data.rentalPrice !== undefined && data.rentalPrice > 0;
+        return !!data.rentalContact && data.rentalPrice !== undefined && data.rentalPrice > 0;
     }
     return true;
-}, { message: "El precio del alquiler debe ser mayor a 0.", path: ["rentalPrice"] });
+}, { message: "El nombre del responsable y el precio del alquiler son obligatorios.", path: ["rentalContact"] });
 
 
 type ClassFormValues = z.infer<typeof classFormSchema>;
@@ -113,7 +116,6 @@ export default function AdminClassesPage() {
   const router = useRouter();
 
   const teachers = users.filter(u => u.role === 'Profesor');
-  const availableTeachers = teachers.map(t => t.name);
 
   const form = useForm<ClassFormValues>({
     resolver: zodResolver(classFormSchema),
@@ -126,6 +128,7 @@ export default function AdminClassesPage() {
       recurrenceMonths: 1,
       date: new Date(),
       enrolledStudentIds: [],
+      teacherIds: [],
       isVisibleToStudents: false,
       workshopPaymentType: 'fixed',
     },
@@ -136,6 +139,7 @@ export default function AdminClassesPage() {
 
   const getStyleName = (id: string) => danceStyles.find(s => s.id === id)?.name || id;
   const getLevelName = (id: string) => danceLevels.find(l => l.id === id)?.name || id;
+  const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
 
   const handleOpenDialog = (danceClass: DanceClass | null = null) => {
     setEditingClass(danceClass);
@@ -145,6 +149,7 @@ export default function AdminClassesPage() {
         date: danceClass.date ? new Date(danceClass.date) : new Date(),
         capacity: danceClass.capacity || undefined,
         recurrenceMonths: danceClass.recurrenceMonths || 1,
+        rentalContact: danceClass.type === 'rental' ? danceClass.name : undefined,
         rentalPrice: danceClass.rentalPrice || undefined,
         workshopPaymentValue: danceClass.workshopPaymentValue || undefined,
       });
@@ -158,6 +163,7 @@ export default function AdminClassesPage() {
         recurrenceMonths: 1,
         date: new Date(),
         enrolledStudentIds: [],
+        teacherIds: [],
         isVisibleToStudents: false,
         workshopPaymentType: 'fixed',
       });
@@ -203,19 +209,19 @@ export default function AdminClassesPage() {
         levelId: '',
         ...data,
         date: data.date ? format(data.date, 'yyyy-MM-dd') : undefined,
-        teacherAvatar: teachers.find(t => t.name === data.teacher)?.avatar || 'https://placehold.co/100x100.png',
     };
 
     if (data.type === 'rental') {
         finalData = {
             ...finalData,
-            teacher: data.name,
+            name: data.name,
+            teacherIds: [],
             styleId: 'practica',
             levelId: 'todos',
             capacity: 0,
         }
     } else {
-        finalData.teacher = data.teacher!;
+        finalData.teacherIds = data.teacherIds!;
         finalData.styleId = data.styleId!;
         finalData.levelId = data.levelId!;
         finalData.capacity = data.capacity!;
@@ -276,7 +282,7 @@ export default function AdminClassesPage() {
         danceClass.id,
         `"${danceClass.name}"`,
         `"${eventTypeLabels[danceClass.type]}"`,
-        `"${danceClass.teacher}"`,
+        `"${getTeacherNames(danceClass.teacherIds)}"` || `"${danceClass.rentalContact}"`,
         danceClass.type === 'recurring' ? (danceClass.day || 'N/A') : (danceClass.date || 'N/A'),
         danceClass.time,
         danceClass.room
@@ -358,7 +364,7 @@ export default function AdminClassesPage() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{danceClass.teacher}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{getTeacherNames(danceClass.teacherIds)}</TableCell>
                     <TableCell className="hidden md:table-cell">
                         <div className="flex items-center gap-2">
                            {danceClass.type === 'recurring' ? <Calendar className="h-4 w-4" /> : <CalendarIcon className="h-4 w-4" />}
@@ -464,12 +470,44 @@ export default function AdminClassesPage() {
                         <SelectContent>{danceLevels.map(lvl => <SelectItem key={lvl.id} value={lvl.id}>{lvl.name}</SelectItem>)}</SelectContent>
                       </Select><FormMessage /></FormItem>
                     )} />
-                    <FormField control={form.control} name="teacher" render={({ field }) => (
-                      <FormItem><FormLabel>Profesor/a</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un profesor" /></SelectTrigger></FormControl>
-                        <SelectContent>{availableTeachers.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                      </Select><FormMessage /></FormItem>
-                    )} />
+                    <FormField
+                        control={form.control}
+                        name="teacherIds"
+                        render={({ field }) => (
+                            <FormItem className="md:col-span-2">
+                            <FormLabel>Profesor/es</FormLabel>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value?.length && "text-muted-foreground")}>
+                                            {field.value?.length ? `${field.value.length} seleccionado(s)` : "Seleccionar profesores"}
+                                        </Button>
+                                    </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-full p-0">
+                                       <ScrollArea className="h-48">
+                                         {teachers.map((teacher) => (
+                                            <div key={teacher.id} className="flex items-center space-x-2 p-2">
+                                                <Checkbox
+                                                    id={`teacher-${teacher.id}`}
+                                                    checked={field.value?.includes(teacher.id)}
+                                                    onCheckedChange={(checked) => {
+                                                        const currentIds = field.value || [];
+                                                        return checked
+                                                        ? field.onChange([...currentIds, teacher.id])
+                                                        : field.onChange(currentIds.filter((id) => id !== teacher.id));
+                                                    }}
+                                                />
+                                                <Label htmlFor={`teacher-${teacher.id}`} className="font-normal">{teacher.name}</Label>
+                                            </div>
+                                         ))}
+                                       </ScrollArea>
+                                    </PopoverContent>
+                                </Popover>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                      <FormField control={form.control} name="capacity" render={({ field }) => (
                         <FormItem><FormLabel>Capacidad</FormLabel><FormControl><Input type="number" min="1" {...field} placeholder="20" /></FormControl><FormMessage /></FormItem>
                     )} />
@@ -546,11 +584,14 @@ export default function AdminClassesPage() {
                 
                 {eventType === 'rental' && (
                     <div className="md:col-span-2 grid grid-cols-2 gap-4 border p-4 rounded-md items-center">
+                        <FormField control={form.control} name="rentalContact" render={({ field }) => (
+                            <FormItem><FormLabel>Responsable/Contacto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
                         <FormField control={form.control} name="rentalPrice" render={({ field }) => (
                             <FormItem><FormLabel>Precio del Alquiler (€)</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={form.control} name="isVisibleToStudents" render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm h-fit mt-auto">
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm h-fit mt-auto md:col-span-2">
                                 <div className="space-y-0.5"><FormLabel>Visible a Alumnos</FormLabel></div>
                                 <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                             </FormItem>

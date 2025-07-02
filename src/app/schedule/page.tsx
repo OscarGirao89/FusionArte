@@ -2,7 +2,7 @@
 'use client';
 import * as React from 'react';
 import { useState, useMemo } from 'react';
-import { danceClasses, danceLevels as allLevels, danceStyles as allStyles } from '@/lib/data';
+import { danceClasses, danceLevels as allLevels, danceStyles as allStyles, users } from '@/lib/data';
 import type { DanceClass } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -10,7 +10,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Clock, User, Award, Users, CalendarDays, MapPin, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { format, parse, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -22,8 +22,8 @@ const timeSlots = Array.from({ length: (22 - 9) * 2 }, (_, i) => {
 });
 
 function TimeGridClassCard({ danceClass }: { danceClass: DanceClass }) {
-    const level = allLevels.find(l => l.id === danceClass.levelId);
     const style = allStyles.find(s => s.id === danceClass.styleId);
+    const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
     
     const getCardColor = () => {
         if (danceClass.type === 'rental') return 'bg-gray-200/50 border-gray-400 dark:bg-gray-800/50 dark:border-gray-600';
@@ -40,9 +40,10 @@ function TimeGridClassCard({ danceClass }: { danceClass: DanceClass }) {
     }
     
     return (
-        <div className={cn("rounded p-1 text-[11px] overflow-hidden border h-full", getCardColor())}>
+        <div className={cn("rounded p-1 text-[11px] overflow-hidden border h-full m-0.5", getCardColor())}>
             <p className="font-bold text-foreground truncate">{danceClass.name}</p>
-            <p className="text-muted-foreground truncate">{danceClass.teacher}</p>
+            <p className="text-muted-foreground truncate">{getTeacherNames(danceClass.teacherIds)}</p>
+            <p className="text-muted-foreground truncate font-semibold">{danceClass.room}</p>
         </div>
     )
 }
@@ -68,7 +69,7 @@ function WeeklySchedule({ classes }: { classes: DanceClass[] }) {
 
     return (
         <div className="overflow-x-auto">
-            <div className="grid grid-cols-[auto_repeat(7,minmax(100px,1fr))] min-w-[800px] relative">
+            <div className="grid grid-cols-[auto_repeat(7,minmax(120px,1fr))] min-w-[900px] relative">
                 {/* Headers */}
                 <div className="sticky top-28 z-20 col-start-1 row-start-1" />
                 {daysOfWeek.map((day, i) => (
@@ -94,7 +95,7 @@ function WeeklySchedule({ classes }: { classes: DanceClass[] }) {
                     const gridColumn = dayToColumn(c.day);
                     if (gridColumn < 2) return null;
                     return (
-                        <div key={c.id} style={{ gridRow: `${gridRowStart} / ${gridRowEnd}`, gridColumn }} className="p-0.5 z-10">
+                        <div key={c.id} style={{ gridRow: `${gridRowStart} / ${gridRowEnd}`, gridColumn }} className="p-0 z-10">
                              <TimeGridClassCard danceClass={c} />
                         </div>
                     );
@@ -107,6 +108,7 @@ function WeeklySchedule({ classes }: { classes: DanceClass[] }) {
 function CalendarClassCard({ danceClass }: { danceClass: DanceClass }) {
   const level = allLevels.find(l => l.id === danceClass.levelId);
   const style = allStyles.find(s => s.id === danceClass.styleId);
+  const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
 
   return (
     <Card className={cn(
@@ -126,7 +128,7 @@ function CalendarClassCard({ danceClass }: { danceClass: DanceClass }) {
          <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /> {danceClass.time} ({danceClass.duration})</div>
          <div className="flex items-center gap-2 text-muted-foreground">
             <User className="h-4 w-4" />
-            {danceClass.teacher}
+            {getTeacherNames(danceClass.teacherIds) || danceClass.name}
         </div>
          <div className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-4 w-4" /> {danceClass.room}</div>
       </CardContent>
@@ -265,7 +267,7 @@ export default function SchedulePage() {
                 <TabsTrigger value="mensual">Calendario de Eventos</TabsTrigger>
             </TabsList>
             <TabsContent value="semanal">
-                {filteredClassesForWeekly.length > 0 ? (
+                {filteredClassesForWeekly.filter(c => c.type === 'recurring').length > 0 ? (
                     <WeeklySchedule classes={filteredClassesForWeekly} />
                 ) : (
                     <div className="text-center py-16">
