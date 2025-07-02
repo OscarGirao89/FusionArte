@@ -1,12 +1,14 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { danceClasses as initialClasses, teachers, danceStyles, danceLevels } from '@/lib/data';
-import type { DanceClass, DanceStyle, DanceLevel, Teacher } from '@/lib/types';
+import type { DanceClass } from '@/lib/types';
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +20,10 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 const classFormSchema = z.object({
   id: z.string().optional(),
@@ -32,6 +37,7 @@ const classFormSchema = z.object({
   duration: z.string().min(1, "La duración es obligatoria."),
   recurrence: z.enum(['one-time', 'recurring'], { required_error: "Debes seleccionar un tipo de recurrencia." }),
   recurrenceMonths: z.coerce.number().optional(),
+  date: z.date().optional(),
 }).refine(data => {
     if (data.recurrence === 'recurring' && (data.recurrenceMonths === undefined || data.recurrenceMonths <= 0)) {
         return false;
@@ -40,6 +46,14 @@ const classFormSchema = z.object({
 }, {
     message: "Para clases recurrentes, los meses deben ser mayor que 0.",
     path: ["recurrenceMonths"],
+}).refine(data => {
+    if (data.recurrence === 'one-time' && !data.date) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Para clases únicas, la fecha es obligatoria.",
+    path: ["date"],
 });
 
 type ClassFormValues = z.infer<typeof classFormSchema>;
@@ -66,6 +80,7 @@ export default function AdminClassesPage() {
       duration: '60 min',
       recurrence: 'one-time',
       recurrenceMonths: 1,
+      date: new Date(),
     },
   });
 
@@ -80,6 +95,7 @@ export default function AdminClassesPage() {
       form.reset({
         ...danceClass,
         recurrenceMonths: danceClass.recurrenceMonths || 1,
+        date: danceClass.date ? new Date(danceClass.date) : undefined,
       });
     } else {
       form.reset({
@@ -93,6 +109,7 @@ export default function AdminClassesPage() {
         duration: '60 min',
         recurrence: 'one-time',
         recurrenceMonths: 1,
+        date: new Date(),
       });
     }
     setIsDialogOpen(true);
@@ -103,14 +120,19 @@ export default function AdminClassesPage() {
       title: `Clase ${editingClass ? 'actualizada' : 'creada'} con éxito`,
       description: `La clase "${data.name}" ha sido guardada (simulación).`,
     });
-    // Lógica de simulación para añadir/editar
+    
+    const dataToSave = {
+      ...data,
+      date: data.date ? format(data.date, 'yyyy-MM-dd') : undefined,
+      teacherAvatar: teachers.find(t => t.name === data.teacher)?.avatar || 'https://placehold.co/100x100.png',
+    };
+
     if (editingClass) {
-      setClasses(classes.map(c => c.id === editingClass.id ? { ...c, ...data, id: c.id, teacherAvatar: c.teacherAvatar } : c));
+      setClasses(classes.map(c => c.id === editingClass.id ? { ...c, ...dataToSave, id: c.id } : c));
     } else {
       const newClass: DanceClass = {
-        ...data,
+        ...dataToSave,
         id: `clase-${Date.now()}`,
-        teacherAvatar: teachers.find(t => t.name === data.teacher)?.avatar || 'https://placehold.co/100x100.png',
       };
       setClasses([...classes, newClass]);
     }
@@ -148,7 +170,7 @@ export default function AdminClassesPage() {
                 <TableRow>
                   <TableHead>Clase</TableHead>
                   <TableHead className="hidden sm:table-cell">Profesor</TableHead>
-                  <TableHead className="hidden md:table-cell">Horario</TableHead>
+                  <TableHead className="hidden md:table-cell">Horario y Tipo</TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -165,7 +187,11 @@ export default function AdminClassesPage() {
                            <Calendar className="h-4 w-4" /> {danceClass.day}, {danceClass.time}
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                           <Clock className="h-3 w-3" /> {danceClass.recurrence === 'recurring' ? `Recurrente (${danceClass.recurrenceMonths} meses)` : 'Clase Única'}
+                           <Clock className="h-3 w-3" />
+                           {danceClass.recurrence === 'recurring' 
+                             ? `Recurrente (${danceClass.recurrenceMonths} meses)` 
+                             : `Única: ${danceClass.date ? format(new Date(danceClass.date), "PPP", { locale: es }) : 'N/A'}`
+                           }
                         </div>
                     </TableCell>
                     <TableCell>
@@ -261,7 +287,7 @@ export default function AdminClassesPage() {
                   <FormItem className="md:col-span-2"><FormLabel>Recurrencia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecciona tipo de recurrencia" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      <SelectItem value="one-time">Clase Única</SelectItem>
+                      <SelectItem value="one-time">Clase Única (Taller)</SelectItem>
                       <SelectItem value="recurring">Clase Recurrente</SelectItem>
                     </SelectContent>
                   </Select><FormMessage /></FormItem>
@@ -275,6 +301,48 @@ export default function AdminClassesPage() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                )}
+                {recurrenceType === 'one-time' && (
+                   <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col md:col-span-2">
+                        <FormLabel>Fecha de la Clase Única</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP", { locale: es })
+                                ) : (
+                                  <span>Elige una fecha</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date < new Date("2000-01-01") }
+                              initialFocus
+                              locale={es}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
               </div>
               <DialogFooter>

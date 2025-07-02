@@ -43,6 +43,7 @@ export default function LoginPage() {
                   <SelectItem value="student">Estudiante</SelectItem>
                   <SelectItem value="teacher">Profesor</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
+                  <SelectItem value="administrativo">Administrativo</SelectItem>
                 </SelectContent>
               </Select>
             </div>

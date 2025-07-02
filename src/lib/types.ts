@@ -2,6 +2,7 @@
 export type DanceStyle = {
   id: string;
   name: string;
+  description: string;
 };
 
 export type DanceLevel = {
@@ -52,6 +53,7 @@ export type DanceClass = {
   duration: string; // e.g. '60 min'
   recurrence: 'one-time' | 'recurring';
   recurrenceMonths?: number;
+  date?: string;
 };
 
 export type Teacher = {
@@ -65,9 +67,7 @@ export type User = {
     id: number;
     name: string;
     email: string;
-    role: 'Estudiante' | 'Profesor' | 'Administrador';
+    role: 'Estudiante' | 'Profesor' | 'Administrador' | 'Administrativo';
     joined: string;
     avatar: string;
 }
-
-    

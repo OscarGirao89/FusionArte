@@ -16,12 +16,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { MoreHorizontal, PlusCircle, Pencil, Trash2 } from 'lucide-react';
 
 const styleFormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "El nombre es obligatorio."),
+  description: z.string().min(1, "La descripción es obligatoria."),
 });
 
 type StyleFormValues = z.infer<typeof styleFormSchema>;
@@ -34,7 +36,7 @@ export default function AdminStylesPage() {
 
   const form = useForm<StyleFormValues>({
     resolver: zodResolver(styleFormSchema),
-    defaultValues: { name: '' },
+    defaultValues: { name: '', description: '' },
   });
 
   const handleOpenDialog = (style: DanceStyle | null = null) => {
@@ -42,7 +44,7 @@ export default function AdminStylesPage() {
     if (style) {
       form.reset(style);
     } else {
-      form.reset({ name: '' });
+      form.reset({ name: '', description: '' });
     }
     setIsDialogOpen(true);
   };
@@ -57,8 +59,9 @@ export default function AdminStylesPage() {
       setStyles(styles.map(s => s.id === editingStyle.id ? { ...editingStyle, ...data } : s));
     } else {
       const newStyle: DanceStyle = {
-        ...data,
         id: data.name.toLowerCase().replace(/\s+/g, '-'),
+        name: data.name,
+        description: data.description,
       };
       setStyles([...styles, newStyle]);
     }
@@ -96,6 +99,7 @@ export default function AdminStylesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nombre del Estilo</TableHead>
+                  <TableHead className="hidden sm:table-cell">Descripción</TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -103,6 +107,7 @@ export default function AdminStylesPage() {
                 {styles.map((style) => (
                   <TableRow key={style.id}>
                     <TableCell className="font-medium">{style.name}</TableCell>
+                    <TableCell className="hidden sm:table-cell max-w-sm truncate">{style.description}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -157,6 +162,9 @@ export default function AdminStylesPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem><FormLabel>Nombre del Estilo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="description" render={({ field }) => (
+                <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>

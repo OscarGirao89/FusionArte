@@ -25,7 +25,7 @@ import { MoreVertical, UserPlus, Pencil, Trash2 } from 'lucide-react';
 const userFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   email: z.string().email("Email inválido."),
-  role: z.enum(['Estudiante', 'Profesor', 'Administrador'], {
+  role: z.enum(['Estudiante', 'Profesor', 'Administrador', 'Administrativo'], {
     required_error: "Debes seleccionar un rol."
   }),
 });
@@ -36,10 +36,11 @@ type UserFormValues = z.infer<typeof userFormSchema>;
 const roleVariant: { [key: string]: "default" | "secondary" | "destructive" } = {
     'Administrador': 'destructive',
     'Profesor': 'default',
-    'Estudiante': 'secondary'
+    'Estudiante': 'secondary',
+    'Administrativo': 'secondary'
 }
 
-const userRoles: User['role'][] = ['Estudiante', 'Profesor', 'Administrador'];
+const userRoles: User['role'][] = ['Estudiante', 'Profesor', 'Administrador', 'Administrativo'];
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<User[]>(initialUsers);
