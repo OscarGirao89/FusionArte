@@ -4,10 +4,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Overview } from '@/components/dashboard/overview';
 import { UpcomingClasses } from '@/components/dashboard/upcoming-classes';
 import { SmartSuggestion } from '@/components/dashboard/smart-suggestion';
-import { HandHelping, CalendarClock, Bot, Users } from 'lucide-react';
+import { HandHelping, CalendarClock, Bot, Users, BarChart } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
+import { danceClasses, danceStyles, users as allUsers } from '@/lib/data';
+import { userProfiles } from '@/components/layout/main-nav';
 
 function StudentDashboard() {
+  const popularStylesData = [
+    { name: 'Salsa', total: 420 },
+    { name: 'Bachata', total: 510 },
+    { name: 'M-Zouk', total: 280 },
+    { name: 'Aeroyoga', total: 150 },
+    { name: 'Elongación', total: 350 },
+  ];
+
+  const popularStylesConfig = {
+    total: {
+      label: 'Inscripciones',
+      color: 'hsl(var(--chart-2))',
+    },
+  };
+
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -45,13 +62,13 @@ function StudentDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-full lg:col-span-4">
           <CardHeader>
-            <CardTitle className="font-headline">Rendimiento de Profesores</CardTitle>
+            <CardTitle className="font-headline">Popularidad de Estilos</CardTitle>
             <CardDescription>
-              Clases mensuales impartidas por cada profesor.
+              Inscripciones totales por estilo de baile este año.
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <Overview />
+            <Overview data={popularStylesData} config={popularStylesConfig} categoryKey="name" dataKey="total"/>
           </CardContent>
         </Card>
         <Card className="col-span-full lg:col-span-3">
@@ -84,23 +101,47 @@ function StudentDashboard() {
 }
 
 function TeacherDashboard() {
+  const { userRole } = useAuth();
+  const teacherName = userRole ? userProfiles[userRole]?.name : '';
+  const myClasses = danceClasses.filter(c => c.teacher === teacherName);
+
+  const classesByDay = myClasses.reduce((acc, currentClass) => {
+      const day = currentClass.day;
+      if (!acc[day]) {
+          acc[day] = 0;
+      }
+      acc[day]++;
+      return acc;
+  }, {} as Record<string, number>);
+  
+  const daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  
+  const teacherPerformanceData = daysOrder.map(day => ({
+      name: day.substring(0,3),
+      total: classesByDay[day] || 0
+  }));
+
+  const teacherChartConfig = {
+      total: { label: "Clases", color: "hsl(var(--chart-1))" },
+  };
+
   return (
      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-full lg:col-span-4">
           <CardHeader>
-            <CardTitle className="font-headline">Tu Rendimiento</CardTitle>
+            <CardTitle className="font-headline">Tus Clases de la Semana</CardTitle>
             <CardDescription>
-              Clases que has impartido este mes.
+              Número de clases que impartes cada día.
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <Overview />
+            <Overview data={teacherPerformanceData} config={teacherChartConfig} categoryKey="name" dataKey="total" />
           </CardContent>
         </Card>
         <Card className="col-span-full lg:col-span-3">
           <CardHeader>
             <CardTitle className="font-headline">Tus Próximas Clases</CardTitle>
-            <CardDescription>Tienes 3 clases programadas esta semana.</CardDescription>
+            <CardDescription>Estas son algunas de tus próximas clases.</CardDescription>
           </CardHeader>
           <CardContent>
             <UpcomingClasses />
@@ -111,6 +152,16 @@ function TeacherDashboard() {
 }
 
 function AdminDashboard() {
+   const teacherData = allUsers.filter(u => u.role === 'Profesor').map(teacher => {
+        return {
+            name: teacher.name.split(' ')[0], // Use first name
+            total: danceClasses.filter(c => c.teacher === teacher.name && c.status === 'completed').length,
+        }
+    });
+   const teacherPerformanceConfig = {
+      total: { label: 'Clases', color: 'hsl(var(--primary))' },
+    };
+
   return (
     <>
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -150,11 +201,11 @@ function AdminDashboard() {
           <CardHeader>
             <CardTitle className="font-headline">Rendimiento General de Profesores</CardTitle>
             <CardDescription>
-              Clases mensuales impartidas por cada profesor.
+              Clases mensuales completadas por cada profesor.
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <Overview />
+            <Overview data={teacherData} config={teacherPerformanceConfig} categoryKey="name" dataKey="total" />
           </CardContent>
         </Card>
       </div>
@@ -173,6 +224,8 @@ export default function DashboardPage() {
         return <TeacherDashboard />;
       case 'admin':
         return <AdminDashboard />;
+      case 'administrativo':
+        return <AdminDashboard />; // Same as admin for now
       default:
         return <div>Cargando...</div>;
     }

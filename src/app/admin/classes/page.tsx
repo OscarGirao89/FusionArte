@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -21,12 +20,13 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon, Users, ClipboardCheck, Palette, Signal, Building, Download, Printer } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon, Users, ClipboardCheck, Palette, Signal, Building, Download, Printer, XCircle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const classFormSchema = z.object({
   id: z.string().optional(),
@@ -105,6 +105,10 @@ export default function AdminClassesPage() {
   const [classes, setClasses] = useState<DanceClass[]>(initialClasses);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<DanceClass | null>(null);
+  const [classToCancel, setClassToCancel] = useState<DanceClass | null>(null);
+  const [cancelReason, setCancelReason] = useState<'cancelled-low-attendance' | 'cancelled-teacher'>('cancelled-low-attendance');
+  const [hideOnSchedule, setHideOnSchedule] = useState(false);
+
   const { toast } = useToast();
   const router = useRouter();
 
@@ -160,10 +164,13 @@ export default function AdminClassesPage() {
     }
     setIsDialogOpen(true);
   };
+  
+  const handleOpenCancelDialog = (danceClass: DanceClass) => {
+    setClassToCancel(danceClass);
+  };
 
   const onSubmit = (data: ClassFormValues) => {
     // Basic overlap check (simulation)
-    // A real implementation would need more robust logic for time comparisons.
     const isOverlapping = classes.some(c => {
         if (editingClass && c.id === editingClass.id) return false;
         if (c.room !== data.room) return false;
@@ -225,7 +232,6 @@ export default function AdminClassesPage() {
       setClasses([...classes, finalData]);
     }
 
-    // In a real app, creating a rental would also create a transaction.
     if(finalData.type === 'rental' && !editingClass) {
         console.log(`Creating rental, a transaction for ${finalData.rentalPrice} should be added to finances.`);
     }
@@ -242,6 +248,24 @@ export default function AdminClassesPage() {
       variant: "destructive"
     });
   }
+  
+  const handleConfirmCancel = () => {
+    if (!classToCancel) return;
+
+    setClasses(classes.map(c => 
+        c.id === classToCancel.id 
+        ? { ...c, status: cancelReason, isCancelledAndHidden: hideOnSchedule } 
+        : c
+    ));
+    
+    toast({
+        title: "Clase cancelada",
+        description: `La clase "${classToCancel.name}" ha sido cancelada.`
+    });
+    
+    setClassToCancel(null);
+  }
+
 
   const handleExportCSV = () => {
     const headers = ["ID", "Evento", "Tipo", "Profesor/Responsable", "Dia/Fecha", "Hora", "Sala"];
@@ -324,7 +348,7 @@ export default function AdminClassesPage() {
               </TableHeader>
               <TableBody>
                 {classes.map((danceClass) => (
-                  <TableRow key={danceClass.id}>
+                  <TableRow key={danceClass.id} className={danceClass.status.startsWith('cancelled') ? 'bg-red-50/50 dark:bg-red-900/10' : ''}>
                     <TableCell>
                       <p className="font-medium">{danceClass.name}</p>
                       {danceClass.type !== 'rental' && (
@@ -362,6 +386,9 @@ export default function AdminClassesPage() {
                             <ClipboardCheck className="mr-2 h-4 w-4" /> Tomar Asistencia
                           </DropdownMenuItem>
                           )}
+                          <DropdownMenuItem onClick={() => handleOpenCancelDialog(danceClass)}>
+                            <XCircle className="mr-2 h-4 w-4" /> Cancelar
+                          </DropdownMenuItem>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
@@ -551,6 +578,49 @@ export default function AdminClassesPage() {
           </Form>
         </DialogContent>
       </Dialog>
+      
+      <AlertDialog open={!!classToCancel} onOpenChange={(isOpen) => !isOpen && setClassToCancel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar Clase</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que quieres cancelar la clase "{classToCancel?.name}"? Esta acción afectará a la nómina del profesor.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+                <Label htmlFor="cancel-reason">Motivo de la cancelación</Label>
+                <Select value={cancelReason} onValueChange={(value) => setCancelReason(value as any)}>
+                    <SelectTrigger id="cancel-reason"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="cancelled-low-attendance">Cancelada por baja asistencia</SelectItem>
+                        <SelectItem value="cancelled-teacher">Cancelada por el profesor</e
+>
+                    </SelectContent>
+                </Select>
+                 <p className="text-xs text-muted-foreground">
+                    Esto determina si se aplica la compensación por cancelación al profesor.
+                </p>
+            </div>
+            <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                    <Label htmlFor="hide-on-schedule">Ocultar del horario público</Label>
+                    <p className="text-xs text-muted-foreground">Si se activa, la clase cancelada no aparecerá en el calendario general.</p>
+                </div>
+                <Switch
+                    id="hide-on-schedule"
+                    checked={hideOnSchedule}
+                    onCheckedChange={setHideOnSchedule}
+                />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setClassToCancel(null)}>Volver</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmCancel}>Confirmar Cancelación</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }

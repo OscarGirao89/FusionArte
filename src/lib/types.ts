@@ -62,6 +62,7 @@ export type DanceClass = {
   // Type-specific fields
   recurrenceMonths?: number; // For 'recurring'
   date?: string; // "YYYY-MM-DD" for 'one-time', 'workshop', 'rental'
+  isCancelledAndHidden?: boolean; // For cancelled classes, to hide from public schedule
   isVisibleToStudents?: boolean; // For 'rental'
   rentalPrice?: number; // For 'rental'
   workshopPaymentType?: 'fixed' | 'percentage'; // For 'workshop'

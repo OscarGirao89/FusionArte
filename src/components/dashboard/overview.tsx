@@ -6,27 +6,19 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 
-const data = [
-  { name: 'Elena G.', total: 42 },
-  { name: 'Carlos R.', total: 35 },
-  { name: 'Aisha J.', total: 51 },
-  { name: 'Liam S.', total: 28 },
-  { name: 'Estudio', total: 12 },
-];
+type OverviewProps = {
+  data: any[];
+  config: ChartConfig;
+  dataKey: string;
+  categoryKey: string;
+}
 
-const chartConfig = {
-  total: {
-    label: 'Clases',
-    color: 'hsl(var(--primary))',
-  },
-} satisfies ChartConfig;
-
-export function Overview() {
+export function Overview({ data, config, dataKey, categoryKey }: OverviewProps) {
   return (
-    <ChartContainer config={chartConfig} className="h-[350px] w-full">
+    <ChartContainer config={config} className="h-[350px] w-full">
       <BarChart accessibilityLayer data={data}>
         <XAxis
-          dataKey="name"
+          dataKey={categoryKey}
           stroke="#888888"
           fontSize={12}
           tickLine={false}
@@ -43,7 +35,7 @@ export function Overview() {
           cursor={{ fill: 'hsl(var(--accent) / 0.2)' }}
           content={<ChartTooltipContent />}
         />
-        <Bar dataKey="total" fill="var(--color-total)" radius={[4, 4, 0, 0]} />
+        <Bar dataKey={dataKey} fill={`var(--color-${dataKey})`} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ChartContainer>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { danceClasses } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,32 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { userProfiles } from '@/components/layout/main-nav';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { parse, addMinutes, subMinutes, isWithinInterval } from 'date-fns';
+
+const isWithinAttendanceWindow = (day: string, time: string, duration: string): boolean => {
+    const daysOfWeek = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const now = new Date();
+
+    const classDayIndex = daysOfWeek.indexOf(day);
+    if (classDayIndex === -1) return false;
+
+    // Create a date for the class on the correct day of the current week
+    const classDate = new Date(now);
+    classDate.setDate(now.getDate() - now.getDay() + classDayIndex);
+
+    const [hour, minute] = time.split(':').map(Number);
+    classDate.setHours(hour, minute, 0, 0);
+
+    const durationInMinutes = parseInt(duration.replace(' min', ''));
+
+    const attendanceStart = subMinutes(classDate, 30);
+    const attendanceEnd = addMinutes(classDate, durationInMinutes + 30);
+    
+    // Check if 'now' is within the attendance window
+    return isWithinInterval(now, { start: attendanceStart, end: attendanceEnd });
+};
+
 
 export default function MyClassesPage() {
   const router = useRouter();
@@ -15,6 +42,11 @@ export default function MyClassesPage() {
   const teacherName = userRole ? userProfiles[userRole]?.name : '';
   
   const myClasses = danceClasses.filter(c => c.teacher === teacherName);
+  
+  const completedClassesCount = useMemo(() => {
+    return myClasses.filter(c => c.status === 'completed').length;
+  }, [myClasses]);
+
   const upcomingClasses = myClasses.slice(0, 3); // Example filter for upcoming
 
   return (
@@ -23,7 +55,7 @@ export default function MyClassesPage() {
         <h1 className="text-3xl font-bold tracking-tight font-headline">Mis Clases</h1>
         <div className="text-right">
             <p className="font-bold text-lg">{teacherName}</p>
-            <p className="text-sm text-muted-foreground">Profesora</p>
+            <p className="text-sm text-muted-foreground">Profesor/a</p>
         </div>
       </div>
       
@@ -31,7 +63,10 @@ export default function MyClassesPage() {
         <Card>
             <CardHeader>
                 <CardTitle>Resumen Semanal</CardTitle>
-                <CardDescription>Tienes un total de <span className="font-bold text-primary">{myClasses.length}</span> clases asignadas.</CardDescription>
+                <CardDescription>
+                    Tienes un total de <span className="font-bold text-primary">{myClasses.length}</span> clases asignadas esta semana.
+                    Has completado <span className="font-bold text-primary">{completedClassesCount}</span> clases hasta ahora.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <h3 className="text-lg font-semibold mb-4 font-headline">Próximas Clases Destacadas</h3>
@@ -48,9 +83,22 @@ export default function MyClassesPage() {
                                 <p className="flex items-center gap-2"><Clock className="h-4 w-4" /> {c.duration}</p>
                             </CardContent>
                             <CardFooter>
-                                <Button variant="outline" className="w-full" onClick={() => router.push(`/my-classes/${c.id}/attendance`)}>
-                                    <Users className="mr-2 h-4 w-4" /> Ver Alumnos
-                                </Button>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <div className="w-full">
+                                                <Button variant="outline" className="w-full" disabled={!isWithinAttendanceWindow(c.day, c.time, c.duration)} onClick={() => router.push(`/my-classes/${c.id}/attendance`)}>
+                                                    <Users className="mr-2 h-4 w-4" /> Pasar Lista
+                                                </Button>
+                                            </div>
+                                        </TooltipTrigger>
+                                        {!isWithinAttendanceWindow(c.day, c.time, c.duration) && (
+                                            <TooltipContent>
+                                                <p>La toma de asistencia se habilita 30 min antes y hasta 30 min después de la clase.</p>
+                                            </TooltipContent>
+                                        )}
+                                    </Tooltip>
+                                </TooltipProvider>
                             </CardFooter>
                          </Card>
                     ))}
@@ -65,18 +113,33 @@ export default function MyClassesPage() {
             </CardHeader>
             <CardContent>
                 <ul className="space-y-4">
-                    {myClasses.map(c => (
-                        <li key={c.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg">
-                            <div className="mb-4 sm:mb-0">
-                                <p className="font-bold">{c.name} - {c.levelId}</p>
-                                <p className="text-sm text-muted-foreground">{c.day} a las {c.time} en {c.room}</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button variant="secondary" size="sm" onClick={() => router.push(`/my-classes/${c.id}/attendance`)}><Users className="mr-2 h-4 w-4" /> Alumnos</Button>
-                                <Button variant="outline" size="sm" onClick={() => router.push(`/my-classes/${c.id}/attendance`)}><BookCheck className="mr-2 h-4 w-4" /> Pasar Lista</Button>
-                            </div>
-                        </li>
-                    ))}
+                    {myClasses.map(c => {
+                        const canTakeAttendance = isWithinAttendanceWindow(c.day, c.time, c.duration);
+                        return (
+                            <li key={c.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg">
+                                <div className="mb-4 sm:mb-0">
+                                    <p className="font-bold">{c.name} - {c.levelId}</p>
+                                    <p className="text-sm text-muted-foreground">{c.day} a las {c.time} en {c.room}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                     <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div className="w-full">
+                                                    <Button variant="secondary" size="sm" disabled={!canTakeAttendance} onClick={() => router.push(`/my-classes/${c.id}/attendance`)}><BookCheck className="mr-2 h-4 w-4" /> Pasar Lista</Button>
+                                                </div>
+                                            </TooltipTrigger>
+                                            {!canTakeAttendance && (
+                                                <TooltipContent>
+                                                    <p>La asistencia solo puede tomarse durante la clase.</p>
+                                                </TooltipContent>
+                                            )}
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
+                            </li>
+                        )
+                    })}
                 </ul>
             </CardContent>
         </Card>
