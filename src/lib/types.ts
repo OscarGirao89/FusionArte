@@ -116,4 +116,21 @@ export type StudentMembership = {
   classesRemaining?: number;
 }
 
+export type Permission = 
+  | 'view_dashboard'
+  | 'manage_users'
+  | 'manage_students'
+  | 'manage_classes'
+  | 'manage_memberships'
+  | 'manage_finances'
+  | 'manage_settings'
+  | 'manage_roles'
+  | 'view_teacher_area'
+  | 'take_attendance';
+
+export type Role = {
+  id: string;
+  name: string;
+  permissions: Permission[];
+};
     

@@ -26,6 +26,7 @@ import {
   DollarSign,
   Banknote,
   GraduationCap,
+  ShieldCheck,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -66,6 +67,7 @@ const adminNavItems = [
     { href: '/admin/classes', label: 'Gestión de Clases', icon: ClipboardList },
     { href: '/admin/memberships', label: 'Gestión de Membresías', icon: CreditCard },
     { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
+    { href: '/admin/roles', label: 'Gestión de Roles', icon: ShieldCheck },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];
 

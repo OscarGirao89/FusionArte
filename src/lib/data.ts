@@ -1,5 +1,5 @@
 
-import type { MembershipPlan, DanceClass, User, DanceStyle, DanceLevel, StudentMembership } from './types';
+import type { MembershipPlan, DanceClass, User, DanceStyle, DanceLevel, StudentMembership, Role } from './types';
 
 export const danceStyles: DanceStyle[] = [
   { id: 'salsa', name: 'Salsa', description: 'Ritmos latinos vibrantes y enérgicos. Origen cubano y puertorriqueño.' },
@@ -159,4 +159,46 @@ export const danceClasses: DanceClass[] = [
 
 ];
 
+export const roles: Role[] = [
+    {
+      id: 'admin',
+      name: 'Administrador',
+      permissions: [
+        'view_dashboard',
+        'manage_users',
+        'manage_students',
+        'manage_classes',
+        'manage_memberships',
+        'manage_finances',
+        'manage_settings',
+        'manage_roles',
+        'take_attendance'
+      ]
+    },
+    {
+      id: 'teacher',
+      name: 'Profesor',
+      permissions: [
+        'view_dashboard',
+        'view_teacher_area',
+        'take_attendance'
+      ]
+    },
+    {
+      id: 'student',
+      name: 'Estudiante',
+      permissions: [
+        'view_dashboard',
+      ]
+    },
+    {
+      id: 'administrative',
+      name: 'Administrativo',
+      permissions: [
+        'view_dashboard',
+        'manage_students',
+        'take_attendance'
+      ]
+    }
+  ];
     
