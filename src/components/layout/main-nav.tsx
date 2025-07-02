@@ -41,6 +41,7 @@ import { LogoIcon } from '@/components/icons/logo-icon';
 const navItems = {
   student: [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/profile', label: 'Mi Perfil', icon: User },
     { href: '/schedule', label: 'Horario de Clases', icon: Calendar },
     { href: '/memberships', label: 'Membresías', icon: CreditCard },
     { href: '/teachers', label: 'Profesores', icon: Users },
@@ -81,7 +82,7 @@ const adminNavItems = [
 ];
 
 export const userProfiles: Record<UserRole, { id: number; name: string; role: string; avatar: string }> = {
-    student: { id: 1, name: 'Alex Doe', role: 'Estudiante', avatar: 'https://placehold.co/100x100.png?text=A' },
+    student: { id: 1, name: 'Ana López', role: 'Estudiante', avatar: 'https://placehold.co/100x100.png?text=AL' },
     teacher: { id: 2, name: 'Oscar Girao', role: 'Profesor', avatar: 'https://placehold.co/100x100.png?text=OG' },
     admin: { id: 4, name: 'Admin FusionArte', role: 'Administrador/a', avatar: 'https://placehold.co/100x100.png?text=AF' },
     administrativo: { id: 7, name: 'Laura Martinez', role: 'Recepción', avatar: 'https://placehold.co/100x100.png?text=LM' },

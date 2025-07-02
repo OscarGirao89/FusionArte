@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { studentPayments as initialPayments } from '@/lib/finances-data';
 import { users, membershipPlans } from '@/lib/data';
-import type { StudentPayment } from '@/lib/types';
+import type { StudentPayment, User } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,12 +16,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { DollarSign, Download, Edit, Printer, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { DollarSign, Download, Edit, Printer, TrendingDown, TrendingUp, Wallet, PlusCircle } from 'lucide-react';
 
 const paymentEditSchema = z.object({
   id: z.string(),
@@ -31,15 +31,28 @@ const paymentEditSchema = z.object({
 
 type PaymentEditFormValues = z.infer<typeof paymentEditSchema>;
 
+const newInvoiceSchema = z.object({
+  studentId: z.string().min(1, "Debes seleccionar un alumno."),
+  planId: z.string().min(1, "Debes seleccionar un plan."),
+});
+type NewInvoiceFormValues = z.infer<typeof newInvoiceSchema>;
+
 export default function AdminPaymentsPage() {
   const [payments, setPayments] = useState<StudentPayment[]>(initialPayments);
   const [editingPayment, setEditingPayment] = useState<StudentPayment | null>(null);
+  const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
   const { toast } = useToast();
-  const { userRole } = useAuth();
+  const { userRole, updateStudentMembership, addStudentPayment } = useAuth();
   const isAdmin = userRole === 'admin';
 
-  const form = useForm<PaymentEditFormValues>({
+  const students = users.filter(u => u.role === 'Estudiante');
+
+  const editForm = useForm<PaymentEditFormValues>({
     resolver: zodResolver(paymentEditSchema),
+  });
+
+  const newInvoiceForm = useForm<NewInvoiceFormValues>({
+      resolver: zodResolver(newInvoiceSchema),
   });
   
   const getStudentName = (id: number) => users.find(u => u.id === id)?.name || 'Desconocido';
@@ -47,37 +60,80 @@ export default function AdminPaymentsPage() {
 
   const handleOpenDialog = (payment: StudentPayment) => {
     setEditingPayment(payment);
-    form.reset({
+    editForm.reset({
       id: payment.id,
       status: payment.status,
       amountPaid: payment.amountPaid,
     });
   };
   
-  const onSubmit = (data: PaymentEditFormValues) => {
+  const onEditSubmit = (data: PaymentEditFormValues) => {
     if (!editingPayment) return;
     
     const totalAmount = editingPayment.totalAmount;
     if (data.amountPaid > totalAmount) {
-        form.setError("amountPaid", { type: "manual", message: "El monto pagado no puede exceder el total."});
+        editForm.setError("amountPaid", { type: "manual", message: "El monto pagado no puede exceder el total."});
         return;
     }
 
-    setPayments(prev => prev.map(p => 
-        p.id === data.id
-        ? {
-            ...p,
-            status: data.status,
-            amountPaid: data.amountPaid,
-            amountDue: totalAmount - data.amountPaid,
-            lastUpdatedBy: users.find(u => u.role === 'Administrador')?.name || 'Admin', // Simulación
-            lastUpdatedDate: new Date().toISOString()
-        }
-        : p
-    ));
+    const updatedPayment = {
+        ...editingPayment,
+        status: data.status,
+        amountPaid: data.amountPaid,
+        amountDue: totalAmount - data.amountPaid,
+        lastUpdatedBy: users.find(u => u.role === 'Administrador')?.name || 'Admin', // Simulación
+        lastUpdatedDate: new Date().toISOString()
+    };
+    
+    // Update local state and global context if available
+    setPayments(prev => prev.map(p => p.id === data.id ? updatedPayment : p));
+    if (addStudentPayment) { // This is a check for the new context function
+        addStudentPayment(updatedPayment, true); // true to indicate update
+    }
+
 
     toast({ title: "Pago actualizado", description: "El estado del pago ha sido guardado." });
     setEditingPayment(null);
+  }
+
+  const onNewInvoiceSubmit = (data: NewInvoiceFormValues) => {
+      const student = users.find(u => u.id === Number(data.studentId));
+      const plan = membershipPlans.find(p => p.id === data.planId);
+
+      if (!student || !plan) {
+          toast({ title: "Error", description: "Alumno o plan no encontrado.", variant: "destructive" });
+          return;
+      }
+      
+      const newPayment: StudentPayment = {
+          id: `inv-${Date.now()}`,
+          studentId: student.id,
+          planId: plan.id,
+          invoiceDate: new Date().toISOString(),
+          totalAmount: plan.price,
+          status: 'pending',
+          amountPaid: 0,
+          amountDue: plan.price,
+          lastUpdatedBy: users.find(u => u.role === 'Administrador')?.name || 'Admin',
+          lastUpdatedDate: new Date().toISOString(),
+      };
+
+      setPayments(prev => [newPayment, ...prev]);
+      addStudentPayment(newPayment);
+
+      const membershipEndDate = new Date();
+      membershipEndDate.setMonth(membershipEndDate.getMonth() + plan.durationValue);
+      
+      updateStudentMembership(student.id, {
+          planId: plan.id,
+          startDate: new Date().toISOString(),
+          endDate: membershipEndDate.toISOString(),
+          classesRemaining: plan.accessType === 'class_pack' ? plan.classCount : undefined,
+      });
+
+      toast({ title: "Factura creada", description: `Se ha creado una factura para ${student.name}.` });
+      setIsNewInvoiceOpen(false);
+      newInvoiceForm.reset();
   }
 
   const totals = payments.reduce((acc, p) => {
@@ -167,6 +223,41 @@ export default function AdminPaymentsPage() {
                     <Button variant="outline" size="sm" onClick={handlePrint}>
                         <Printer className="mr-2 h-4 w-4" /> Imprimir
                     </Button>
+                    <Dialog open={isNewInvoiceOpen} onOpenChange={setIsNewInvoiceOpen}>
+                        <DialogTrigger asChild>
+                            <Button size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Crear Factura</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Crear Nueva Factura</DialogTitle>
+                                <DialogDescription>Genera una nueva factura para un alumno.</DialogDescription>
+                            </DialogHeader>
+                            <Form {...newInvoiceForm}>
+                                <form onSubmit={newInvoiceForm.handleSubmit(onNewInvoiceSubmit)} className="space-y-4 py-4">
+                                     <FormField control={newInvoiceForm.control} name="studentId" render={({ field }) => (
+                                      <FormItem><FormLabel>Alumno</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar alumno..." /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                          {students.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                                        </SelectContent>
+                                      </Select><FormMessage /></FormItem>
+                                    )} />
+                                     <FormField control={newInvoiceForm.control} name="planId" render={({ field }) => (
+                                      <FormItem><FormLabel>Plan de Membresía</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                          {membershipPlans.map(p => <SelectItem key={p.id} value={p.id}>{p.title} (€{p.price})</SelectItem>)}
+                                        </SelectContent>
+                                      </Select><FormMessage /></FormItem>
+                                    )} />
+                                    <DialogFooter>
+                                        <Button type="button" variant="ghost" onClick={() => setIsNewInvoiceOpen(false)}>Cancelar</Button>
+                                        <Button type="submit">Crear Factura</Button>
+                                    </DialogFooter>
+                                </form>
+                            </Form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
         </CardHeader>
@@ -228,9 +319,9 @@ export default function AdminPaymentsPage() {
                     Actualiza el estado del pago para {getStudentName(editingPayment?.studentId ?? 0)}.
                 </DialogDescription>
             </DialogHeader>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                     <FormField control={form.control} name="status" render={({ field }) => (
+            <Form {...editForm}>
+                <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4 py-4">
+                     <FormField control={editForm.control} name="status" render={({ field }) => (
                       <FormItem><FormLabel>Estado del Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -240,7 +331,7 @@ export default function AdminPaymentsPage() {
                         </SelectContent>
                       </Select><FormMessage /></FormItem>
                     )} />
-                     <FormField control={form.control} name="amountPaid" render={({ field }) => (
+                     <FormField control={editForm.control} name="amountPaid" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Monto Pagado (€)</FormLabel>
                             <FormControl><Input type="number" step="0.01" {...field} /></FormControl>

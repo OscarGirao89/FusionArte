@@ -9,6 +9,7 @@ import { Check, Star, TicketPercent } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 const getPlanPriceDisplay = (plan: MembershipPlan) => {
   if (plan.accessType === 'unlimited') {
@@ -26,20 +27,14 @@ const getPlanPriceDisplay = (plan: MembershipPlan) => {
 };
 
 function PlanCard({ plan }: { plan: MembershipPlan }) {
-  const router = useRouter();
+  const { toast } = useToast();
   
-  const getButtonInfo = () => {
-    switch(plan.accessType) {
-      case 'unlimited':
-        return { text: 'Ver Horario y Elegir Clases', action: () => router.push('/schedule') };
-      case 'class_pack':
-        return { text: 'Ver Horario y Seleccionar Clases', action: () => router.push('/schedule') };
-      default:
-        return { text: 'Comprar Ahora', action: () => alert('Proceso de compra no implementado en este prototipo.') };
-    }
-  }
-
-  const { text, action } = getButtonInfo();
+  const handleAcquirePlan = () => {
+      toast({
+          title: "Solicitud Recibida",
+          description: "Tu solicitud de membresía ha sido enviada. El administrador creará tu factura y te aparecerá en tu perfil.",
+      });
+  };
 
   return (
     <Card className={cn(
@@ -70,8 +65,8 @@ function PlanCard({ plan }: { plan: MembershipPlan }) {
         </ul>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" variant={plan.isPopular ? 'default' : 'outline'} onClick={action}>
-          {text}
+        <Button className="w-full" variant={plan.isPopular ? 'default' : 'outline'} onClick={handleAcquirePlan}>
+          Adquirir Plan
         </Button>
       </CardFooter>
     </Card>
