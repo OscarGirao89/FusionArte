@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle2, DollarSign, MinusCircle, Percent, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, DollarSign, Handshake, MinusCircle, Percent, XCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; color: string } => {
     switch (status) {
@@ -80,8 +81,8 @@ export function TeacherPayroll() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nómina de Profesores (Simulación)</CardTitle>
-        <CardDescription>Calcula el pago pendiente para cada profesor basado en las clases impartidas este mes y su tipo de contrato.</CardDescription>
+        <CardTitle>Nómina y Resumen de Socios</CardTitle>
+        <CardDescription>Calcula el pago para profesores y socios basado en las clases del mes y su tipo de contrato.</CardDescription>
       </CardHeader>
       <CardContent>
         <Accordion type="single" collapsible className="w-full">
@@ -96,9 +97,17 @@ export function TeacherPayroll() {
                                 </Avatar>
                                 <div>
                                     <p className="font-medium">{teacher.name}</p>
-                                    <p className="text-sm text-muted-foreground capitalize">
-                                        {teacher.paymentDetails?.type === 'per_class' ? 'Pago por Evento' : 'Salario Mensual'}
-                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm text-muted-foreground capitalize">
+                                            {teacher.paymentDetails?.type === 'per_class' ? 'Pago por Evento' : 'Salario Mensual'}
+                                        </p>
+                                        {teacher.isPartner && (
+                                            <Badge variant="outline" className="text-primary border-primary flex items-center gap-1">
+                                                <Handshake className="h-3 w-3" />
+                                                Socio
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                             <div className="text-right">

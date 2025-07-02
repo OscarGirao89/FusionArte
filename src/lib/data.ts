@@ -39,6 +39,7 @@ export const users: User[] = [
     specialties: ['Bachata', 'Salsa', 'M-Zouk'],
     paymentDetails: { type: 'per_class', payRate: 25, cancelledClassPay: 10 },
     isVisibleToStudents: true,
+    isPartner: true,
   },
   { 
     id: 3, name: 'Beatriz Sanz', email: 'beatriz.sanz@example.com', role: 'Estudiante', joined: '2024-01-15', avatar: 'https://placehold.co/100x100.png?text=BS',
@@ -57,6 +58,7 @@ export const users: User[] = [
     specialties: ['Bachata', 'Salsa', 'M-Zouk'],
     paymentDetails: { type: 'monthly', monthlySalary: 2500, cancelledClassPay: 0 },
     isVisibleToStudents: true,
+    isPartner: true,
   },
   { 
     id: 6, name: 'Joana Garcia', email: 'joana.garcia@example.com', role: 'Profesor', joined: '2023-08-11', avatar: 'https://placehold.co/100x100.png?text=JG',
@@ -64,6 +66,7 @@ export const users: User[] = [
     specialties: ['Elongación', 'Stretching', 'Gimnasia Rítmica'],
     paymentDetails: { type: 'per_class', payRate: 20, cancelledClassPay: 5 },
     isVisibleToStudents: true,
+    isPartner: true,
   },
   { id: 7, name: 'Laura Martinez', email: 'laura.martinez@example.com', role: 'Administrativo', joined: '2023-11-10', avatar: 'https://placehold.co/100x100.png?text=LM' },
   { id: 8, name: 'David Chen', email: 'david.chen@example.com', role: 'Estudiante', joined: '2023-10-05', avatar: 'https://placehold.co/100x100.png?text=DC', dob: '1995-07-30', attendanceHistory: [] },
@@ -74,6 +77,7 @@ export const users: User[] = [
     specialties: ['Aeroyoga'],
     paymentDetails: { type: 'per_class', payRate: 30, cancelledClassPay: 10 },
     isVisibleToStudents: true,
+    isPartner: false,
   },
 ];
 

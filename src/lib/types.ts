@@ -85,6 +85,7 @@ export type User = {
     dob?: string; // YYYY-MM-DD
     mobile?: string;
     isVisibleToStudents?: boolean;
+    isPartner?: boolean;
     // Student-specific fields
     attendanceHistory?: AttendanceRecord[];
     // Teacher-specific fields

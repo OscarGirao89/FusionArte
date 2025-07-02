@@ -55,6 +55,7 @@ const userFormSchema = z.object({
     paymentDetails: paymentDetailsSchema.optional(),
     avatar: z.string().optional(),
     isVisibleToStudents: z.boolean().default(false).optional(),
+    isPartner: z.boolean().default(false).optional(),
   }).refine(data => {
     if (data.role === 'Profesor' && !data.paymentDetails) {
       return false; // Professor must have payment details
@@ -92,6 +93,7 @@ export default function AdminUsersPage() {
                 cancelledClassPay: 8,
             },
             isVisibleToStudents: false,
+            isPartner: false,
         }
     });
 
@@ -112,7 +114,8 @@ export default function AdminUsersPage() {
             specialties: user.specialties?.join(', '),
             paymentDetails: user.paymentDetails || { type: 'per_class', payRate: 20, cancelledClassPay: 8 },
             avatar: user.avatar,
-            isVisibleToStudents: user.isVisibleToStudents
+            isVisibleToStudents: user.isVisibleToStudents,
+            isPartner: user.isPartner,
           });
         } else {
           form.reset({
@@ -124,6 +127,7 @@ export default function AdminUsersPage() {
             paymentDetails: { type: 'per_class', payRate: 20, cancelledClassPay: 8 },
             avatar: '',
             isVisibleToStudents: false,
+            isPartner: false,
           });
         }
         setIsDialogOpen(true);
@@ -147,6 +151,7 @@ export default function AdminUsersPage() {
             dataToSave.specialties = data.specialties?.split(',').map(s => s.trim());
             dataToSave.paymentDetails = data.paymentDetails;
             dataToSave.isVisibleToStudents = data.isVisibleToStudents;
+            dataToSave.isPartner = data.isPartner;
         }
 
         if (editingUser) {
@@ -411,6 +416,19 @@ export default function AdminUsersPage() {
                                 </FormControl>
                             </FormItem>
                         )} />
+                        <FormField control={form.control} name="isPartner" render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                <div className="space-y-0.5">
+                                    <FormLabel>Socio de la Academia</FormLabel>
+                                    <FormDescription>
+                                        Marcar si el profesor es socio. Esto afectará a los cálculos financieros.
+                                    </FormDescription>
+                                </div>
+                                <FormControl>
+                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                </FormControl>
+                            </FormItem>
+                        )} />
                          <FormMessage>{form.formState.errors.paymentDetails?.message}</FormMessage>
                     </div>
                 )}
@@ -427,5 +445,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-
-    
