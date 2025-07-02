@@ -15,7 +15,7 @@ const getPlanPriceDisplay = (plan: MembershipPlan) => {
     };
     return `/${plan.durationValue} ${unitMap[plan.durationUnit]}`;
   }
-  if (plan.accessType === 'pack_classes') {
+  if (plan.accessType === 'class_pack') {
     return ` / ${plan.classCount} clases`;
   }
   return '/ pago único';

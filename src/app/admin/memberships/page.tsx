@@ -39,7 +39,7 @@ const baseSchema = z.object({
 const formSchema = z.discriminatedUnion("accessType", [
   z.object({ accessType: z.literal("unlimited") }).merge(baseSchema),
   z.object({
-    accessType: z.literal("pack_classes"),
+    accessType: z.literal("class_pack"),
     classCount: z.coerce.number().int().min(1, "El número de clases debe ser al menos 1."),
     allowedClasses: z.array(z.string()).default([]),
   }).merge(baseSchema),
@@ -61,8 +61,8 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
   switch (plan.accessType) {
     case 'unlimited':
       return { ...common, accessType: 'unlimited' };
-    case 'pack_classes':
-      return { ...common, accessType: 'pack_classes', allowedClasses: plan.allowedClasses || [] };
+    case 'class_pack':
+      return { ...common, accessType: 'class_pack', allowedClasses: plan.allowedClasses || [] };
     case 'trial_class':
       return { ...common, accessType: 'trial_class', allowedClasses: plan.allowedClasses || [] };
   }
@@ -146,8 +146,8 @@ export default function AdminMembershipsPage() {
         case 'unlimited':
             planToSave = { ...commonData, accessType: 'unlimited' };
             break;
-        case 'pack_classes':
-            planToSave = { ...commonData, accessType: 'pack_classes', classCount: data.classCount, allowedClasses: data.allowedClasses };
+        case 'class_pack':
+            planToSave = { ...commonData, accessType: 'class_pack', classCount: data.classCount, allowedClasses: data.allowedClasses };
             break;
         case 'trial_class':
             planToSave = { ...commonData, accessType: 'trial_class', classCount: data.classCount, allowedClasses: data.allowedClasses };
@@ -213,7 +213,7 @@ export default function AdminMembershipsPage() {
                             {
                                 {
                                     'unlimited': 'Pase Ilimitado',
-                                    'pack_classes': 'Paquete de Clases',
+                                    'class_pack': 'Bono de Clases',
                                     'trial_class': 'Clase de Prueba'
                                 }[plan.accessType]
                             }
@@ -280,7 +280,7 @@ export default function AdminMembershipsPage() {
                       <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un tipo" /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="unlimited">Pase Ilimitado</SelectItem>
-                        <SelectItem value="pack_classes">Paquete de Clases</SelectItem>
+                        <SelectItem value="class_pack">Bono de Clases</SelectItem>
                         <SelectItem value="trial_class">Clase de Prueba</SelectItem>
                       </SelectContent>
                     </Select><FormMessage />
@@ -317,14 +317,14 @@ export default function AdminMembershipsPage() {
               </div>
 
 
-              {(accessType === 'pack_classes' || accessType === 'trial_class') && (
+              {(accessType === 'class_pack' || accessType === 'trial_class') && (
                   <div className="space-y-4 p-4 border rounded-md">
                      <FormField control={form.control} name="classCount" render={({ field }) => (
                           <FormItem>
                             <FormLabel>Cantidad de Clases</FormLabel>
                             <FormControl><Input type="number" min="1" {...field} /></FormControl>
                             <FormDescription>
-                              {accessType === 'trial_class' ? 'Normalmente 1 para una clase de prueba.' : 'Número de clases incluidas en el paquete.'}
+                              {accessType === 'trial_class' ? 'Normalmente 1 para una clase de prueba.' : 'Número de clases incluidas en el bono.'}
                             </FormDescription>
                             <FormMessage />
                           </FormItem>

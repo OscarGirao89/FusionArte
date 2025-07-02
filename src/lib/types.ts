@@ -26,19 +26,19 @@ type UnlimitedPlan = MembershipPlanBase & {
   accessType: 'unlimited';
 };
 
-type PackClassesPlan = MembershipPlanBase & {
-  accessType: 'pack_classes';
+type ClassPackPlan = MembershipPlanBase & {
+  accessType: 'class_pack';
   classCount: number;
   allowedClasses: string[];
 };
 
-type TrialClassPlan = MembershipPlanBase & {
+type TrialClassPlan = MembershipPlan-Base & {
   accessType: 'trial_class';
   classCount: number;
   allowedClasses: string[];
 };
 
-export type MembershipPlan = UnlimitedPlan | PackClassesPlan | TrialClassPlan;
+export type MembershipPlan = UnlimitedPlan | ClassPackPlan | TrialClassPlan;
 
 export type DanceClass = {
   id: string;
