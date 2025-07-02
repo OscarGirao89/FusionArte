@@ -1,5 +1,6 @@
 
 'use client';
+import * as React from 'react';
 import { useState, useMemo } from 'react';
 import { danceClasses, danceLevels as allLevels, danceStyles as allStyles } from '@/lib/data';
 import type { DanceClass } from '@/lib/types';
