@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -12,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Eye, PlusCircle, Ticket, List } from 'lucide-react';
+import { Eye, PlusCircle, Ticket, List, CalendarCheck, CalendarX } from 'lucide-react';
 
 
 export default function AdminStudentsPage() {
@@ -54,6 +55,10 @@ export default function AdminStudentsPage() {
     const getEnrolledClasses = (studentId: number): DanceClass[] => {
         return danceClasses.filter(c => c.enrolledStudentIds.includes(studentId));
     };
+
+    const getClassNameById = (classId: string) => {
+        return danceClasses.find(c => c.id === classId)?.name || 'Clase desconocida';
+    }
 
     const currentMembership = selectedStudent ? allStudentMemberships.find(sm => sm.userId === selectedStudent.id) : null;
     const currentPlan = currentMembership ? membershipPlans.find(p => p.id === currentMembership.planId) : null;
@@ -165,7 +170,7 @@ export default function AdminStudentsPage() {
                         )}
                        
                     </Card>
-                    <Card>
+                     <Card>
                         <CardHeader>
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <List className="h-5 w-5"/>
@@ -187,6 +192,34 @@ export default function AdminStudentsPage() {
                                 </ul>
                             ) : (
                                 <p className="text-sm text-muted-foreground">No está inscrito/a en ninguna clase actualmente.</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                    <Card>
+                         <CardHeader>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <CalendarCheck className="h-5 w-5"/>
+                                Historial de Asistencia
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {selectedStudent.attendanceHistory && selectedStudent.attendanceHistory.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {selectedStudent.attendanceHistory.map((att, index) => (
+                                        <li key={index} className="text-sm flex justify-between items-center">
+                                            <div>
+                                                <p className="font-medium">{getClassNameById(att.classId)}</p>
+                                                <p className="text-muted-foreground">{format(new Date(att.date), 'PPP', { locale: es })}</p>
+                                            </div>
+                                             <Badge variant={att.status === 'presente' ? 'default' : 'destructive'} className="capitalize">
+                                                 {att.status === 'presente' ? <CalendarCheck className="mr-1 h-3 w-3" /> : <CalendarX className="mr-1 h-3 w-3" />}
+                                                {att.status}
+                                             </Badge>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">No hay registros de asistencia.</p>
                             )}
                         </CardContent>
                     </Card>

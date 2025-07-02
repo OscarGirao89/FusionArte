@@ -1,10 +1,13 @@
-import { teachers } from '@/lib/data';
-import type { Teacher } from '@/lib/types';
+
+import { users } from '@/lib/data';
+import type { User } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 
-function TeacherCard({ teacher }: { teacher: Teacher }) {
+function TeacherCard({ teacher }: { teacher: User }) {
+    if (teacher.role !== 'Profesor') return null;
+
     return (
         <Card className="overflow-hidden transition-shadow hover:shadow-xl">
             <CardHeader className="p-0">
@@ -19,9 +22,9 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
             </CardHeader>
             <CardContent className="p-6">
                 <CardTitle className="font-headline text-2xl mb-2">{teacher.name}</CardTitle>
-                <CardDescription className="mb-4">{teacher.bio}</CardDescription>
+                <CardDescription className="mb-4">{teacher.bio || 'Biografía no disponible.'}</CardDescription>
                 <div className="flex flex-wrap gap-2">
-                    {teacher.specialties.map(specialty => (
+                    {teacher.specialties?.map(specialty => (
                         <Badge key={specialty} variant="secondary">{specialty}</Badge>
                     ))}
                 </div>
@@ -31,6 +34,8 @@ function TeacherCard({ teacher }: { teacher: Teacher }) {
 }
 
 export default function TeachersPage() {
+  const teachers = users.filter(user => user.role === 'Profesor');
+    
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="space-y-2 mb-8">
@@ -42,7 +47,7 @@ export default function TeachersPage() {
 
       <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
         {teachers.map(teacher => (
-          <TeacherCard key={teacher.name} teacher={teacher} />
+          <TeacherCard key={teacher.id} teacher={teacher} />
         ))}
       </div>
     </div>

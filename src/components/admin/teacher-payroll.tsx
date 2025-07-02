@@ -2,18 +2,14 @@
 'use client';
 
 import { useState } from 'react';
-import { teachers, danceClasses } from '@/lib/data';
+import { users, danceClasses } from '@/lib/data';
+import type { User } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, CheckCircle2, DollarSign, MinusCircle, XCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-
-const CANCELLATION_PAY = 8; // Fixed pay for cancellation due to low attendance
 
 const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; color: string } => {
     switch (status) {
@@ -28,21 +24,33 @@ const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; c
 export function TeacherPayroll() {
     
     const calculatePay = () => {
+        const teachers = users.filter(u => u.role === 'Profesor');
+
         const payroll = teachers.map(teacher => {
             const classesTaught = danceClasses.filter(c => c.teacher === teacher.name);
             let totalPay = 0;
+            const paymentDetails = teacher.paymentDetails;
+            
             const classDetails = classesTaught.map(c => {
                 let classPay = 0;
-                if (c.status === 'completed') {
-                    const durationHours = parseInt(c.duration.replace(' min', '')) / 60;
-                    classPay = durationHours * teacher.payRate;
-                } else if (c.status === 'cancelled-low-attendance') {
-                    classPay = CANCELLATION_PAY;
+                if (!paymentDetails) return { ...c, classPay };
+
+                if (paymentDetails.type === 'per_class') {
+                    if (c.status === 'completed') {
+                        const durationHours = parseInt(c.duration.replace(' min', '')) / 60;
+                        classPay = durationHours * (paymentDetails.payRate || 0);
+                    } else if (c.status === 'cancelled-low-attendance') {
+                        classPay = paymentDetails.cancelledClassPay;
+                    }
+                    totalPay += classPay;
                 }
-                // 'cancelled-teacher' or 'scheduled' gets 0 pay
-                totalPay += classPay;
                 return { ...c, classPay };
-            })
+            });
+
+            if (paymentDetails?.type === 'monthly') {
+                totalPay = paymentDetails.monthlySalary || 0;
+            }
+
             return {
                 teacher,
                 classes: classDetails,
@@ -58,12 +66,12 @@ export function TeacherPayroll() {
     <Card>
       <CardHeader>
         <CardTitle>Nómina de Profesores (Simulación)</CardTitle>
-        <CardDescription>Calcula el pago pendiente para cada profesor basado en las clases impartidas este mes.</CardDescription>
+        <CardDescription>Calcula el pago pendiente para cada profesor basado en las clases impartidas este mes y su tipo de contrato.</CardDescription>
       </CardHeader>
       <CardContent>
         <Accordion type="single" collapsible className="w-full">
             {payrollData.map(({ teacher, classes, totalPay }) => (
-                <AccordionItem value={teacher.name} key={teacher.name}>
+                <AccordionItem value={teacher.name} key={teacher.id}>
                     <AccordionTrigger>
                         <div className="flex items-center justify-between w-full pr-4">
                             <div className="flex items-center gap-4">
@@ -73,7 +81,9 @@ export function TeacherPayroll() {
                                 </Avatar>
                                 <div>
                                     <p className="font-medium">{teacher.name}</p>
-                                    <p className="text-sm text-muted-foreground">{classes.length} clases asignadas</p>
+                                    <p className="text-sm text-muted-foreground capitalize">
+                                        {teacher.paymentDetails?.type === 'per_class' ? 'Pago por Clase' : 'Salario Mensual'}
+                                    </p>
                                 </div>
                             </div>
                             <div className="text-right">
@@ -83,6 +93,7 @@ export function TeacherPayroll() {
                         </div>
                     </AccordionTrigger>
                     <AccordionContent>
+                       {teacher.paymentDetails?.type === 'per_class' ? (
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -111,6 +122,11 @@ export function TeacherPayroll() {
                                 })}
                             </TableBody>
                         </Table>
+                       ) : (
+                           <p className="p-4 text-sm text-muted-foreground">
+                               Este profesor tiene un salario mensual fijo de €{teacher.paymentDetails.monthlySalary?.toFixed(2)}.
+                           </p>
+                       )}
                          <div className="flex justify-end mt-4">
                             <Button size="sm"><DollarSign className="mr-2 h-4 w-4" /> Marcar como Pagado</Button>
                         </div>

@@ -1,5 +1,5 @@
 
-import type { MembershipPlan, DanceClass, Teacher, User, DanceStyle, DanceLevel, StudentMembership } from './types';
+import type { MembershipPlan, DanceClass, User, DanceStyle, DanceLevel, StudentMembership } from './types';
 
 export const danceStyles: DanceStyle[] = [
   { id: 'salsa', name: 'Salsa', description: 'Ritmos latinos vibrantes y enérgicos. Origen cubano y puertorriqueño.' },
@@ -19,15 +19,52 @@ export const danceLevels: DanceLevel[] = [
 ];
 
 export const users: User[] = [
-  { id: 1, name: 'Ana López', email: 'ana.lopez@example.com', role: 'Estudiante', joined: '2023-09-01', avatar: 'https://placehold.co/100x100.png?text=AL' },
-  { id: 2, name: 'Carlos Ruiz', email: 'carlos.ruiz@example.com', role: 'Profesor', joined: '2022-05-20', avatar: 'https://placehold.co/100x100.png?text=CR' },
-  { id: 3, name: 'Beatriz Sanz', email: 'beatriz.sanz@example.com', role: 'Estudiante', joined: '2024-01-15', avatar: 'https://placehold.co/100x100.png?text=BS' },
+  { 
+    id: 1, name: 'Ana López', email: 'ana.lopez@example.com', role: 'Estudiante', joined: '2023-09-01', avatar: 'https://placehold.co/100x100.png?text=AL',
+    attendanceHistory: [
+      { classId: 'clase-1', date: '2024-07-01', status: 'presente' },
+      { classId: 'clase-2', date: '2024-07-01', status: 'presente' },
+      { classId: 'clase-5', date: '2024-07-03', status: 'ausente' },
+      { classId: 'clase-8', date: '2024-07-04', status: 'presente' },
+    ]
+  },
+  { 
+    id: 2, name: 'Carlos Ruiz', email: 'carlos.ruiz@example.com', role: 'Profesor', joined: '2022-05-20', avatar: 'https://placehold.co/100x100.png?text=CR',
+    bio: 'Carlos trae el corazón de la República Dominicana a sus clases de Bachata. Se enfoca en la conexión, la musicalidad y los movimientos suaves y sensuales de la Bachata moderna y tradicional.',
+    specialties: ['Bachata Sensual', 'Bachata Dominicana', 'Trabajo en Pareja'],
+    paymentDetails: { type: 'per_class', payRate: 30, cancelledClassPay: 8 }
+  },
+  { 
+    id: 3, name: 'Beatriz Sanz', email: 'beatriz.sanz@example.com', role: 'Estudiante', joined: '2024-01-15', avatar: 'https://placehold.co/100x100.png?text=BS',
+    attendanceHistory: [
+      { classId: 'clase-1', date: '2024-07-01', status: 'presente' },
+      { classId: 'clase-3', date: '2024-07-02', status: 'presente' },
+      { classId: 'clase-5', date: '2024-07-03', status: 'presente' },
+      { classId: 'clase-7', date: '2024-07-04', status: 'ausente' },
+    ]
+  },
   { id: 4, name: 'Admin FusionArte', email: 'admin@fusionarte.com', role: 'Administrador', joined: '2022-01-01', avatar: 'https://placehold.co/100x100.png?text=AF' },
-  { id: 5, name: 'Elena Garcia', email: 'elena.garcia@example.com', role: 'Profesor', joined: '2022-03-10', avatar: 'https://placehold.co/100x100.png?text=EG' },
-  { id: 6, name: 'Liam Smith', email: 'liam.smith@example.com', role: 'Profesor', joined: '2023-08-11', avatar: 'https://placehold.co/100x100.png?text=LS' },
+  { 
+    id: 5, name: 'Elena Garcia', email: 'elena.garcia@example.com', role: 'Profesor', joined: '2022-03-10', avatar: 'https://placehold.co/100x100.png?text=EG',
+    bio: 'Con más de 15 años de experiencia, Elena es una maestra del baile latino. Su pasión por la Salsa es contagiosa y crea una atmósfera vibrante y de apoyo en sus clases.',
+    specialties: ['Salsa On1', 'Salsa On2', 'Salsa Cubana', 'Estilo'],
+    paymentDetails: { type: 'monthly', monthlySalary: 2200, cancelledClassPay: 0 }
+  },
+  { 
+    id: 6, name: 'Liam Smith', email: 'liam.smith@example.com', role: 'Profesor', joined: '2023-08-11', avatar: 'https://placehold.co/100x100.png?text=LS',
+    bio: "El enfoque de Liam hacia la danza contemporánea es contar historias a través del movimiento. Combina la precisión técnica con la expresión emocional, animando a los estudiantes a encontrar su voz única.",
+    specialties: ['Lírico', 'Trabajo de Suelo', 'Improvisación', 'Técnica'],
+    paymentDetails: { type: 'per_class', payRate: 32, cancelledClassPay: 10 }
+  },
   { id: 7, name: 'Laura Martinez', email: 'laura.martinez@example.com', role: 'Administrativo', joined: '2023-11-10', avatar: 'https://placehold.co/100x100.png?text=LM' },
-  { id: 8, name: 'David Chen', email: 'david.chen@example.com', role: 'Estudiante', joined: '2023-10-05', avatar: 'https://placehold.co/100x100.png?text=DC' },
-  { id: 9, name: 'Sophia Rodriguez', email: 'sophia.r@example.com', role: 'Estudiante', joined: '2022-11-12', avatar: 'https://placehold.co/100x100.png?text=SR' },
+  { id: 8, name: 'David Chen', email: 'david.chen@example.com', role: 'Estudiante', joined: '2023-10-05', avatar: 'https://placehold.co/100x100.png?text=DC', attendanceHistory: [] },
+  { id: 9, name: 'Sophia Rodriguez', email: 'sophia.r@example.com', role: 'Estudiante', joined: '2022-11-12', avatar: 'https://placehold.co/100x100.png?text=SR', attendanceHistory: [] },
+  { 
+    id: 10, name: 'Aisha Jones', email: 'aisha.jones@example.com', role: 'Profesor', joined: '2023-02-18', avatar: 'https://placehold.co/100x100.png?text=AJ',
+    bio: 'Aisha es una fuerza dinámica en el mundo del Hip Hop. Desde las bases de la vieja escuela hasta las últimas tendencias comerciales, sus clases de alta energía te desafiarán y aumentarán tu confianza.',
+    specialties: ['Popping', 'Locking', 'Coreografía', 'Freestyle'],
+    paymentDetails: { type: 'per_class', payRate: 35, cancelledClassPay: 10 }
+  },
 ];
 
 export const membershipPlans: MembershipPlan[] = [
@@ -98,35 +135,4 @@ export const danceClasses: DanceClass[] = [
     { id: 'clase-10', name: 'Práctica Libre', styleId: 'practica', levelId: 'todos', teacher: 'Estudio', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min', capacity: 50, recurrence: 'recurring', recurrenceMonths: 12, status: 'completed', enrolledStudentIds: [1, 3, 8, 9] },
     { id: 'clase-11', name: 'Tango Salón', styleId: 'tango', levelId: 'principiante', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Sábado', time: '12:00', room: 'Estudio 2', duration: '90 min', capacity: 16, recurrence: 'one-time', date: '2024-09-07', status: 'scheduled', enrolledStudentIds: [] },
     { id: 'clase-12', name: 'Flamenco', styleId: 'flamenco', levelId: 'intermedio', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Sábado', time: '14:00', room: 'Estudio 1', duration: '75 min', capacity: 15, recurrence: 'recurring', recurrenceMonths: 4, status: 'cancelled-teacher', enrolledStudentIds: [1, 3] },
-];
-
-export const teachers: Teacher[] = [
-  {
-    name: 'Elena Garcia',
-    avatar: 'https://placehold.co/400x400.png',
-    bio: 'Con más de 15 años de experiencia, Elena es una maestra del baile latino. Su pasión por la Salsa es contagiosa y crea una atmósfera vibrante y de apoyo en sus clases.',
-    specialties: ['Salsa On1', 'Salsa On2', 'Salsa Cubana', 'Estilo'],
-    payRate: 30, // Euros per hour
-  },
-  {
-    name: 'Carlos Ruiz',
-    avatar: 'https://placehold.co/400x400.png',
-    bio: 'Carlos trae el corazón de la República Dominicana a sus clases de Bachata. Se enfoca en la conexión, la musicalidad y los movimientos suaves y sensuales de la Bachata moderna y tradicional.',
-    specialties: ['Bachata Sensual', 'Bachata Dominicana', 'Trabajo en Pareja'],
-    payRate: 30, // Euros per hour
-  },
-  {
-    name: 'Aisha Jones',
-    avatar: 'https://placehold.co/400x400.png',
-    bio: 'Aisha es una fuerza dinámica en el mundo del Hip Hop. Desde las bases de la vieja escuela hasta las últimas tendencias comerciales, sus clases de alta energía te desafiarán y aumentarán tu confianza.',
-    specialties: ['Popping', 'Locking', 'Coreografía', 'Freestyle'],
-    payRate: 35, // Euros per hour
-  },
-  {
-    name: 'Liam Smith',
-    avatar: 'https://placehold.co/400x400.png',
-    bio: "El enfoque de Liam hacia la danza contemporánea es contar historias a través del movimiento. Combina la precisión técnica con la expresión emocional, animando a los estudiantes a encontrar su voz única.",
-    specialties: ['Lírico', 'Trabajo de Suelo', 'Improvisación', 'Técnica'],
-    payRate: 32, // Euros per hour
-  },
 ];

@@ -59,12 +59,10 @@ export type DanceClass = {
   enrolledStudentIds: number[];
 };
 
-export type Teacher = {
-  name: string;
-  avatar: string;
-  bio: string;
-  specialties: string[];
-  payRate: number; // Pay per hour
+export type AttendanceRecord = {
+  classId: string;
+  date: string; // YYYY-MM-DD
+  status: 'presente' | 'ausente';
 };
 
 export type User = {
@@ -74,6 +72,17 @@ export type User = {
     role: 'Estudiante' | 'Profesor' | 'Administrador' | 'Administrativo';
     joined: string;
     avatar: string;
+    // Student-specific fields
+    attendanceHistory?: AttendanceRecord[];
+    // Teacher-specific fields
+    bio?: string;
+    specialties?: string[];
+    paymentDetails?: {
+        type: 'per_class' | 'monthly';
+        payRate?: number; // per hour for 'per_class'
+        monthlySalary?: number; // for 'monthly'
+        cancelledClassPay: number; // Can be 0
+    };
 };
 
 export type Transaction = {

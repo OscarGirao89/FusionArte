@@ -16,22 +16,46 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { MoreVertical, UserPlus, Pencil, Trash2 } from 'lucide-react';
 
-const userFormSchema = z.object({
-  name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
-  email: z.string().email("Email inválido."),
-  role: z.enum(['Estudiante', 'Profesor', 'Administrador', 'Administrativo'], {
-    required_error: "Debes seleccionar un rol."
+const paymentDetailsSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("per_class"),
+    payRate: z.coerce.number().min(0, "La tarifa por hora debe ser un número positivo."),
+    cancelledClassPay: z.coerce.number().min(0, "El valor no puede ser negativo."),
   }),
-});
+  z.object({
+    type: z.literal("monthly"),
+    monthlySalary: z.coerce.number().min(0, "El salario mensual debe ser un número positivo."),
+    cancelledClassPay: z.coerce.number().min(0, "El valor no puede ser negativo."),
+  }),
+]);
+
+
+const userFormSchema = z.object({
+    id: z.number().optional(),
+    name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
+    email: z.string().email("Email inválido."),
+    role: z.enum(['Estudiante', 'Profesor', 'Administrador', 'Administrativo']),
+    bio: z.string().optional(),
+    specialties: z.string().optional(),
+    paymentDetails: paymentDetailsSchema.optional(),
+  }).refine(data => {
+    if (data.role === 'Profesor' && !data.paymentDetails) {
+      return false; // Professor must have payment details
+    }
+    return true;
+  }, {
+    message: "Los detalles de pago son obligatorios para los profesores.",
+    path: ["paymentDetails"],
+  });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
-
 
 const roleVariant: { [key: string]: "default" | "secondary" | "destructive" } = {
     'Administrador': 'destructive',
@@ -50,21 +74,38 @@ export default function AdminUsersPage() {
 
     const form = useForm<UserFormValues>({
         resolver: zodResolver(userFormSchema),
+        defaultValues: {
+            paymentDetails: {
+                type: 'per_class',
+                payRate: 20,
+                cancelledClassPay: 8,
+            }
+        }
     });
+
+    const watchedRole = form.watch('role');
+    const watchedPaymentType = form.watch('paymentDetails.type');
     
     const handleOpenDialog = (user: User | null = null) => {
         setEditingUser(user);
         if (user) {
           form.reset({
+            id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
+            bio: user.bio,
+            specialties: user.specialties?.join(', '),
+            paymentDetails: user.paymentDetails || { type: 'per_class', payRate: 20, cancelledClassPay: 8 }
           });
         } else {
           form.reset({
             name: '',
             email: '',
             role: 'Estudiante',
+            bio: '',
+            specialties: '',
+            paymentDetails: { type: 'per_class', payRate: 20, cancelledClassPay: 8 }
           });
         }
         setIsDialogOpen(true);
@@ -76,12 +117,24 @@ export default function AdminUsersPage() {
           description: `El usuario "${data.name}" ha sido guardado (simulación).`,
         });
 
+        const dataToSave: Omit<User, 'id' | 'joined' | 'avatar'> = {
+            name: data.name,
+            email: data.email,
+            role: data.role,
+        };
+
+        if (data.role === 'Profesor') {
+            dataToSave.bio = data.bio;
+            dataToSave.specialties = data.specialties?.split(',').map(s => s.trim());
+            dataToSave.paymentDetails = data.paymentDetails;
+        }
+
         if (editingUser) {
-            setUsers(users.map(u => u.id === editingUser.id ? { ...editingUser, ...data } : u));
+            setUsers(users.map(u => u.id === editingUser.id ? { ...editingUser, ...dataToSave } : u));
         } else {
             const newUser: User = {
                 id: Math.max(...users.map(u => u.id)) + 1,
-                ...data,
+                ...dataToSave,
                 joined: new Date().toISOString().split('T')[0],
                 avatar: `https://placehold.co/100x100.png?text=${data.name.split(' ').map(n=>n[0]).join('')}`
             };
@@ -187,7 +240,7 @@ export default function AdminUsersPage() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
             <DialogTitle>{editingUser ? 'Editar Usuario' : 'Añadir Nuevo Usuario'}</DialogTitle>
             <DialogDescription>
@@ -195,19 +248,61 @@ export default function AdminUsersPage() {
             </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="email" render={({ field }) => (
-                <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="role" render={({ field }) => (
-                  <FormItem><FormLabel>Rol</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un rol" /></SelectTrigger></FormControl>
-                    <SelectContent>{userRoles.map(role => <SelectItem key={role} value={role}>{role}</SelectItem>)}</SelectContent>
-                  </Select><FormMessage /></FormItem>
-                )} />
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="email" render={({ field }) => (
+                    <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="role" render={({ field }) => (
+                    <FormItem className="md:col-span-2"><FormLabel>Rol</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un rol" /></SelectTrigger></FormControl>
+                        <SelectContent>{userRoles.map(role => <SelectItem key={role} value={role}>{role}</SelectItem>)}</SelectContent>
+                    </Select><FormMessage /></FormItem>
+                    )} />
+                </div>
+
+                {watchedRole === 'Profesor' && (
+                    <div className="space-y-4 p-4 border rounded-md">
+                        <h3 className="text-lg font-medium">Detalles del Profesor</h3>
+                        <FormField control={form.control} name="bio" render={({ field }) => (
+                            <FormItem><FormLabel>Biografía</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="specialties" render={({ field }) => (
+                            <FormItem><FormLabel>Especialidades</FormLabel><FormControl><Input {...field} placeholder="Salsa, Bachata, etc." /></FormControl><FormDescription>Separadas por comas.</FormDescription><FormMessage /></FormItem>
+                        )} />
+                        
+                        <div className="space-y-2 p-3 border rounded-md">
+                           <FormLabel>Detalles de Pago</FormLabel>
+                            <FormField control={form.control} name="paymentDetails.type" render={({ field }) => (
+                                <FormItem><FormLabel>Tipo de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="per_class">Por Clase</SelectItem>
+                                        <SelectItem value="monthly">Mensual</SelectItem>
+                                    </SelectContent>
+                                </Select><FormMessage /></FormItem>
+                            )} />
+                            {watchedPaymentType === 'per_class' && (
+                                <FormField control={form.control} name="paymentDetails.payRate" render={({ field }) => (
+                                    <FormItem><FormLabel>Tarifa por Hora (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                            )}
+                             {watchedPaymentType === 'monthly' && (
+                                <FormField control={form.control} name="paymentDetails.monthlySalary" render={({ field }) => (
+                                    <FormItem><FormLabel>Salario Mensual (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                            )}
+                             <FormField control={form.control} name="paymentDetails.cancelledClassPay" render={({ field }) => (
+                                <FormItem><FormLabel>Pago por Clase Cancelada (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>Poner 0 si no se paga.</FormDescription><FormMessage /></FormItem>
+                            )} />
+                        </div>
+                         <FormMessage>{form.formState.errors.paymentDetails?.message}</FormMessage>
+                    </div>
+                )}
+
 
                 <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
