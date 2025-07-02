@@ -4,6 +4,7 @@
 import { useAuth } from "@/context/auth-context";
 import { userProfiles } from "@/components/layout/main-nav";
 import { users as allUsers, membershipPlans } from '@/lib/data';
+import type { StudentPayment } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, parseISO, isBefore } from 'date-fns';
@@ -12,6 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Printer, TicketPercent, User, Calendar, BadgeCheck, XCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+
+const paymentStatusLabels: Record<StudentPayment['status'], string> = {
+    paid: 'Pagado',
+    pending: 'Pendiente',
+    deposit: 'Adelanto',
+};
 
 export default function ProfilePage() {
     const { userRole, studentMemberships, studentPayments } = useAuth();
@@ -60,7 +67,7 @@ export default function ProfilePage() {
             printWindow.document.write(`<tr><td><strong>Precio Total:</strong></td><td>€${payment.totalAmount.toFixed(2)}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Monto Pagado:</strong></td><td>€${payment.amountPaid.toFixed(2)}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Monto Pendiente:</strong></td><td>€${payment.amountDue.toFixed(2)}</td></tr>`);
-            printWindow.document.write(`<tr><td><strong>Estado:</strong></td><td class="status status-${payment.status}">${payment.status}</td></tr>`);
+            printWindow.document.write(`<tr><td><strong>Estado:</strong></td><td class="status status-${payment.status}">${paymentStatusLabels[payment.status]}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Fecha de Inicio:</strong></td><td>${format(parseISO(membership.startDate), 'PPP', { locale: es })}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Fecha de Vencimiento:</strong></td><td>${format(parseISO(membership.endDate), 'PPP', { locale: es })}</td></tr>`);
             if (plan.accessType === 'class_pack') {
@@ -118,10 +125,8 @@ export default function ProfilePage() {
                                         ? <Badge><BadgeCheck className="mr-1 h-4 w-4"/>Activa</Badge>
                                         : <Badge variant="destructive"><XCircle className="mr-1 h-4 w-4"/>Expirada</Badge>
                                         }
-                                        <Badge variant={payment.status === 'paid' ? 'default' : payment.status === 'pending' ? 'destructive' : 'secondary'} className="capitalize">
-                                            {payment.status === 'paid' && 'Pagado'}
-                                            {payment.status === 'pending' && 'Pendiente'}
-                                            {payment.status === 'deposit' && 'Adelanto'}
+                                        <Badge variant={payment.status === 'paid' ? 'default' : payment.status === 'pending' ? 'destructive' : 'secondary'}>
+                                            {paymentStatusLabels[payment.status]}
                                         </Badge>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm border-t pt-4">

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { users, membershipPlans } from '@/lib/data';
 import type { StudentPayment } from '@/lib/types';
@@ -55,6 +55,14 @@ export default function AdminPaymentsPage() {
   const newInvoiceForm = useForm<NewInvoiceFormValues>({
       resolver: zodResolver(newInvoiceSchema),
   });
+
+  const watchedStatus = editForm.watch('status');
+
+  useEffect(() => {
+    if (watchedStatus === 'paid' && editingPayment) {
+      editForm.setValue('amountPaid', editingPayment.totalAmount, { shouldValidate: true });
+    }
+  }, [watchedStatus, editingPayment, editForm]);
   
   const getStudentName = (id: number) => users.find(u => u.id === id)?.name || 'Desconocido';
   const getPlanName = (id: string) => membershipPlans.find(p => p.id === id)?.title || 'Desconocido';
