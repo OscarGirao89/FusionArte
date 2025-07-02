@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle2, DollarSign, MinusCircle, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, DollarSign, MinusCircle, Percent, XCircle } from 'lucide-react';
 
 const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; color: string } => {
     switch (status) {
@@ -33,18 +33,30 @@ export function TeacherPayroll() {
             
             const classDetails = classesTaught.map(c => {
                 let classPay = 0;
-                if (!paymentDetails) return { ...c, classPay };
+                let payDescription = '';
 
-                if (paymentDetails.type === 'per_class') {
+                if (!paymentDetails) return { ...c, classPay, payDescription };
+
+                if (c.type === 'workshop') {
+                    if (c.workshopPaymentType === 'fixed') {
+                        classPay = c.workshopPaymentValue || 0;
+                        payDescription = 'Tarifa fija de taller';
+                    } else { // percentage
+                        payDescription = `Porcentaje (${c.workshopPaymentValue}%)`;
+                    }
+                } else if (paymentDetails.type === 'per_class') {
                     if (c.status === 'completed') {
                         const durationHours = parseInt(c.duration.replace(' min', '')) / 60;
                         classPay = durationHours * (paymentDetails.payRate || 0);
+                        payDescription = `${durationHours}h a €${paymentDetails.payRate}/h`;
                     } else if (c.status === 'cancelled-low-attendance') {
                         classPay = paymentDetails.cancelledClassPay;
+                        payDescription = 'Compensación por cancelación';
                     }
-                    totalPay += classPay;
                 }
-                return { ...c, classPay };
+                
+                totalPay += classPay;
+                return { ...c, classPay, payDescription };
             });
 
             if (paymentDetails?.type === 'monthly') {
@@ -82,7 +94,7 @@ export function TeacherPayroll() {
                                 <div>
                                     <p className="font-medium">{teacher.name}</p>
                                     <p className="text-sm text-muted-foreground capitalize">
-                                        {teacher.paymentDetails?.type === 'per_class' ? 'Pago por Clase' : 'Salario Mensual'}
+                                        {teacher.paymentDetails?.type === 'per_class' ? 'Pago por Evento' : 'Salario Mensual'}
                                     </p>
                                 </div>
                             </div>
@@ -93,11 +105,11 @@ export function TeacherPayroll() {
                         </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                       {teacher.paymentDetails?.type === 'per_class' ? (
+                       {teacher.paymentDetails?.type !== 'monthly' ? (
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Clase</TableHead>
+                                    <TableHead>Clase/Taller</TableHead>
                                     <TableHead>Estado</TableHead>
                                     <TableHead className="text-right">Pago</TableHead>
                                 </TableRow>
@@ -109,14 +121,22 @@ export function TeacherPayroll() {
                                         <TableRow key={c.id}>
                                             <TableCell>
                                                 <p className="font-medium">{c.name}</p>
-                                                <p className="text-xs text-muted-foreground">{c.day}, {c.time}</p>
+                                                <p className="text-xs text-muted-foreground capitalize">{c.type} - {c.date ? c.date : c.day}</p>
                                             </TableCell>
                                             <TableCell>
                                                 <div className={`flex items-center gap-2 text-sm ${statusInfo.color}`}>
                                                     {statusInfo.icon} {statusInfo.text}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-right font-mono">€{c.classPay.toFixed(2)}</TableCell>
+                                            <TableCell className="text-right">
+                                                <p className="font-mono font-semibold">
+                                                   {c.workshopPaymentType === 'percentage' 
+                                                        ? <span className="flex items-center justify-end gap-1"><Percent className="h-3 w-3" />{c.workshopPaymentValue}%</span>
+                                                        : `€${c.classPay.toFixed(2)}`
+                                                   }
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">{c.payDescription}</p>
+                                            </TableCell>
                                         </TableRow>
                                     )
                                 })}

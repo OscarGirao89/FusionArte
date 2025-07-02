@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { danceClasses as initialClasses, users, danceStyles, danceLevels } from '@/lib/data';
-import type { DanceClass } from '@/lib/types';
+import type { DanceClass, ClassType } from '@/lib/types';
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -21,48 +21,85 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon, Users, ClipboardCheck, Palette, Signal } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon, Users, ClipboardCheck, Palette, Signal, Building } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 
 const classFormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "El nombre es obligatorio."),
-  styleId: z.string({ required_error: "Debes seleccionar un estilo." }),
-  levelId: z.string({ required_error: "Debes seleccionar un nivel." }),
-  teacher: z.string({ required_error: "Debes seleccionar un profesor." }),
-  day: z.string({ required_error: "Debes seleccionar un día." }),
+  type: z.enum(['recurring', 'one-time', 'workshop', 'rental'], { required_error: "Debes seleccionar un tipo." }),
+  
+  // Fields for classes/workshops
+  styleId: z.string().optional(),
+  levelId: z.string().optional(),
+  teacher: z.string().optional(),
+  capacity: z.coerce.number().optional(),
+
+  // Fields for recurring
+  day: z.string().optional(),
+  recurrenceMonths: z.coerce.number().optional(),
+  
+  // Fields for one-time events
+  date: z.date().optional(),
+  
+  // Fields for workshop
+  workshopPaymentType: z.enum(['fixed', 'percentage']).optional(),
+  workshopPaymentValue: z.coerce.number().optional(),
+
+  // Fields for rental
+  rentalPrice: z.coerce.number().optional(),
+  isVisibleToStudents: z.boolean().default(false),
+  
+  // Common fields
   time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato de hora inválido (HH:MM)."),
   room: z.string().min(1, "La sala es obligatoria."),
   duration: z.string().min(1, "La duración es obligatoria."),
-  capacity: z.coerce.number().int().min(1, "La capacidad debe ser al menos 1."),
-  recurrence: z.enum(['one-time', 'recurring'], { required_error: "Debes seleccionar un tipo de recurrencia." }),
-  recurrenceMonths: z.coerce.number().optional(),
-  date: z.date().optional(),
   enrolledStudentIds: z.array(z.number()).default([]),
 }).refine(data => {
-    if (data.recurrence === 'recurring' && (data.recurrenceMonths === undefined || data.recurrenceMonths <= 0)) {
-        return false;
+    if (['recurring', 'one-time', 'workshop'].includes(data.type)) {
+        return !!data.styleId && !!data.levelId && !!data.teacher && data.capacity !== undefined && data.capacity > 0;
     }
     return true;
-}, {
-    message: "Para clases recurrentes, los meses deben ser mayor que 0.",
-    path: ["recurrenceMonths"],
-}).refine(data => {
-    if (data.recurrence === 'one-time' && !data.date) {
-        return false;
+}, { message: "Estilo, nivel, profesor y capacidad son obligatorios.", path: ["styleId"] })
+.refine(data => {
+    if (data.type === 'recurring') {
+        return !!data.day && data.recurrenceMonths !== undefined && data.recurrenceMonths > 0;
     }
     return true;
-}, {
-    message: "Para clases únicas, la fecha es obligatoria.",
-    path: ["date"],
-});
+}, { message: "El día y la duración en meses son obligatorios.", path: ["day"] })
+.refine(data => {
+    if (['one-time', 'workshop', 'rental'].includes(data.type)) {
+        return !!data.date;
+    }
+    return true;
+}, { message: "La fecha es obligatoria para este tipo de evento.", path: ["date"] })
+.refine(data => {
+    if (data.type === 'workshop') {
+        return !!data.workshopPaymentType && data.workshopPaymentValue !== undefined;
+    }
+    return true;
+}, { message: "El tipo y valor de pago son obligatorios para talleres.", path: ["workshopPaymentType"] })
+.refine(data => {
+    if (data.type === 'rental') {
+        return data.rentalPrice !== undefined && data.rentalPrice > 0;
+    }
+    return true;
+}, { message: "El precio del alquiler debe ser mayor a 0.", path: ["rentalPrice"] });
+
 
 type ClassFormValues = z.infer<typeof classFormSchema>;
 
 const availableDays = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const eventTypeLabels: Record<ClassType, string> = {
+    recurring: 'Clase Recurrente',
+    'one-time': 'Clase Única',
+    workshop: 'Taller',
+    rental: 'Alquiler de Sala'
+};
 
 export default function AdminClassesPage() {
   const [classes, setClasses] = useState<DanceClass[]>(initialClasses);
@@ -78,22 +115,19 @@ export default function AdminClassesPage() {
     resolver: zodResolver(classFormSchema),
     defaultValues: {
       name: '',
-      styleId: undefined,
-      levelId: undefined,
-      teacher: undefined,
-      day: undefined,
+      type: 'recurring',
       time: '19:00',
-      room: '',
       duration: '60 min',
       capacity: 20,
-      recurrence: 'one-time',
       recurrenceMonths: 1,
       date: new Date(),
       enrolledStudentIds: [],
+      isVisibleToStudents: false,
+      workshopPaymentType: 'fixed',
     },
   });
 
-  const recurrenceType = form.watch('recurrence');
+  const eventType = form.watch('type');
 
   const getStyleName = (id: string) => danceStyles.find(s => s.id === id)?.name || id;
   const getLevelName = (id: string) => danceLevels.find(l => l.id === id)?.name || id;
@@ -103,51 +137,98 @@ export default function AdminClassesPage() {
     if (danceClass) {
       form.reset({
         ...danceClass,
+        date: danceClass.date ? new Date(danceClass.date) : new Date(),
+        capacity: danceClass.capacity || undefined,
         recurrenceMonths: danceClass.recurrenceMonths || 1,
-        date: danceClass.date ? new Date(danceClass.date) : undefined,
+        rentalPrice: danceClass.rentalPrice || undefined,
+        workshopPaymentValue: danceClass.workshopPaymentValue || undefined,
       });
     } else {
       form.reset({
         name: '',
-        styleId: undefined,
-        levelId: undefined,
-        teacher: undefined,
-        day: undefined,
+        type: 'recurring',
         time: '19:00',
-        room: '',
         duration: '60 min',
         capacity: 20,
-        recurrence: 'one-time',
         recurrenceMonths: 1,
         date: new Date(),
         enrolledStudentIds: [],
+        isVisibleToStudents: false,
+        workshopPaymentType: 'fixed',
       });
     }
     setIsDialogOpen(true);
   };
 
   const onSubmit = (data: ClassFormValues) => {
-    toast({
-      title: `Clase ${editingClass ? 'actualizada' : 'creada'} con éxito`,
-      description: `La clase "${data.name}" ha sido guardada (simulación).`,
+    // Basic overlap check (simulation)
+    // A real implementation would need more robust logic for time comparisons.
+    const isOverlapping = classes.some(c => {
+        if (editingClass && c.id === editingClass.id) return false;
+        if (c.room !== data.room) return false;
+        
+        const cDate = c.date ? format(new Date(c.date), 'yyyy-MM-dd') : null;
+        const dataDate = data.date ? format(data.date, 'yyyy-MM-dd') : null;
+
+        const dateMatch = (c.type !== 'recurring' && data.type !== 'recurring' && cDate && dataDate && cDate === dataDate);
+        const dayMatch = (c.type === 'recurring' && data.type === 'recurring' && c.day === data.day);
+
+        if ((dateMatch || dayMatch) && c.time === data.time) {
+            return true;
+        }
+        return false;
     });
+
+    if (isOverlapping) {
+        toast({
+            title: "Conflicto de Horario",
+            description: "La sala ya está reservada en ese día y hora. Por favor, elige otro horario.",
+            variant: "destructive"
+        });
+        return;
+    }
     
-    const dataToSave = {
-      ...data,
-      date: data.date ? format(data.date, 'yyyy-MM-dd') : undefined,
-      teacherAvatar: teachers.find(t => t.name === data.teacher)?.avatar || 'https://placehold.co/100x100.png',
+    let finalData: DanceClass = {
+        id: editingClass?.id || `clase-${Date.now()}`,
+        status: 'scheduled',
+        styleId: '',
+        levelId: '',
+        ...data,
+        date: data.date ? format(data.date, 'yyyy-MM-dd') : undefined,
+        teacherAvatar: teachers.find(t => t.name === data.teacher)?.avatar || 'https://placehold.co/100x100.png',
     };
 
-    if (editingClass) {
-      setClasses(classes.map(c => c.id === editingClass.id ? { ...c, ...dataToSave, id: c.id } : c));
+    if (data.type === 'rental') {
+        finalData = {
+            ...finalData,
+            teacher: data.name,
+            styleId: 'practica',
+            levelId: 'todos',
+            capacity: 0,
+        }
     } else {
-      const newClass: DanceClass = {
-        ...dataToSave,
-        id: `clase-${Date.now()}`,
-        status: 'scheduled',
-      };
-      setClasses([...classes, newClass]);
+        finalData.teacher = data.teacher!;
+        finalData.styleId = data.styleId!;
+        finalData.levelId = data.levelId!;
+        finalData.capacity = data.capacity!;
     }
+    
+    toast({
+      title: `Evento ${editingClass ? 'actualizado' : 'creado'}`,
+      description: `El evento "${data.name}" ha sido guardado.`,
+    });
+    
+    if (editingClass) {
+      setClasses(classes.map(c => c.id === editingClass.id ? finalData : c));
+    } else {
+      setClasses([...classes, finalData]);
+    }
+
+    // In a real app, creating a rental would also create a transaction.
+    if(finalData.type === 'rental' && !editingClass) {
+        console.log(`Creating rental, a transaction for ${finalData.rentalPrice} should be added to finances.`);
+    }
+
     setIsDialogOpen(false);
     setEditingClass(null);
   };
@@ -155,8 +236,8 @@ export default function AdminClassesPage() {
   const handleDelete = (classId: string) => {
     setClasses(classes.filter(c => c.id !== classId));
     toast({
-      title: "Clase eliminada",
-      description: `La clase ha sido eliminada exitosamente (simulación).`,
+      title: "Evento eliminado",
+      description: `El evento ha sido eliminado exitosamente.`,
       variant: "destructive"
     });
   }
@@ -164,18 +245,18 @@ export default function AdminClassesPage() {
   return (
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Clases</h1>
+        <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Clases y Eventos</h1>
         <Button onClick={() => handleOpenDialog()}>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Añadir Clase
+          Añadir Evento
         </Button>
       </div>
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
             <div>
-              <CardTitle>Listado de Clases</CardTitle>
-              <CardDescription>Añade, edita o elimina las clases ofrecidas en la academia.</CardDescription>
+              <CardTitle>Listado de Eventos</CardTitle>
+              <CardDescription>Añade, edita o elimina clases, talleres y alquileres.</CardDescription>
             </div>
             <div className="flex gap-2 flex-shrink-0">
                 <Button variant="outline" size="sm" onClick={() => router.push('/admin/styles')}>
@@ -194,8 +275,8 @@ export default function AdminClassesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Clase</TableHead>
-                  <TableHead className="hidden sm:table-cell">Profesor</TableHead>
+                  <TableHead>Evento</TableHead>
+                  <TableHead className="hidden sm:table-cell">Responsable/Profesor</TableHead>
                   <TableHead className="hidden md:table-cell">Horario y Tipo</TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
@@ -204,23 +285,23 @@ export default function AdminClassesPage() {
                 {classes.map((danceClass) => (
                   <TableRow key={danceClass.id}>
                     <TableCell>
-                      <p className="font-medium">{danceClass.name} ({getStyleName(danceClass.styleId)})</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Badge variant="outline">{getLevelName(danceClass.levelId)}</Badge>
-                         <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {danceClass.capacity} cupos</span>
-                      </div>
+                      <p className="font-medium">{danceClass.name}</p>
+                      {danceClass.type !== 'rental' && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Badge variant="outline">{getLevelName(danceClass.levelId)}</Badge>
+                          <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {danceClass.capacity} cupos</span>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{danceClass.teacher}</TableCell>
                     <TableCell className="hidden md:table-cell">
                         <div className="flex items-center gap-2">
-                           <Calendar className="h-4 w-4" /> {danceClass.day}, {danceClass.time}
+                           {danceClass.type === 'recurring' ? <Calendar className="h-4 w-4" /> : <CalendarIcon className="h-4 w-4" />}
+                           {danceClass.type === 'recurring' ? `${danceClass.day}, ${danceClass.time}` : `${danceClass.date ? format(new Date(danceClass.date), "PPP", { locale: es }) : 'N/A'}, ${danceClass.time}`}
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                           <Clock className="h-3 w-3" />
-                           {danceClass.recurrence === 'recurring' 
-                             ? `Recurrente (${danceClass.recurrenceMonths} meses)` 
-                             : `Única: ${danceClass.date ? format(new Date(danceClass.date), "PPP", { locale: es }) : 'N/A'}`
-                           }
+                           {danceClass.type === 'rental' ? <Building className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                           {eventTypeLabels[danceClass.type]}
                         </div>
                     </TableCell>
                     <TableCell>
@@ -235,9 +316,11 @@ export default function AdminClassesPage() {
                           <DropdownMenuItem onClick={() => handleOpenDialog(danceClass)}>
                             <Pencil className="mr-2 h-4 w-4" /> Editar
                           </DropdownMenuItem>
+                          {danceClass.type !== 'rental' && (
                           <DropdownMenuItem onClick={() => router.push(`/admin/classes/${danceClass.id}/attendance`)}>
                             <ClipboardCheck className="mr-2 h-4 w-4" /> Tomar Asistencia
                           </DropdownMenuItem>
+                          )}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
@@ -248,7 +331,7 @@ export default function AdminClassesPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Esta acción no se puede deshacer. Esto eliminará permanentemente la clase.
+                                  Esta acción no se puede deshacer. Esto eliminará permanentemente el evento.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -271,107 +354,99 @@ export default function AdminClassesPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingClass ? 'Editar Clase' : 'Añadir Nueva Clase'}</DialogTitle>
+            <DialogTitle>{editingClass ? 'Editar Evento' : 'Añadir Nuevo Evento'}</DialogTitle>
             <DialogDescription>
-              {editingClass ? 'Modifica los detalles de la clase.' : 'Rellena los detalles para crear una nueva clase.'}
+              {editingClass ? 'Modifica los detalles del evento.' : 'Rellena los detalles para crear un nuevo evento.'}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="name" render={({ field }) => (
-                  <FormItem><FormLabel>Nombre de la clase</FormLabel><FormControl><Input {...field} placeholder="Ej: Salsa Lady Style" /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="styleId" render={({ field }) => (
-                  <FormItem><FormLabel>Estilo de Baile</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un estilo" /></SelectTrigger></FormControl>
-                    <SelectContent>{danceStyles.map(style => <SelectItem key={style.id} value={style.id}>{style.name}</SelectItem>)}</SelectContent>
-                  </Select><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="levelId" render={({ field }) => (
-                  <FormItem><FormLabel>Nivel</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un nivel" /></SelectTrigger></FormControl>
-                    <SelectContent>{danceLevels.map(lvl => <SelectItem key={lvl.id} value={lvl.id}>{lvl.name}</SelectItem>)}</SelectContent>
-                  </Select><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="teacher" render={({ field }) => (
-                  <FormItem><FormLabel>Profesor/a</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un profesor" /></SelectTrigger></FormControl>
-                    <SelectContent>{availableTeachers.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                  </Select><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="day" render={({ field }) => (
-                  <FormItem><FormLabel>Día de la semana</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un día" /></SelectTrigger></FormControl>
-                    <SelectContent>{availableDays.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}</SelectContent>
-                  </Select><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="time" render={({ field }) => (
-                  <FormItem><FormLabel>Hora (HH:MM)</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                 <FormField control={form.control} name="room" render={({ field }) => (
-                  <FormItem><FormLabel>Sala</FormLabel><FormControl><Input {...field} placeholder="Ej: Estudio 1" /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="duration" render={({ field }) => (
-                  <FormItem><FormLabel>Duración</FormLabel><FormControl><Input {...field} placeholder="Ej: 60 min" /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="capacity" render={({ field }) => (
-                    <FormItem><FormLabel>Capacidad</FormLabel><FormControl><Input type="number" min="1" {...field} placeholder="20" /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="recurrence" render={({ field }) => (
-                  <FormItem><FormLabel>Recurrencia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecciona tipo de recurrencia" /></SelectTrigger></FormControl>
+                 <FormField control={form.control} name="type" render={({ field }) => (
+                  <FormItem className="md:col-span-2"><FormLabel>Tipo de Evento</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un tipo" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      <SelectItem value="one-time">Clase Única (Taller)</SelectItem>
                       <SelectItem value="recurring">Clase Recurrente</SelectItem>
+                      <SelectItem value="one-time">Clase Única</SelectItem>
+                      <SelectItem value="workshop">Taller</SelectItem>
+                      <SelectItem value="rental">Alquiler de Sala</SelectItem>
                     </SelectContent>
                   </Select><FormMessage /></FormItem>
                 )} />
-                {recurrenceType === 'recurring' && (
-                  <FormField control={form.control} name="recurrenceMonths" render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Duración de la recurrencia (meses)</FormLabel>
-                      <FormControl><Input type="number" min="1" {...field} /></FormControl>
-                      <FormDescription>La clase se repetirá semanalmente durante este número de meses.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+
+                <FormField control={form.control} name="name" render={({ field }) => (
+                  <FormItem className="md:col-span-2"><FormLabel>Nombre del Evento</FormLabel><FormControl><Input {...field} placeholder={
+                      eventType === 'rental' ? "Ej: Alquiler para Ensayo" :
+                      eventType === 'workshop' ? "Ej: Taller de Bachata Dominicana" :
+                      "Ej: Salsa Lady Style"
+                  } /></FormControl><FormMessage /></FormItem>
+                )} />
+
+                {['recurring', 'one-time', 'workshop'].includes(eventType) && (
+                  <>
+                    <FormField control={form.control} name="styleId" render={({ field }) => (
+                      <FormItem><FormLabel>Estilo de Baile</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un estilo" /></SelectTrigger></FormControl>
+                        <SelectContent>{danceStyles.map(style => <SelectItem key={style.id} value={style.id}>{style.name}</SelectItem>)}</SelectContent>
+                      </Select><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="levelId" render={({ field }) => (
+                      <FormItem><FormLabel>Nivel</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un nivel" /></SelectTrigger></FormControl>
+                        <SelectContent>{danceLevels.map(lvl => <SelectItem key={lvl.id} value={lvl.id}>{lvl.name}</SelectItem>)}</SelectContent>
+                      </Select><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="teacher" render={({ field }) => (
+                      <FormItem><FormLabel>Profesor/a</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un profesor" /></SelectTrigger></FormControl>
+                        <SelectContent>{availableTeachers.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                      </Select><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="capacity" render={({ field }) => (
+                        <FormItem><FormLabel>Capacidad</FormLabel><FormControl><Input type="number" min="1" {...field} placeholder="20" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </>
                 )}
-                {recurrenceType === 'one-time' && (
+                
+                {eventType === 'recurring' && (
+                    <>
+                        <FormField control={form.control} name="day" render={({ field }) => (
+                          <FormItem><FormLabel>Día de la semana</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un día" /></SelectTrigger></FormControl>
+                            <SelectContent>{availableDays.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}</SelectContent>
+                          </Select><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="recurrenceMonths" render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Duración (meses)</FormLabel>
+                            <FormControl><Input type="number" min="1" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )} />
+                    </>
+                )}
+
+                {['one-time', 'workshop', 'rental'].includes(eventType) && (
                    <FormField
                     control={form.control}
                     name="date"
                     render={({ field }) => (
                       <FormItem className="flex flex-col md:col-span-2">
-                        <FormLabel>Fecha de la Clase Única</FormLabel>
+                        <FormLabel>Fecha del Evento</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
                                 variant={"outline"}
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
+                                className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                               >
-                                {field.value ? (
-                                  format(field.value, "PPP", { locale: es })
-                                ) : (
-                                  <span>Elige una fecha</span>
-                                )}
+                                {field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Elige una fecha</span>)}
                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <CalendarComponent
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) => date < new Date("2000-01-01") }
-                              initialFocus
-                              locale={es}
-                            />
+                            <CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date("2000-01-01")} initialFocus locale={es}/>
                           </PopoverContent>
                         </Popover>
                         <FormMessage />
@@ -379,6 +454,49 @@ export default function AdminClassesPage() {
                     )}
                   />
                 )}
+                
+                {eventType === 'workshop' && (
+                    <div className="md:col-span-2 grid grid-cols-2 gap-4 border p-4 rounded-md">
+                        <FormField control={form.control} name="workshopPaymentType" render={({ field }) => (
+                            <FormItem><FormLabel>Tipo de Pago al Profesor</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="fixed">Monto Fijo</SelectItem>
+                                    <SelectItem value="percentage">Porcentaje (%)</SelectItem>
+                                </SelectContent>
+                            </Select><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="workshopPaymentValue" render={({ field }) => (
+                            <FormItem><FormLabel>Valor del Pago</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    </div>
+                )}
+                
+                {eventType === 'rental' && (
+                    <div className="md:col-span-2 grid grid-cols-2 gap-4 border p-4 rounded-md items-center">
+                        <FormField control={form.control} name="rentalPrice" render={({ field }) => (
+                            <FormItem><FormLabel>Precio del Alquiler (€)</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="isVisibleToStudents" render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm h-fit mt-auto">
+                                <div className="space-y-0.5"><FormLabel>Visible a Alumnos</FormLabel></div>
+                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            </FormItem>
+                        )} />
+                    </div>
+                )}
+
+                <div className="md:col-span-2 grid grid-cols-3 gap-4">
+                    <FormField control={form.control} name="time" render={({ field }) => (
+                    <FormItem><FormLabel>Hora (HH:MM)</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="room" render={({ field }) => (
+                    <FormItem><FormLabel>Sala</FormLabel><FormControl><Input {...field} placeholder="Ej: Estudio 1" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="duration" render={({ field }) => (
+                    <FormItem><FormLabel>Duración</FormLabel><FormControl><Input {...field} placeholder="Ej: 60 min" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
               </div>
               <DialogFooter>
                 <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>

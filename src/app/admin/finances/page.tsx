@@ -5,11 +5,13 @@ import { TeacherPayroll } from '@/components/admin/teacher-payroll';
 import { IncomeExpenseLedger } from '@/components/admin/income-expense-ledger';
 import { DollarSign, TrendingUp, TrendingDown, Scale } from 'lucide-react';
 import { studentPayments, extraTransactions } from '@/lib/finances-data';
+import { danceClasses } from '@/lib/data';
 
 export default function AdminFinancesPage() {
   const studentIncome = studentPayments.reduce((acc, p) => acc + p.amount, 0);
   const otherIncome = extraTransactions.filter(t => t.type === 'ingreso').reduce((acc, t) => acc + t.amount, 0);
-  const totalIncome = studentIncome + otherIncome;
+  const rentalIncome = danceClasses.filter(c => c.type === 'rental' && c.rentalPrice).reduce((acc, c) => acc + (c.rentalPrice || 0), 0);
+  const totalIncome = studentIncome + otherIncome + rentalIncome;
 
   const totalExpenses = extraTransactions.filter(t => t.type === 'egreso').reduce((acc, t) => acc + t.amount, 0);
   // Note: Teacher payroll is not included in this calculation, it's shown separately.
@@ -28,7 +30,7 @@ export default function AdminFinancesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">€{totalIncome.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Ingresos de membresías y otros</p>
+            <p className="text-xs text-muted-foreground">Membresías, alquileres y otros</p>
           </CardContent>
         </Card>
         <Card>

@@ -1,4 +1,5 @@
 
+
 export type DanceStyle = {
   id: string;
   name: string;
@@ -40,9 +41,12 @@ type TrialClassPlan = MembershipPlanBase & {
 
 export type MembershipPlan = UnlimitedPlan | ClassPackPlan | TrialClassPlan;
 
+export type ClassType = 'recurring' | 'one-time' | 'workshop' | 'rental';
+
 export type DanceClass = {
   id: string;
   name: string;
+  type: ClassType;
   styleId: string;
   levelId: string;
   teacher: string;
@@ -52,12 +56,18 @@ export type DanceClass = {
   room: string;
   duration: string; // e.g. '60 min'
   capacity: number;
-  recurrence: 'one-time' | 'recurring';
-  recurrenceMonths?: number;
-  date?: string; // "YYYY-MM-DD"
   status: 'completed' | 'scheduled' | 'cancelled-low-attendance' | 'cancelled-teacher';
   enrolledStudentIds: number[];
+  
+  // Type-specific fields
+  recurrenceMonths?: number; // For 'recurring'
+  date?: string; // "YYYY-MM-DD" for 'one-time', 'workshop', 'rental'
+  isVisibleToStudents?: boolean; // For 'rental'
+  rentalPrice?: number; // For 'rental'
+  workshopPaymentType?: 'fixed' | 'percentage'; // For 'workshop'
+  workshopPaymentValue?: number; // For 'workshop'
 };
+
 
 export type AttendanceRecord = {
   classId: string;
