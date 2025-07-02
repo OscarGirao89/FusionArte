@@ -109,12 +109,6 @@ export const membershipPlans: MembershipPlan[] = [
     durationValue: 3,
     isPopular: true,
     visibility: 'public',
-    coupon: {
-        code: 'VERANO24',
-        discountType: 'percentage',
-        discountValue: 10,
-        expirationDate: '2024-08-31'
-    }
   },
   {
     id: 'unlimited-1',

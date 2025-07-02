@@ -12,12 +12,17 @@ export type DanceLevel = {
   description: string;
 };
 
-export type CouponDetails = {
+export type Coupon = {
+  id: string;
   code: string;
   discountType: 'percentage' | 'fixed';
   discountValue: number;
   expirationDate?: string; // YYYY-MM-DD
   usageLimit?: number;
+  status: 'active' | 'inactive';
+  applicableTo: 'all_memberships' | 'specific_memberships' | 'all_classes' | 'specific_classes';
+  specificPlanIds?: string[];
+  specificClassIds?: string[];
 };
 
 type MembershipPlanBase = {
@@ -30,7 +35,6 @@ type MembershipPlanBase = {
   durationUnit: 'days' | 'weeks' | 'months';
   durationValue: number;
   visibility: 'public' | 'unlisted';
-  coupon?: CouponDetails;
 };
 
 type UnlimitedPlan = MembershipPlanBase & {

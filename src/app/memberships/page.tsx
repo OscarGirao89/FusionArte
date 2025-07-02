@@ -5,7 +5,7 @@ import { membershipPlans } from '@/lib/data';
 import type { MembershipPlan } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Star, Ticket } from 'lucide-react';
+import { Check, Star, TicketPercent } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -60,14 +60,6 @@ function PlanCard({ plan }: { plan: MembershipPlan }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        {plan.coupon && (
-            <div className="mb-4 text-center">
-                <Badge variant="destructive" className="text-sm">
-                    <Ticket className="mr-2 h-4 w-4" />
-                    Cupón: {plan.coupon.code}
-                </Badge>
-            </div>
-        )}
         <ul className="space-y-3">
           {plan.features.map((feature, index) => (
             <li key={index} className="flex items-start">

@@ -2,11 +2,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { membershipPlans as initialPlans, danceClasses } from '@/lib/data';
-import type { MembershipPlan, CouponDetails } from '@/lib/types';
+import type { MembershipPlan } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,19 +22,10 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { MoreHorizontal, PlusCircle, Pencil, Trash2, Ticket, InfinityIcon, Settings } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Pencil, Trash2, TicketPercent, InfinityIcon, Settings } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-
-const couponSchema = z.object({
-    code: z.string(),
-    discountType: z.enum(['percentage', 'fixed']),
-    discountValue: z.coerce.number(),
-    expirationDate: z.string().optional(),
-    usageLimit: z.coerce.number().optional(),
-}).optional().nullable();
-
 
 const baseSchema = z.object({
   id: z.string().optional(),
@@ -45,7 +37,6 @@ const baseSchema = z.object({
   durationUnit: z.enum(['days', 'weeks', 'months'], { required_error: "Debes seleccionar una unidad." }),
   durationValue: z.coerce.number().int().min(1, "La duración debe ser al menos 1."),
   visibility: z.enum(['public', 'unlisted']).default('public'),
-  coupon: couponSchema,
 });
 
 const formSchema = z.discriminatedUnion("accessType", [
@@ -70,7 +61,6 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
     ...plan,
     features: plan.features.join('\n'),
     visibility: plan.visibility || 'public',
-    coupon: plan.coupon ? { ...plan.coupon, expirationDate: plan.coupon.expirationDate || '', usageLimit: plan.coupon.usageLimit || undefined } : undefined,
   };
   switch (plan.accessType) {
     case 'unlimited':
@@ -99,6 +89,7 @@ export default function AdminMembershipsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<MembershipFormValues>({
     resolver: zodResolver(formSchema),
@@ -112,7 +103,6 @@ export default function AdminMembershipsPage() {
       durationUnit: 'months',
       durationValue: 1,
       visibility: 'public',
-      coupon: undefined,
     },
   });
 
@@ -136,7 +126,6 @@ export default function AdminMembershipsPage() {
         classCount: 10,
         allowedClasses: [],
         visibility: 'public',
-        coupon: undefined,
       });
     }
     setIsDialogOpen(true);
@@ -150,8 +139,6 @@ export default function AdminMembershipsPage() {
     
     let planToSave: MembershipPlan;
     
-    const couponData = data.coupon && data.coupon.code ? data.coupon : undefined;
-
     const commonData = {
         id: editingPlan?.id || `plan-${Date.now()}`,
         title: data.title,
@@ -162,7 +149,6 @@ export default function AdminMembershipsPage() {
         durationUnit: data.durationUnit,
         durationValue: data.durationValue,
         visibility: data.visibility,
-        coupon: couponData as CouponDetails | undefined,
     };
 
     switch(data.accessType) {
@@ -200,10 +186,16 @@ export default function AdminMembershipsPage() {
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Membresías</h1>
-        <Button onClick={() => handleOpenDialog()}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Añadir Plan
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => router.push('/admin/coupons')}>
+              <TicketPercent className="mr-2 h-4 w-4" />
+              Gestionar Cupones
+            </Button>
+            <Button onClick={() => handleOpenDialog()}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Añadir Plan
+            </Button>
+        </div>
       </div>
       <Card>
         <CardHeader>
@@ -227,14 +219,11 @@ export default function AdminMembershipsPage() {
                   <TableRow key={plan.id}>
                     <TableCell>
                       <p className="font-medium">{plan.title}</p>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {plan.isPopular && <Badge variant="secondary" className="mt-1">Popular</Badge>}
-                        {plan.coupon && <Badge variant="destructive" className="mt-1 flex items-center gap-1"><Ticket className="h-3 w-3"/>{plan.coupon.code}</Badge>}
-                      </div>
+                      {plan.isPopular && <Badge variant="secondary" className="mt-1">Popular</Badge>}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                         <div className="flex items-center gap-2">
-                        {plan.accessType === 'unlimited' ? <InfinityIcon className="h-4 w-4" /> : <Ticket className="h-4 w-4" />}
+                        {plan.accessType === 'unlimited' ? <InfinityIcon className="h-4 w-4" /> : <TicketPercent className="h-4 w-4" />}
                         <span>
                             {
                                 {
@@ -463,32 +452,6 @@ export default function AdminMembershipsPage() {
                             <FormMessage />
                         </FormItem>
                     )} />
-                    <div className="p-4 border rounded-md space-y-4">
-                        <h4 className="font-medium text-base">Cupón de Descuento (Opcional)</h4>
-                        <FormField control={form.control} name="coupon.code" render={({ field }) => (
-                          <FormItem><FormLabel>Código del Cupón</FormLabel><FormControl><Input {...field} placeholder="EJ: VERANO20" /></FormControl><FormMessage /></FormItem>
-                        )} />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="coupon.discountType" render={({ field }) => (
-                                <FormItem><FormLabel>Tipo de Descuento</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="percentage">Porcentaje (%)</SelectItem>
-                                        <SelectItem value="fixed">Monto Fijo (€)</SelectItem>
-                                    </SelectContent>
-                                </Select><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="coupon.discountValue" render={({ field }) => (
-                                <FormItem><FormLabel>Valor</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                        </div>
-                        <FormField control={form.control} name="coupon.expirationDate" render={({ field }) => (
-                            <FormItem><FormLabel>Fecha de Caducidad</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
-                        <FormField control={form.control} name="coupon.usageLimit" render={({ field }) => (
-                            <FormItem><FormLabel>Límite de Usos</FormLabel><FormControl><Input type="number" min="1" {...field} placeholder="Ej: 15" /></FormControl><FormDescription>Dejar vacío para usos ilimitados.</FormDescription><FormMessage /></FormItem>
-                        )} />
-                    </div>
                 </CollapsibleContent>
               </Collapsible>
 

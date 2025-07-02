@@ -28,6 +28,7 @@ import {
   GraduationCap,
   ShieldCheck,
   Wallet,
+  TicketPercent,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -74,6 +75,7 @@ const adminNavItems = [
     { href: '/admin/students', label: 'Gestión de Alumnos', icon: GraduationCap },
     { href: '/admin/classes', label: 'Gestión de Clases', icon: ClipboardList },
     { href: '/admin/memberships', label: 'Gestión de Membresías', icon: CreditCard },
+    { href: '/admin/coupons', label: 'Gestión de Cupones', icon: TicketPercent },
     { href: '/admin/payments', label: 'Pagos', icon: Wallet },
     { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },

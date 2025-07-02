@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Eye, PlusCircle, Ticket, List, CalendarCheck, CalendarX, Pencil, Save, Calendar as CalendarIcon, Download, Printer } from 'lucide-react';
+import { Eye, PlusCircle, TicketPercent, List, CalendarCheck, CalendarX, Pencil, Save, Calendar as CalendarIcon, Download, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -446,7 +446,7 @@ export default function AdminStudentsPage() {
                             </Card>
                             <Card>
                                 <CardHeader className="flex flex-row justify-between items-center">
-                                    <CardTitle className="text-lg flex items-center gap-2"><Ticket className="h-5 w-5"/>Membresía Actual</CardTitle>
+                                    <CardTitle className="text-lg flex items-center gap-2"><TicketPercent className="h-5 w-5"/>Membresía Actual</CardTitle>
                                     <Button variant="outline" size="sm" onClick={handlePrintReceipt}>
                                         <Printer className="mr-2 h-4 w-4" />
                                         Imprimir Comprobante
