@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { MoreVertical, UserPlus, Pencil, Trash2, ShieldCheck } from 'lucide-react';
+import { MoreVertical, UserPlus, Pencil, Trash2, ShieldCheck, Download, Printer } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 
 const paymentDetailsSchema = z.discriminatedUnion("type", [
@@ -172,11 +172,48 @@ export default function AdminUsersPage() {
         });
     }
 
+    const handleExportCSV = () => {
+        const headers = ["ID", "Nombre", "Email", "Rol", "Fecha de Ingreso"];
+        const csvRows = [headers.join(',')];
+        
+        users.forEach(user => {
+          const row = [
+            user.id,
+            `"${user.name}"`,
+            user.email,
+            user.role,
+            user.joined
+          ].map(field => (typeof field === 'string' ? field.replace(/"/g, '""') : field)).join(',');
+          csvRows.push(row);
+        });
+        
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'usuarios_fusionarte.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
   return (
     <div className="p-4 md:p-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
             <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Usuarios</h1>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap no-print">
+                 <Button variant="outline" onClick={handleExportCSV}>
+                    <Download className="mr-2 h-4 w-4" /> Exportar CSV
+                </Button>
+                <Button variant="outline" onClick={handlePrint}>
+                    <Printer className="mr-2 h-4 w-4" /> Imprimir
+                </Button>
                 <Button variant="outline" onClick={() => router.push('/admin/roles')}>
                     <ShieldCheck className="mr-2 h-4 w-4" />
                     Gestionar Roles
@@ -199,7 +236,7 @@ export default function AdminUsersPage() {
                 <TableHead>Nombre</TableHead>
                 <TableHead className="hidden sm:table-cell">Rol</TableHead>
                 <TableHead className="hidden md:table-cell">Fecha de Ingreso</TableHead>
-                <TableHead>
+                <TableHead className="no-print">
                   <span className="sr-only">Acciones</span>
                 </TableHead>
               </TableRow>
@@ -223,7 +260,7 @@ export default function AdminUsersPage() {
                     <Badge variant={roleVariant[user.role] || 'secondary'}>{user.role}</Badge>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{user.joined}</TableCell>
-                  <TableCell>
+                  <TableCell className="no-print">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">

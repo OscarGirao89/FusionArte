@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Eye, PlusCircle, Ticket, List, CalendarCheck, CalendarX, Pencil, Save, Calendar as CalendarIcon } from 'lucide-react';
+import { Eye, PlusCircle, Ticket, List, CalendarCheck, CalendarX, Pencil, Save, Calendar as CalendarIcon, Download, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -182,14 +182,63 @@ export default function AdminStudentsPage() {
     const currentPlan = currentMembership ? membershipPlans.find(p => p.id === currentMembership.planId) : null;
     const enrolledClasses = selectedStudent ? getEnrolledClasses(selectedStudent.id) : [];
 
+    const handleExportCSV = () => {
+        const headers = ["ID", "Nombre", "Email", "Membresia", "Estado", "Fecha Fin Membresia", "Clases Restantes"];
+        const csvRows = [headers.join(',')];
+        
+        students.forEach(student => {
+          const membershipInfo = getStudentMembershipInfo(student.id);
+          const membership = studentMemberships.find(sm => sm.userId === student.id);
+          const plan = membership ? membershipPlans.find(p => p.id === membership.planId) : null;
+          
+          const row = [
+            student.id,
+            `"${student.name}"`,
+            student.email,
+            `"${membershipInfo.planTitle}"`,
+            membership ? (isBefore(new Date(), new Date(membership.endDate)) ? 'Activa' : 'Expirada') : 'Sin membresía',
+            membership ? membership.endDate : 'N/A',
+            (plan?.accessType === 'class_pack' && membership?.classesRemaining !== undefined) ? membership.classesRemaining : 'N/A'
+          ].map(field => (typeof field === 'string' ? field.replace(/"/g, '""') : field)).join(',');
+          csvRows.push(row);
+        });
+        
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+          const url = URL.createObjectURL(blob);
+          link.setAttribute('href', url);
+          link.setAttribute('download', 'alumnos_fusionarte.csv');
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
   return (
     <div className="p-4 md:p-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
             <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Alumnos</h1>
-            <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Añadir Membresía a Alumno
-            </Button>
+            <div className="flex gap-2 flex-wrap no-print">
+                <Button variant="outline" onClick={handleExportCSV}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Exportar a CSV
+                </Button>
+                <Button variant="outline" onClick={handlePrint}>
+                    <Printer className="mr-2 h-4 w-4" />
+                    Imprimir
+                </Button>
+                <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Añadir Membresía
+                </Button>
+            </div>
         </div>
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
@@ -205,7 +254,7 @@ export default function AdminStudentsPage() {
                         <TableHead>Nombre</TableHead>
                         <TableHead className="hidden sm:table-cell">Membresía</TableHead>
                         <TableHead className="hidden md:table-cell">Estado</TableHead>
-                        <TableHead>
+                        <TableHead className="no-print">
                         <span className="sr-only">Acciones</span>
                         </TableHead>
                     </TableRow>
@@ -231,7 +280,7 @@ export default function AdminStudentsPage() {
                                 <Badge variant="secondary">{planTitle}</Badge>
                             </TableCell>
                             <TableCell className={`hidden md:table-cell text-sm font-medium ${statusColor}`}>{status}</TableCell>
-                            <TableCell>
+                            <TableCell className="no-print">
                                 <Button variant="ghost" size="icon" onClick={() => handleViewProfile(student)}>
                                     <Eye className="h-4 w-4" />
                                     <span className="sr-only">Ver Perfil</span>
@@ -245,7 +294,7 @@ export default function AdminStudentsPage() {
                 </CardContent>
             </Card>
         </div>
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 no-print">
             <BirthdayCalendar />
         </div>
       </div>
@@ -254,7 +303,7 @@ export default function AdminStudentsPage() {
         <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
             {selectedStudent && (
             <>
-                <DialogHeader>
+                <DialogHeader className="no-print">
                     <div className="flex items-center justify-between">
                          <div className="flex items-center gap-4">
                             <Avatar className="h-16 w-16">
@@ -426,7 +475,7 @@ export default function AdminStudentsPage() {
                         </div>
                     )}
                 </div>
-                <DialogFooter>
+                <DialogFooter className="no-print">
                     {isEditing && (
                         <>
                             <Button type="button" variant="ghost" onClick={() => { setIsEditing(false); handleViewProfile(selectedStudent)}}>Cancelar</Button>

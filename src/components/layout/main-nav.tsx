@@ -97,7 +97,7 @@ export function MainNav() {
     <>
       <SidebarHeader className="h-14 justify-between">
         {open || isMobile ? logo : <Link href="/">{logo}</Link>}
-        <SidebarTrigger className="hidden md:flex" />
+        <SidebarTrigger className="md:hidden" />
       </SidebarHeader>
 
       <SidebarMenu className="flex-1 p-2">

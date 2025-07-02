@@ -21,7 +21,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon, Users, ClipboardCheck, Palette, Signal, Building } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon, Users, ClipboardCheck, Palette, Signal, Building, Download, Printer } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -243,11 +243,45 @@ export default function AdminClassesPage() {
     });
   }
 
+  const handleExportCSV = () => {
+    const headers = ["ID", "Evento", "Tipo", "Profesor/Responsable", "Dia/Fecha", "Hora", "Sala"];
+    const csvRows = [headers.join(',')];
+    
+    classes.forEach(danceClass => {
+      const row = [
+        danceClass.id,
+        `"${danceClass.name}"`,
+        `"${eventTypeLabels[danceClass.type]}"`,
+        `"${danceClass.teacher}"`,
+        danceClass.type === 'recurring' ? (danceClass.day || 'N/A') : (danceClass.date || 'N/A'),
+        danceClass.time,
+        danceClass.room
+      ].map(field => (typeof field === 'string' ? field.replace(/"/g, '""') : field)).join(',');
+      csvRows.push(row);
+    });
+    
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'clases_fusionarte.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+
   return (
     <div className="p-4 md:p-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Clases y Eventos</h1>
-        <Button onClick={() => handleOpenDialog()}>
+        <Button onClick={() => handleOpenDialog()} className="no-print">
           <PlusCircle className="mr-2 h-4 w-4" />
           Añadir Evento
         </Button>
@@ -259,7 +293,13 @@ export default function AdminClassesPage() {
               <CardTitle>Listado de Eventos</CardTitle>
               <CardDescription>Añade, edita o elimina clases, talleres y alquileres.</CardDescription>
             </div>
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex gap-2 flex-shrink-0 flex-wrap no-print">
+                <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                  <Download className="mr-2 h-4 w-4" /> Exportar CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={handlePrint}>
+                  <Printer className="mr-2 h-4 w-4" /> Imprimir
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => router.push('/admin/styles')}>
                   <Palette className="mr-2 h-4 w-4" />
                   Gestionar Estilos
@@ -279,7 +319,7 @@ export default function AdminClassesPage() {
                   <TableHead>Evento</TableHead>
                   <TableHead className="hidden sm:table-cell">Responsable/Profesor</TableHead>
                   <TableHead className="hidden md:table-cell">Horario y Tipo</TableHead>
-                  <TableHead>Acciones</TableHead>
+                  <TableHead className="no-print">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -305,7 +345,7 @@ export default function AdminClassesPage() {
                            {eventTypeLabels[danceClass.type]}
                         </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="no-print">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
