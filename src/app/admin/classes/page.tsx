@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { danceClasses as initialClasses, teachers, danceStyles, danceLevels } from '@/lib/data';
+import { danceClasses as initialClasses, users, danceStyles, danceLevels } from '@/lib/data';
 import type { DanceClass } from '@/lib/types';
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -63,7 +63,6 @@ const classFormSchema = z.object({
 type ClassFormValues = z.infer<typeof classFormSchema>;
 
 const availableDays = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-const availableTeachers = teachers.map(t => t.name);
 
 export default function AdminClassesPage() {
   const [classes, setClasses] = useState<DanceClass[]>(initialClasses);
@@ -71,6 +70,9 @@ export default function AdminClassesPage() {
   const [editingClass, setEditingClass] = useState<DanceClass | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+
+  const teachers = users.filter(u => u.role === 'Profesor');
+  const availableTeachers = teachers.map(t => t.name);
 
   const form = useForm<ClassFormValues>({
     resolver: zodResolver(classFormSchema),
