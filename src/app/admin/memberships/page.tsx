@@ -5,8 +5,8 @@ import { useState } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { membershipPlans as initialPlans, danceStyles } from '@/lib/data';
-import type { MembershipPlan } from '@/lib/types';
+import { membershipPlans as initialPlans, danceClasses } from '@/lib/data';
+import type { MembershipPlan, DanceClass } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { MoreHorizontal, PlusCircle, Pencil, Trash2, Ticket, InfinityIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const baseSchema = z.object({
   id: z.string().optional(),
@@ -40,12 +41,12 @@ const formSchema = z.discriminatedUnion("accessType", [
   z.object({
     accessType: z.literal("pack_classes"),
     classCount: z.coerce.number().int().min(1, "El número de clases debe ser al menos 1."),
-    allowedStyles: z.array(z.string()).default([]),
+    allowedClasses: z.array(z.string()).default([]),
   }).merge(baseSchema),
   z.object({
     accessType: z.literal("trial_class"),
     classCount: z.coerce.number().int().min(1, "El número de clases debe ser al menos 1.").default(1),
-    allowedStyles: z.array(z.string()).default([]),
+    allowedClasses: z.array(z.string()).default([]),
   }).merge(baseSchema),
 ]);
 
@@ -61,9 +62,9 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
     case 'unlimited':
       return { ...common, accessType: 'unlimited' };
     case 'pack_classes':
-      return { ...common, accessType: 'pack_classes', allowedStyles: plan.allowedStyles || [] };
+      return { ...common, accessType: 'pack_classes', allowedClasses: plan.allowedClasses || [] };
     case 'trial_class':
-      return { ...common, accessType: 'trial_class', allowedStyles: plan.allowedStyles || [] };
+      return { ...common, accessType: 'trial_class', allowedClasses: plan.allowedClasses || [] };
   }
 };
 
@@ -100,6 +101,7 @@ export default function AdminMembershipsPage() {
   });
 
   const accessType = form.watch('accessType');
+  const allClassIds = danceClasses.map(c => c.id);
 
   const handleOpenDialog = (plan: MembershipPlan | null = null) => {
     setEditingPlan(plan);
@@ -116,7 +118,7 @@ export default function AdminMembershipsPage() {
         durationUnit: 'months',
         durationValue: 1,
         classCount: 10,
-        allowedStyles: [],
+        allowedClasses: [],
       });
     }
     setIsDialogOpen(true);
@@ -145,10 +147,10 @@ export default function AdminMembershipsPage() {
             planToSave = { ...commonData, accessType: 'unlimited' };
             break;
         case 'pack_classes':
-            planToSave = { ...commonData, accessType: 'pack_classes', classCount: data.classCount, allowedStyles: data.allowedStyles };
+            planToSave = { ...commonData, accessType: 'pack_classes', classCount: data.classCount, allowedClasses: data.allowedClasses };
             break;
         case 'trial_class':
-            planToSave = { ...commonData, accessType: 'trial_class', classCount: data.classCount, allowedStyles: data.allowedStyles };
+            planToSave = { ...commonData, accessType: 'trial_class', classCount: data.classCount, allowedClasses: data.allowedClasses };
             break;
     }
 
@@ -329,21 +331,35 @@ export default function AdminMembershipsPage() {
                       )} />
                       <FormField
                         control={form.control}
-                        name="allowedStyles"
+                        name="allowedClasses"
                         render={() => (
                           <FormItem>
                             <div className="mb-4">
-                              <FormLabel className="text-base">Estilos Permitidos</FormLabel>
+                              <FormLabel className="text-base">Clases Permitidas</FormLabel>
                               <FormDescription>
-                                Selecciona los estilos a los que da acceso este plan. Si no marcas ninguno, se permitirá el acceso a todos.
+                                Selecciona las clases a las que da acceso este plan. Si no marcas ninguna, se permitirá el acceso a todas.
                               </FormDescription>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                            {danceStyles.map((item) => (
+                            <ScrollArea className="h-40 rounded-md border p-4">
+                            <div className="flex items-center space-x-2 mb-4">
+                               <Checkbox
+                                    id="select-all-classes"
+                                    checked={form.watch('allowedClasses')?.length === allClassIds.length}
+                                    onCheckedChange={(checked) => {
+                                        form.setValue('allowedClasses', checked ? allClassIds : []);
+                                    }}
+                                />
+                                <label htmlFor="select-all-classes" className="text-sm font-medium leading-none">
+                                    Seleccionar todas
+                                </label>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {danceClasses.map((item) => (
                               <FormField
                                 key={item.id}
                                 control={form.control}
-                                name="allowedStyles"
+                                name="allowedClasses"
                                 render={({ field }) => {
                                   // Ensure field.value is an array
                                   const fieldValue = Array.isArray(field.value) ? field.value : [];
@@ -366,8 +382,8 @@ export default function AdminMembershipsPage() {
                                           }}
                                         />
                                       </FormControl>
-                                      <FormLabel className="font-normal">
-                                        {item.name}
+                                      <FormLabel className="font-normal text-sm">
+                                        {item.name} ({item.day} - {item.time})
                                       </FormLabel>
                                     </FormItem>
                                   )
@@ -375,6 +391,7 @@ export default function AdminMembershipsPage() {
                               />
                             ))}
                             </div>
+                            </ScrollArea>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -402,5 +419,3 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
-
-    

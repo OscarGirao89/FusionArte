@@ -37,7 +37,7 @@ export const membershipPlans: MembershipPlan[] = [
     features: ['1 clase a tu elección', 'Experimenta nuestra comunidad'],
     accessType: 'trial_class',
     classCount: 1,
-    allowedStyles: [],
+    allowedClasses: [],
     durationUnit: 'days',
     durationValue: 7,
   },
@@ -49,7 +49,7 @@ export const membershipPlans: MembershipPlan[] = [
     features: ['10 clases de cualquier estilo', 'Horario flexible'],
     accessType: 'pack_classes',
     classCount: 10,
-    allowedStyles: [],
+    allowedClasses: [],
     durationUnit: 'months',
     durationValue: 3,
     isPopular: true,
@@ -77,18 +77,18 @@ export const membershipPlans: MembershipPlan[] = [
 ];
 
 export const danceClasses: DanceClass[] = [
-    { id: 'clase-1', name: 'Salsa On1', styleId: 'salsa', levelId: 'principiante', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min', recurrence: 'recurring', recurrenceMonths: 3 },
-    { id: 'clase-2', name: 'Bachata Sensual', styleId: 'bachata', levelId: 'intermedio', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '20:00', room: 'Estudio 2', duration: '60 min', recurrence: 'recurring', recurrenceMonths: 3 },
-    { id: 'clase-3', name: 'Hip Hop Old School', styleId: 'hip-hop', levelId: 'avanzado', teacher: 'Aisha Jones', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '18:30', room: 'Estudio 1', duration: '90 min', recurrence: 'recurring', recurrenceMonths: 6 },
-    { id: 'clase-4', name: 'Contemporáneo Lirical', styleId: 'contemporaneo', levelId: 'principiante', teacher: 'Liam Smith', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '19:30', room: 'Estudio 3', duration: '75 min', recurrence: 'one-time', date: '2024-08-13' },
-    { id: 'clase-5', name: 'Taller de Salsa Caleña', styleId: 'salsa', levelId: 'intermedio', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '19:00', room: 'Estudio 1', duration: '60 min', recurrence: 'one-time', date: '2024-08-21' },
-    { id: 'clase-6', name: 'Bachata Dominicana', styleId: 'bachata', levelId: 'principiante', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '20:00', room: 'Estudio 2', duration: '60 min', recurrence: 'recurring', recurrenceMonths: 3 },
-    { id: 'clase-7', name: 'Hip Hop Commercial', styleId: 'hip-hop', levelId: 'principiante', teacher: 'Aisha Jones', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '19:00', room: 'Estudio 1', duration: '60 min', recurrence: 'recurring', recurrenceMonths: 3 },
-    { id: 'clase-8', name: 'Contemporáneo Floorwork', styleId: 'contemporaneo', levelId: 'intermedio', teacher: 'Liam Smith', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '20:15', room: 'Estudio 3', duration: '75 min', recurrence: 'recurring', recurrenceMonths: 2 },
-    { id: 'clase-9', name: 'Salsa On2', styleId: 'salsa', levelId: 'avanzado', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '19:00', room: 'Estudio 1', duration: '90 min', recurrence: 'one-time', date: '2024-08-30' },
-    { id: 'clase-10', name: 'Práctica Libre', styleId: 'practica', levelId: 'todos', teacher: 'Estudio', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min', recurrence: 'recurring', recurrenceMonths: 12 },
-    { id: 'clase-11', name: 'Tango Salón', styleId: 'tango', levelId: 'principiante', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Sábado', time: '12:00', room: 'Estudio 2', duration: '90 min', recurrence: 'one-time', date: '2024-09-07' },
-    { id: 'clase-12', name: 'Flamenco', styleId: 'flamenco', levelId: 'intermedio', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Sábado', time: '14:00', room: 'Estudio 1', duration: '75 min', recurrence: 'recurring', recurrenceMonths: 4 },
+    { id: 'clase-1', name: 'Salsa On1', styleId: 'salsa', levelId: 'principiante', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrence: 'recurring', recurrenceMonths: 3 },
+    { id: 'clase-2', name: 'Bachata Sensual', styleId: 'bachata', levelId: 'intermedio', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Lunes', time: '20:00', room: 'Estudio 2', duration: '60 min', capacity: 18, recurrence: 'recurring', recurrenceMonths: 3 },
+    { id: 'clase-3', name: 'Hip Hop Old School', styleId: 'hip-hop', levelId: 'avanzado', teacher: 'Aisha Jones', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '18:30', room: 'Estudio 1', duration: '90 min', capacity: 25, recurrence: 'recurring', recurrenceMonths: 6 },
+    { id: 'clase-4', name: 'Contemporáneo Lirical', styleId: 'contemporaneo', levelId: 'principiante', teacher: 'Liam Smith', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Martes', time: '19:30', room: 'Estudio 3', duration: '75 min', capacity: 15, recurrence: 'one-time', date: '2024-08-13' },
+    { id: 'clase-5', name: 'Taller de Salsa Caleña', styleId: 'salsa', levelId: 'intermedio', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrence: 'one-time', date: '2024-08-21' },
+    { id: 'clase-6', name: 'Bachata Dominicana', styleId: 'bachata', levelId: 'principiante', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Miércoles', time: '20:00', room: 'Estudio 2', duration: '60 min', capacity: 18, recurrence: 'recurring', recurrenceMonths: 3 },
+    { id: 'clase-7', name: 'Hip Hop Commercial', styleId: 'hip-hop', levelId: 'principiante', teacher: 'Aisha Jones', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 25, recurrence: 'recurring', recurrenceMonths: 3 },
+    { id: 'clase-8', name: 'Contemporáneo Floorwork', styleId: 'contemporaneo', levelId: 'intermedio', teacher: 'Liam Smith', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '20:15', room: 'Estudio 3', duration: '75 min', capacity: 15, recurrence: 'recurring', recurrenceMonths: 2 },
+    { id: 'clase-9', name: 'Salsa On2', styleId: 'salsa', levelId: 'avanzado', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '19:00', room: 'Estudio 1', duration: '90 min', capacity: 20, recurrence: 'one-time', date: '2024-08-30' },
+    { id: 'clase-10', name: 'Práctica Libre', styleId: 'practica', levelId: 'todos', teacher: 'Estudio', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min', capacity: 50, recurrence: 'recurring', recurrenceMonths: 12 },
+    { id: 'clase-11', name: 'Tango Salón', styleId: 'tango', levelId: 'principiante', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Sábado', time: '12:00', room: 'Estudio 2', duration: '90 min', capacity: 16, recurrence: 'one-time', date: '2024-09-07' },
+    { id: 'clase-12', name: 'Flamenco', styleId: 'flamenco', levelId: 'intermedio', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Sábado', time: '14:00', room: 'Estudio 1', duration: '75 min', capacity: 15, recurrence: 'recurring', recurrenceMonths: 4 },
 ];
 
 export const teachers: Teacher[] = [

@@ -29,13 +29,13 @@ type UnlimitedPlan = MembershipPlanBase & {
 type PackClassesPlan = MembershipPlanBase & {
   accessType: 'pack_classes';
   classCount: number;
-  allowedStyles: string[];
+  allowedClasses: string[];
 };
 
 type TrialClassPlan = MembershipPlanBase & {
   accessType: 'trial_class';
   classCount: number;
-  allowedStyles: string[];
+  allowedClasses: string[];
 };
 
 export type MembershipPlan = UnlimitedPlan | PackClassesPlan | TrialClassPlan;
@@ -51,6 +51,7 @@ export type DanceClass = {
   time: string;
   room: string;
   duration: string; // e.g. '60 min'
+  capacity: number;
   recurrence: 'one-time' | 'recurring';
   recurrenceMonths?: number;
   date?: string;

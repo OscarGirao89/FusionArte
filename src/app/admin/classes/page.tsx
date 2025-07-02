@@ -20,10 +20,11 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon, Users } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const classFormSchema = z.object({
   id: z.string().optional(),
@@ -35,6 +36,7 @@ const classFormSchema = z.object({
   time: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato de hora inválido (HH:MM)."),
   room: z.string().min(1, "La sala es obligatoria."),
   duration: z.string().min(1, "La duración es obligatoria."),
+  capacity: z.coerce.number().int().min(1, "La capacidad debe ser al menos 1."),
   recurrence: z.enum(['one-time', 'recurring'], { required_error: "Debes seleccionar un tipo de recurrencia." }),
   recurrenceMonths: z.coerce.number().optional(),
   date: z.date().optional(),
@@ -78,6 +80,7 @@ export default function AdminClassesPage() {
       time: '19:00',
       room: '',
       duration: '60 min',
+      capacity: 20,
       recurrence: 'one-time',
       recurrenceMonths: 1,
       date: new Date(),
@@ -107,6 +110,7 @@ export default function AdminClassesPage() {
         time: '19:00',
         room: '',
         duration: '60 min',
+        capacity: 20,
         recurrence: 'one-time',
         recurrenceMonths: 1,
         date: new Date(),
@@ -179,7 +183,10 @@ export default function AdminClassesPage() {
                   <TableRow key={danceClass.id}>
                     <TableCell>
                       <p className="font-medium">{danceClass.name} ({getStyleName(danceClass.styleId)})</p>
-                      <p className="text-sm text-muted-foreground">{getLevelName(danceClass.levelId)}</p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Badge variant="outline">{getLevelName(danceClass.levelId)}</Badge>
+                         <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {danceClass.capacity} cupos</span>
+                      </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{danceClass.teacher}</TableCell>
                     <TableCell className="hidden md:table-cell">
@@ -283,8 +290,11 @@ export default function AdminClassesPage() {
                 <FormField control={form.control} name="duration" render={({ field }) => (
                   <FormItem><FormLabel>Duración</FormLabel><FormControl><Input {...field} placeholder="Ej: 60 min" /></FormControl><FormMessage /></FormItem>
                 )} />
+                <FormField control={form.control} name="capacity" render={({ field }) => (
+                    <FormItem><FormLabel>Capacidad</FormLabel><FormControl><Input type="number" min="1" {...field} placeholder="20" /></FormControl><FormMessage /></FormItem>
+                )} />
                 <FormField control={form.control} name="recurrence" render={({ field }) => (
-                  <FormItem className="md:col-span-2"><FormLabel>Recurrencia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormItem><FormLabel>Recurrencia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecciona tipo de recurrencia" /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="one-time">Clase Única (Taller)</SelectItem>
