@@ -28,6 +28,7 @@ import {
   ClipboardCheck,
   DollarSign,
   Banknote,
+  GraduationCap,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -63,6 +64,7 @@ const navItems = {
 
 const adminNavItems = [
     { href: '/admin/users', label: 'Gestión de Usuarios', icon: User },
+    { href: '/admin/students', label: 'Gestión de Alumnos', icon: GraduationCap },
     { href: '/admin/classes', label: 'Gestión de Clases', icon: ClipboardList },
     { href: '/admin/memberships', label: 'Gestión de Membresías', icon: CreditCard },
     { href: '/admin/styles', label: 'Estilos de Baile', icon: Palette },
@@ -71,7 +73,7 @@ const adminNavItems = [
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];
 
-const userProfiles: Record<UserRole, { name: string; role: string; avatar: string }> = {
+export const userProfiles: Record<UserRole, { name: string; role: string; avatar: string }> = {
     student: { name: 'Alex Doe', role: 'Estudiante', avatar: 'https://placehold.co/100x100.png?text=A' },
     teacher: { name: 'Elena Garcia', role: 'Profesora', avatar: 'https://placehold.co/100x100.png?text=E' },
     admin: { name: 'Admin FusionArte', role: 'Administrador/a', avatar: 'https://placehold.co/100x100.png?text=AF' },

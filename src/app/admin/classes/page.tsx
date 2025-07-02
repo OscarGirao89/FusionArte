@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -20,7 +21,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon, Users } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Pencil, Trash2, Calendar, Clock, Calendar as CalendarIcon, Users, ClipboardCheck } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -40,6 +41,7 @@ const classFormSchema = z.object({
   recurrence: z.enum(['one-time', 'recurring'], { required_error: "Debes seleccionar un tipo de recurrencia." }),
   recurrenceMonths: z.coerce.number().optional(),
   date: z.date().optional(),
+  enrolledStudentIds: z.array(z.number()).default([]),
 }).refine(data => {
     if (data.recurrence === 'recurring' && (data.recurrenceMonths === undefined || data.recurrenceMonths <= 0)) {
         return false;
@@ -68,6 +70,7 @@ export default function AdminClassesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<DanceClass | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<ClassFormValues>({
     resolver: zodResolver(classFormSchema),
@@ -84,6 +87,7 @@ export default function AdminClassesPage() {
       recurrence: 'one-time',
       recurrenceMonths: 1,
       date: new Date(),
+      enrolledStudentIds: [],
     },
   });
 
@@ -114,6 +118,7 @@ export default function AdminClassesPage() {
         recurrence: 'one-time',
         recurrenceMonths: 1,
         date: new Date(),
+        enrolledStudentIds: [],
       });
     }
     setIsDialogOpen(true);
@@ -137,6 +142,7 @@ export default function AdminClassesPage() {
       const newClass: DanceClass = {
         ...dataToSave,
         id: `clase-${Date.now()}`,
+        status: 'scheduled',
       };
       setClasses([...classes, newClass]);
     }
@@ -212,6 +218,9 @@ export default function AdminClassesPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handleOpenDialog(danceClass)}>
                             <Pencil className="mr-2 h-4 w-4" /> Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(`/admin/classes/${danceClass.id}/attendance`)}>
+                            <ClipboardCheck className="mr-2 h-4 w-4" /> Tomar Asistencia
                           </DropdownMenuItem>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>

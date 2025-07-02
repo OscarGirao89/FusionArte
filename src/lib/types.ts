@@ -56,6 +56,7 @@ export type DanceClass = {
   recurrenceMonths?: number;
   date?: string; // "YYYY-MM-DD"
   status: 'completed' | 'scheduled' | 'cancelled-low-attendance' | 'cancelled-teacher';
+  enrolledStudentIds: number[];
 };
 
 export type Teacher = {
@@ -83,4 +84,12 @@ export type Transaction = {
   amount: number;
   date: string; // YYYY-MM-DD
   receiptUrl?: string;
+}
+
+export type StudentMembership = {
+  userId: number;
+  planId: string;
+  startDate: string;
+  endDate: string;
+  classesRemaining?: number;
 }
