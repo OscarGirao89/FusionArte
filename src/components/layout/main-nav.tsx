@@ -18,7 +18,6 @@ import {
   CreditCard,
   Users,
   LogOut,
-  Flame,
   Settings,
   BookMarked,
   User,
@@ -27,6 +26,7 @@ import {
   DollarSign,
   Banknote,
   GraduationCap,
+  UsersRound,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -71,7 +71,7 @@ const adminNavItems = [
 
 export const userProfiles: Record<UserRole, { name: string; role: string; avatar: string }> = {
     student: { name: 'Alex Doe', role: 'Estudiante', avatar: 'https://placehold.co/100x100.png?text=A' },
-    teacher: { name: 'Elena Garcia', role: 'Profesora', avatar: 'https://placehold.co/100x100.png?text=E' },
+    teacher: { name: 'Oscar Girao', role: 'Profesor', avatar: 'https://placehold.co/100x100.png?text=OG' },
     admin: { name: 'Admin FusionArte', role: 'Administrador/a', avatar: 'https://placehold.co/100x100.png?text=AF' },
     administrativo: { name: 'Laura Martinez', role: 'Recepción', avatar: 'https://placehold.co/100x100.png?text=LM' },
 };
@@ -87,7 +87,7 @@ export function MainNav() {
   
   const logo = (
     <div className="flex items-center gap-2" aria-hidden="true">
-        <Flame className="h-8 w-8 text-primary" />
+        <UsersRound className="h-8 w-8 text-primary" />
         <span className="font-bold text-lg font-headline">FusionArte</span>
     </div>
   )
