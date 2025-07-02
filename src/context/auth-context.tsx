@@ -41,10 +41,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [pathname, router]);
 
+  useEffect(() => {
+    // This effect handles redirecting a logged-in user away from the login page.
+    // It runs after the component renders, avoiding the "cannot update during render" error.
+    if (userRole && pathname === '/login') {
+      router.push('/');
+    }
+  }, [userRole, pathname, router]);
+
   const login = (role: UserRole) => {
     try {
       localStorage.setItem('userRole', role);
       setUserRole(role);
+      router.push('/');
     } catch (error) {
        console.error("Could not access localStorage", error);
     }
@@ -72,12 +81,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return <div className="flex h-screen w-full items-center justify-center"><Skeleton className="h-20 w-20 rounded-full" /></div>
   }
 
+  // Prevent rendering children if a redirect is imminent.
   if (!userRole && pathname !== '/login') {
     return null;
   }
   
   if (userRole && pathname === '/login') {
-    router.push('/');
     return null;
   }
 
