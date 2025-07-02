@@ -90,10 +90,10 @@ export default function AdminRolesPage() {
   
   const handleDelete = (roleId: string) => {
     // Prevent deleting core roles in this simulation
-    if (['admin', 'teacher', 'student'].includes(roleId)) {
+    if (['admin', 'teacher', 'student', 'socio', 'administrative'].includes(roleId)) {
       toast({
         title: "Error al eliminar",
-        description: "No se pueden eliminar los roles principales en esta simulación.",
+        description: "No se pueden eliminar los roles principales.",
         variant: "destructive"
       });
       return;
@@ -262,4 +262,3 @@ export default function AdminRolesPage() {
     </div>
   );
 }
-

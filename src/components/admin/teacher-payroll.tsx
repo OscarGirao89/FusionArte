@@ -9,9 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle2, DollarSign, Handshake, MinusCircle, Percent, Users, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, DollarSign, Handshake, MinusCircle, Percent, Users, XCircle, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import type { UserRole } from '@/context/auth-context';
 
 const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; color: string } => {
     switch (status) {
@@ -23,10 +24,19 @@ const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; c
     }
 }
 
-export function TeacherPayroll() {
+type TeacherPayrollProps = {
+    userRole: UserRole | null;
+    userId: number | null;
+};
+
+export function TeacherPayroll({ userRole, userId }: TeacherPayrollProps) {
     
     const calculatePay = () => {
-        const teachersAndPartners = users.filter(u => u.role === 'Profesor' || u.role === 'Socio');
+        let teachersAndPartners = users.filter(u => u.role === 'Profesor' || u.role === 'Socio');
+
+        if (userRole === 'socio' && userId) {
+            teachersAndPartners = teachersAndPartners.filter(u => u.id === userId);
+        }
 
         const payroll = teachersAndPartners.map(user => {
             const classesTaught = danceClasses.filter(c => c.teacherIds.includes(user.id));
@@ -83,9 +93,9 @@ export function TeacherPayroll() {
 
     const { partners, nonPartners } = calculatePay();
     
-    const renderAccordion = (data: any[], title: string) => (
+    const renderAccordion = (data: any[], title: string, isForSocioView: boolean) => (
         <div>
-            <h3 className="text-lg font-semibold my-4 flex items-center gap-2">{title === 'Socios' ? <Handshake/> : <Users/>} {title}</h3>
+            {!isForSocioView && <h3 className="text-lg font-semibold my-4 flex items-center gap-2">{title === 'Socios' ? <Handshake/> : <Users/>} {title}</h3>}
             <Accordion type="single" collapsible className="w-full">
                 {data.map(({ user, classes, totalPay }) => (
                     <AccordionItem value={user.name} key={user.id}>
@@ -99,8 +109,9 @@ export function TeacherPayroll() {
                                     <div>
                                         <p className="font-medium">{user.name}</p>
                                         <div className="flex items-center gap-2">
+                                            {user.isPartner && <Badge variant="destructive" className="flex items-center gap-1"><Shield className="h-3 w-3" /> Socio</Badge>}
                                             <p className="text-sm text-muted-foreground capitalize">
-                                                {user.paymentDetails?.type === 'per_class' ? 'Pago por Evento' : 'Salario Mensual'}
+                                                {user.paymentDetails?.type === 'per_class' ? 'Pago por Evento' : user.paymentDetails?.type === 'monthly' ? 'Salario Mensual' : 'Porcentaje'}
                                             </p>
                                         </div>
                                     </div>
@@ -167,18 +178,31 @@ export function TeacherPayroll() {
         </div>
     );
 
+  const isSocioView = userRole === 'socio';
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nómina y Resumen de Socios</CardTitle>
-        <CardDescription>Calcula el pago para profesores y socios basado en las clases del mes y su tipo de contrato.</CardDescription>
+        <CardTitle>{isSocioView ? 'Tu Resumen Financiero' : 'Nómina y Resumen de Socios'}</CardTitle>
+        <CardDescription>
+            {isSocioView 
+                ? 'Aquí puedes ver un desglose de tus ingresos por las clases impartidas.'
+                : 'Calcula el pago para profesores y socios basado en las clases del mes y su tipo de contrato.'
+            }
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        {partners.length > 0 && renderAccordion(partners, 'Socios')}
-        {nonPartners.length > 0 && (
+        {isSocioView ? (
+            partners.length > 0 && renderAccordion(partners, 'Mis Ingresos', true)
+        ) : (
             <>
-                <Separator className="my-6" />
-                {renderAccordion(nonPartners, 'Profesores')}
+                {partners.length > 0 && renderAccordion(partners, 'Socios', false)}
+                {nonPartners.length > 0 && (
+                    <>
+                        <Separator className="my-6" />
+                        {renderAccordion(nonPartners, 'Profesores', false)}
+                    </>
+                )}
             </>
         )}
       </CardContent>

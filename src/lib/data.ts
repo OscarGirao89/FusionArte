@@ -35,7 +35,7 @@ export const users: User[] = [
     ]
   },
   { 
-    id: 2, name: 'Oscar Girao', email: 'oscar.girao@example.com', role: 'Profesor', joined: '2022-05-20', avatar: 'https://placehold.co/100x100.png?text=OG',
+    id: 2, name: 'Oscar Girao', email: 'oscar.girao@example.com', role: 'Socio', joined: '2022-05-20', avatar: 'https://placehold.co/100x100.png?text=OG',
     bio: 'Profesor experto en ritmos latinos con una pasión por la enseñanza.',
     specialties: ['Bachata', 'Salsa', 'M-Zouk'],
     paymentDetails: { type: 'per_class', payRate: 25, cancelledClassPay: 10 },
@@ -54,7 +54,7 @@ export const users: User[] = [
   },
   { id: 4, name: 'Admin FusionArte', email: 'admin@fusionarte.com', role: 'Administrador', joined: '2022-01-01', avatar: 'https://placehold.co/100x100.png?text=AF' },
   { 
-    id: 5, name: 'Flor Diaz', email: 'flor.diaz@example.com', role: 'Profesor', joined: '2022-03-10', avatar: 'https://placehold.co/100x100.png?text=FD',
+    id: 5, name: 'Flor Diaz', email: 'flor.diaz@example.com', role: 'Socio', joined: '2022-03-10', avatar: 'https://placehold.co/100x100.png?text=FD',
     bio: 'Bailarina profesional con años de experiencia en escenarios internacionales.',
     specialties: ['Bachata', 'Salsa', 'M-Zouk'],
     paymentDetails: { type: 'monthly', monthlySalary: 2500, cancelledClassPay: 0 },
@@ -62,7 +62,7 @@ export const users: User[] = [
     isPartner: true,
   },
   { 
-    id: 6, name: 'Joana Garcia', email: 'joana.garcia@example.com', role: 'Profesor', joined: '2023-08-11', avatar: 'https://placehold.co/100x100.png?text=JG',
+    id: 6, name: 'Joana Garcia', email: 'joana.garcia@example.com', role: 'Socio', joined: '2023-08-11', avatar: 'https://placehold.co/100x100.png?text=JG',
     bio: 'Especialista en técnicas de elongación y flexibilidad para bailarines.',
     specialties: ['Elongación', 'Stretching', 'Gimnasia Rítmica'],
     paymentDetails: { type: 'per_class', payRate: 20, cancelledClassPay: 5 },
@@ -143,27 +143,27 @@ export const studentMemberships: StudentMembership[] = [
 
 export const danceClasses: DanceClass[] = [
     // Lunes
-    { id: 'clase-1', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacherIds: [5], day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 3, 8] },
-    { id: 'clase-2', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacherIds: [2], day: 'Lunes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 9] },
-    { id: 'clase-3', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'principiante', teacherIds: [2], day: 'Lunes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 25, recurrenceMonths: 6, status: 'completed', enrolledStudentIds: [3] },
+    { id: 'clase-1', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacherIds: [5], day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 3, 8], cancellationPolicyHours: 24 },
+    { id: 'clase-2', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacherIds: [2, 5], day: 'Lunes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 9], cancellationPolicyHours: 24 },
+    { id: 'clase-3', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'principiante', teacherIds: [2], day: 'Lunes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 25, recurrenceMonths: 6, status: 'completed', enrolledStudentIds: [3], cancellationPolicyHours: 24 },
     
     // Martes
-    { id: 'clase-4', name: 'Elongación', type: 'recurring', styleId: 'elongacion', levelId: 'todos', teacherIds: [6], day: 'Martes', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 15, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [8, 9] },
-    { id: 'clase-5', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'principiante', teacherIds: [5], day: 'Martes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [1, 3] },
-    { id: 'clase-6', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'principiante', teacherIds: [2], day: 'Martes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'cancelled-low-attendance', enrolledStudentIds: [9] },
+    { id: 'clase-4', name: 'Elongación', type: 'recurring', styleId: 'elongacion', levelId: 'todos', teacherIds: [6], day: 'Martes', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 15, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [8, 9], cancellationPolicyHours: 24 },
+    { id: 'clase-5', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'principiante', teacherIds: [5], day: 'Martes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [1, 3], cancellationPolicyHours: 24 },
+    { id: 'clase-6', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'principiante', teacherIds: [2], day: 'Martes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'cancelled-low-attendance', enrolledStudentIds: [9], cancellationPolicyHours: 24 },
     
     // Miercoles
-    { id: 'clase-7', name: 'Aeroyoga', type: 'recurring', styleId: 'aeroyoga', levelId: 'todos', teacherIds: [10], day: 'Miércoles', time: '18:00', room: 'Estudio 3', duration: '60 min', capacity: 10, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [3, 8] },
-    { id: 'clase-8', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacherIds: [5], day: 'Miércoles', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 2, status: 'completed', enrolledStudentIds: [1] },
-    { id: 'clase-9', name: 'Taller de Salsa On2', type: 'workshop', styleId: 'salsa', levelId: 'avanzado', teacherIds: [2], day: 'Miércoles', time: '21:00', room: 'Estudio 1', duration: '90 min', capacity: 20, date: '2024-08-30', status: 'scheduled', enrolledStudentIds: [1, 9], workshopPaymentType: 'percentage', workshopPaymentValue: 50 },
+    { id: 'clase-7', name: 'Aeroyoga', type: 'recurring', styleId: 'aeroyoga', levelId: 'todos', teacherIds: [10], day: 'Miércoles', time: '18:00', room: 'Estudio 3', duration: '60 min', capacity: 10, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [3, 8], cancellationPolicyHours: 24 },
+    { id: 'clase-8', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacherIds: [5], day: 'Miércoles', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 2, status: 'completed', enrolledStudentIds: [1], cancellationPolicyHours: 24 },
+    { id: 'clase-9', name: 'Taller de Salsa On2', type: 'workshop', styleId: 'salsa', levelId: 'avanzado', teacherIds: [2], time: '21:00', room: 'Estudio 1', duration: '90 min', capacity: 20, date: '2024-08-30', status: 'scheduled', enrolledStudentIds: [1, 9], workshopPaymentType: 'percentage', workshopPaymentValue: 50, day: 'Miércoles' },
 
     // Jueves
-    { id: 'clase-10', name: 'Gimnasia Rítmica', type: 'recurring', styleId: 'gimnasia-ritmica', levelId: 'principiante', teacherIds: [6], day: 'Jueves', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 20, recurrenceMonths: 4, status: 'completed', enrolledStudentIds: [1, 3, 8] },
-    { id: 'clase-11', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'intermedio', teacherIds: [2], day: 'Jueves', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 16, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [] },
-    { id: 'clase-12', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacherIds: [5], day: 'Jueves', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 4, status: 'cancelled-teacher', enrolledStudentIds: [1, 3] },
+    { id: 'clase-10', name: 'Gimnasia Rítmica', type: 'recurring', styleId: 'gimnasia-ritmica', levelId: 'principiante', teacherIds: [6], day: 'Jueves', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 20, recurrenceMonths: 4, status: 'completed', enrolledStudentIds: [1, 3, 8], cancellationPolicyHours: 24 },
+    { id: 'clase-11', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'intermedio', teacherIds: [2], day: 'Jueves', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 16, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [], cancellationPolicyHours: 24 },
+    { id: 'clase-12', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacherIds: [5], day: 'Jueves', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 4, status: 'cancelled-teacher', enrolledStudentIds: [1, 3], cancellationPolicyHours: 24 },
     
     // Viernes
-    { id: 'rental-1', name: 'Alquiler: Ensayo Teatro', type: 'rental', styleId: 'practica', levelId: 'todos', teacherIds: [], day: 'Viernes', time: '10:00', room: 'Estudio 3', duration: '180 min', capacity: 30, date: '2024-09-01', status: 'scheduled', enrolledStudentIds: [], isVisibleToStudents: false, rentalPrice: 150 },
+    { id: 'rental-1', name: 'Alquiler: Ensayo Teatro', type: 'rental', styleId: 'practica', levelId: 'todos', teacherIds: [], time: '10:00', room: 'Estudio 3', duration: '180 min', capacity: 30, date: '2024-09-01', status: 'scheduled', enrolledStudentIds: [], isVisibleToStudents: false, rentalContact: 'Compañía de Teatro Local', rentalPrice: 150, day: 'Viernes' },
     { id: 'clase-13', name: 'Práctica Libre', type: 'recurring', styleId: 'practica', levelId: 'todos', teacherIds: [], day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min', capacity: 50, recurrenceMonths: 12, status: 'completed', enrolledStudentIds: [1, 3, 8, 9] },
 
 ];
@@ -181,6 +181,20 @@ export const roles: Role[] = [
         'manage_finances',
         'manage_settings',
         'manage_roles',
+        'take_attendance'
+      ]
+    },
+    {
+      id: 'socio',
+      name: 'Socio',
+      permissions: [
+        'view_dashboard',
+        'manage_users',
+        'manage_students',
+        'manage_classes',
+        'manage_memberships',
+        'manage_finances',
+        'view_teacher_area',
         'take_attendance'
       ]
     },
@@ -210,4 +224,3 @@ export const roles: Role[] = [
       ]
     }
   ];
-    
