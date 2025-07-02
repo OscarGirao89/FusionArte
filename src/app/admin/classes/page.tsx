@@ -115,7 +115,7 @@ export default function AdminClassesPage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const teachers = users.filter(u => u.role === 'Profesor');
+  const teachers = users.filter(u => u.role === 'Profesor' || u.role === 'Socio');
 
   const form = useForm<ClassFormValues>({
     resolver: zodResolver(classFormSchema),
@@ -149,7 +149,7 @@ export default function AdminClassesPage() {
         date: danceClass.date ? new Date(danceClass.date) : new Date(),
         capacity: danceClass.capacity || undefined,
         recurrenceMonths: danceClass.recurrenceMonths || 1,
-        rentalContact: danceClass.type === 'rental' ? danceClass.name : undefined,
+        rentalContact: danceClass.rentalContact,
         rentalPrice: danceClass.rentalPrice || undefined,
         workshopPaymentValue: danceClass.workshopPaymentValue || undefined,
       });
@@ -215,6 +215,7 @@ export default function AdminClassesPage() {
         finalData = {
             ...finalData,
             name: data.name,
+            rentalContact: data.rentalContact,
             teacherIds: [],
             styleId: 'practica',
             levelId: 'todos',
@@ -282,7 +283,7 @@ export default function AdminClassesPage() {
         danceClass.id,
         `"${danceClass.name}"`,
         `"${eventTypeLabels[danceClass.type]}"`,
-        `"${getTeacherNames(danceClass.teacherIds)}"` || `"${danceClass.rentalContact}"`,
+        `"${danceClass.type === 'rental' ? danceClass.rentalContact : getTeacherNames(danceClass.teacherIds)}"`,
         danceClass.type === 'recurring' ? (danceClass.day || 'N/A') : (danceClass.date || 'N/A'),
         danceClass.time,
         danceClass.room
@@ -364,7 +365,7 @@ export default function AdminClassesPage() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{getTeacherNames(danceClass.teacherIds)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{danceClass.type === 'rental' ? danceClass.rentalContact : getTeacherNames(danceClass.teacherIds)}</TableCell>
                     <TableCell className="hidden md:table-cell">
                         <div className="flex items-center gap-2">
                            {danceClass.type === 'recurring' ? <Calendar className="h-4 w-4" /> : <CalendarIcon className="h-4 w-4" />}

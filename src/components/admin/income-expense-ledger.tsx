@@ -61,62 +61,57 @@ export function IncomeExpenseLedger() {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>Libro de Transacciones</CardTitle>
-          <CardDescription>Registra y consulta todos los movimientos financieros.</CardDescription>
+    <>
+        <div className="flex items-center justify-end mb-4">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+                <Button size="sm">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Añadir Transacción
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                <DialogTitle>Añadir Nueva Transacción</DialogTitle>
+                <DialogDescription>
+                    Registra un nuevo ingreso o egreso manualmente.
+                </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                    <FormField control={form.control} name="type" render={({ field }) => (
+                    <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                        <SelectItem value="ingreso">Ingreso</SelectItem>
+                        <SelectItem value="egreso">Egreso</SelectItem>
+                        </SelectContent>
+                    </Select><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="category" render={({ field }) => (
+                        <FormItem><FormLabel>Categoría</FormLabel><FormControl><Input {...field} placeholder="Ej: Suministros, Alquiler" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="description" render={({ field }) => (
+                        <FormItem><FormLabel>Descripción</FormLabel><FormControl><Input {...field} placeholder="Ej: Compra de botellas de agua" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="amount" render={({ field }) => (
+                        <FormItem><FormLabel>Monto (€)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="date" render={({ field }) => (
+                        <FormItem><FormLabel>Fecha</FormLabel><FormControl><Input type="date" {...field} value={format(field.value, 'yyyy-MM-dd')} onChange={(e) => field.onChange(new Date(e.target.value))} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="receiptUrl" render={({ field }) => (
+                        <FormItem><FormLabel>Recibo (Opcional)</FormLabel><FormControl><Input type="file" {...field} /></FormControl><FormDescription>Adjunta una imagen o PDF del recibo.</FormDescription><FormMessage /></FormItem>
+                    )} />
+                    <DialogFooter>
+                        <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                        <Button type="submit">Guardar Transacción</Button>
+                    </DialogFooter>
+                </form>
+                </Form>
+            </DialogContent>
+            </Dialog>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Añadir Transacción
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Añadir Nueva Transacción</DialogTitle>
-              <DialogDescription>
-                Registra un nuevo ingreso o egreso manualmente.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-                <FormField control={form.control} name="type" render={({ field }) => (
-                  <FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="ingreso">Ingreso</SelectItem>
-                      <SelectItem value="egreso">Egreso</SelectItem>
-                    </SelectContent>
-                  </Select><FormMessage /></FormItem>
-                )} />
-                 <FormField control={form.control} name="category" render={({ field }) => (
-                    <FormItem><FormLabel>Categoría</FormLabel><FormControl><Input {...field} placeholder="Ej: Suministros, Alquiler" /></FormControl><FormMessage /></FormItem>
-                )} />
-                 <FormField control={form.control} name="description" render={({ field }) => (
-                    <FormItem><FormLabel>Descripción</FormLabel><FormControl><Input {...field} placeholder="Ej: Compra de botellas de agua" /></FormControl><FormMessage /></FormItem>
-                )} />
-                 <FormField control={form.control} name="amount" render={({ field }) => (
-                    <FormItem><FormLabel>Monto (€)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="date" render={({ field }) => (
-                    <FormItem><FormLabel>Fecha</FormLabel><FormControl><Input type="date" {...field} value={format(field.value, 'yyyy-MM-dd')} onChange={(e) => field.onChange(new Date(e.target.value))} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="receiptUrl" render={({ field }) => (
-                    <FormItem><FormLabel>Recibo (Opcional)</FormLabel><FormControl><Input type="file" {...field} /></FormControl><FormDescription>Adjunta una imagen o PDF del recibo.</FormDescription><FormMessage /></FormItem>
-                )} />
-                <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                    <Button type="submit">Guardar Transacción</Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </CardHeader>
-      <CardContent>
         <div className="overflow-y-auto h-96">
             <Table>
             <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
@@ -130,10 +125,10 @@ export function IncomeExpenseLedger() {
                 <TableRow key={t.id}>
                     <TableCell>
                         <div className="flex items-center gap-2">
-                             {t.type === 'ingreso' 
+                            {t.type === 'ingreso' 
                                 ? <ArrowUpCircle className="h-5 w-5 text-green-500" />
                                 : <ArrowDownCircle className="h-5 w-5 text-red-500" />
-                             }
+                            }
                             <div>
                                 <p className="font-medium">{t.description}</p>
                                 <p className="text-xs text-muted-foreground">{t.category} - {format(parseISO(t.date), 'PPP', { locale: es })}</p>
@@ -148,7 +143,6 @@ export function IncomeExpenseLedger() {
             </TableBody>
             </Table>
         </div>
-      </CardContent>
-    </Card>
+    </>
   );
 }

@@ -69,7 +69,15 @@ export default function AdminFinancesPage() {
 
       <div className="grid gap-8 mt-8">
         <TeacherPayroll />
-        <IncomeExpenseLedger />
+        <Card>
+          <CardHeader>
+              <CardTitle>Libro de Transacciones del Estudio</CardTitle>
+              <CardDescription>Registra y consulta todos los movimientos financieros generales.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <IncomeExpenseLedger />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

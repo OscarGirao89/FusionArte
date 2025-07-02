@@ -63,6 +63,7 @@ export type DanceClass = {
   date?: string; // "YYYY-MM-DD" for 'one-time', 'workshop', 'rental'
   isCancelledAndHidden?: boolean; // For cancelled classes, to hide from public schedule
   isVisibleToStudents?: boolean; // For 'rental'
+  rentalContact?: string; // For 'rental'
   rentalPrice?: number; // For 'rental'
   workshopPaymentType?: 'fixed' | 'percentage'; // For 'workshop'
   workshopPaymentValue?: number; // For 'workshop'
