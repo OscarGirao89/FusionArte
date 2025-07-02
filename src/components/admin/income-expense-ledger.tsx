@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { studentPayments, extraTransactions } from '@/lib/finances-data';
+import { initialStudentPayments, extraTransactions } from '@/lib/finances-data';
 import type { Transaction } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Paperclip, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const transactionFormSchema = z.object({
@@ -30,7 +30,7 @@ const transactionFormSchema = z.object({
 type TransactionFormValues = z.infer<typeof transactionFormSchema>;
 
 export function IncomeExpenseLedger() {
-  const [transactions, setTransactions] = useState<Transaction[]>([...studentPayments, ...extraTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  const [transactions, setTransactions] = useState<Transaction[]>([...initialStudentPayments, ...extraTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -136,7 +136,7 @@ export function IncomeExpenseLedger() {
                              }
                             <div>
                                 <p className="font-medium">{t.description}</p>
-                                <p className="text-xs text-muted-foreground">{t.category} - {format(new Date(t.date), 'PPP', { locale: es })}</p>
+                                <p className="text-xs text-muted-foreground">{t.category} - {format(parseISO(t.date), 'PPP', { locale: es })}</p>
                             </div>
                         </div>
                     </TableCell>

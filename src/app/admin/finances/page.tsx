@@ -8,7 +8,7 @@ import { studentPayments, extraTransactions } from '@/lib/finances-data';
 import { danceClasses } from '@/lib/data';
 
 export default function AdminFinancesPage() {
-  const studentIncome = studentPayments.reduce((acc, p) => acc + p.amount, 0);
+  const studentIncome = studentPayments.reduce((acc, p) => acc + p.amountPaid, 0);
   const otherIncome = extraTransactions.filter(t => t.type === 'ingreso').reduce((acc, t) => acc + t.amount, 0);
   const rentalIncome = danceClasses.filter(c => c.type === 'rental' && c.rentalPrice).reduce((acc, c) => acc + (c.rentalPrice || 0), 0);
   const totalIncome = studentIncome + otherIncome + rentalIncome;
