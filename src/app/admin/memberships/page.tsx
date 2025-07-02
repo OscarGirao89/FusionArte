@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -29,29 +29,29 @@ const baseSchema = z.object({
   title: z.string().min(1, "El título es obligatorio."),
   description: z.string().min(1, "La descripción es obligatoria."),
   price: z.coerce.number().min(0, "El precio debe ser un número positivo."),
-  pricePeriod: z.string().min(1, "El período del precio es obligatorio."),
   features: z.string().min(10, "Añade al menos una característica."),
   isPopular: z.boolean().default(false),
+  durationUnit: z.enum(['days', 'weeks', 'months'], { required_error: "Debes seleccionar una unidad." }),
+  durationValue: z.coerce.number().int().min(1, "La duración debe ser al menos 1."),
 });
 
 const formSchema = z.discriminatedUnion("accessType", [
-  z.object({
-    accessType: z.literal("unlimited"),
-    durationUnit: z.enum(['days', 'months']),
-    durationValue: z.coerce.number().int().min(1, "La duración debe ser al menos 1."),
-  }).merge(baseSchema),
+  z.object({ accessType: z.literal("unlimited") }).merge(baseSchema),
   z.object({
     accessType: z.literal("pack_classes"),
     classCount: z.coerce.number().int().min(1, "El número de clases debe ser al menos 1."),
-    allowedStyles: z.array(z.string()).optional(),
+    allowedStyles: z.array(z.string()).default([]),
   }).merge(baseSchema),
   z.object({
-    accessType: z.literal("trial_class")
+    accessType: z.literal("trial_class"),
+    classCount: z.coerce.number().int().min(1, "El número de clases debe ser al menos 1.").default(1),
+    allowedStyles: z.array(z.string()).default([]),
   }).merge(baseSchema),
 ]);
 
 type MembershipFormValues = z.infer<typeof formSchema>;
 
+// Helper to convert plan data to form values
 const planToForm = (plan: MembershipPlan): MembershipFormValues => {
   const common = {
     ...plan,
@@ -59,14 +59,24 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
   };
   switch (plan.accessType) {
     case 'unlimited':
-      return { ...common, accessType: 'unlimited', durationUnit: plan.durationUnit || 'months', durationValue: plan.durationValue || 1 };
+      return { ...common, accessType: 'unlimited' };
     case 'pack_classes':
-      return { ...common, accessType: 'pack_classes', classCount: plan.classCount || 1, allowedStyles: plan.allowedStyles || [] };
+      return { ...common, accessType: 'pack_classes', allowedStyles: plan.allowedStyles || [] };
     case 'trial_class':
-      return { ...common, accessType: 'trial_class' };
-    default:
-      throw new Error("Invalid plan type");
+      return { ...common, accessType: 'trial_class', allowedStyles: plan.allowedStyles || [] };
   }
+};
+
+// Helper to format duration for display
+const formatDuration = (value: number, unit: 'days' | 'weeks' | 'months') => {
+  if (!value || !unit) return '';
+  const labels = {
+    days: { singular: 'día', plural: 'días' },
+    weeks: { singular: 'semana', plural: 'semanas' },
+    months: { singular: 'mes', plural: 'meses' },
+  };
+  const unitLabel = value === 1 ? labels[unit].singular : labels[unit].plural;
+  return `${value} ${unitLabel}`;
 };
 
 export default function AdminMembershipsPage() {
@@ -81,7 +91,7 @@ export default function AdminMembershipsPage() {
       accessType: 'unlimited',
       title: '',
       price: 0,
-      pricePeriod: 'por mes',
+      description: '',
       features: '',
       isPopular: false,
       durationUnit: 'months',
@@ -100,12 +110,13 @@ export default function AdminMembershipsPage() {
         accessType: 'unlimited',
         title: '',
         price: 0,
-        pricePeriod: 'por mes',
         description: '',
         features: '',
         isPopular: false,
         durationUnit: 'months',
         durationValue: 1,
+        classCount: 10,
+        allowedStyles: [],
       });
     }
     setIsDialogOpen(true);
@@ -117,11 +128,29 @@ export default function AdminMembershipsPage() {
       description: `El plan "${data.title}" ha sido guardado (simulación).`,
     });
     
-    const planToSave: MembershipPlan = {
-      ...data,
-      features: data.features.split('\n').filter(f => f.trim() !== ''),
-      id: editingPlan?.id || `plan-${Date.now()}`,
+    let planToSave: MembershipPlan;
+    const commonData = {
+        id: editingPlan?.id || `plan-${Date.now()}`,
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        features: data.features.split('\n').filter(f => f.trim() !== ''),
+        isPopular: data.isPopular,
+        durationUnit: data.durationUnit,
+        durationValue: data.durationValue
     };
+
+    switch(data.accessType) {
+        case 'unlimited':
+            planToSave = { ...commonData, accessType: 'unlimited' };
+            break;
+        case 'pack_classes':
+            planToSave = { ...commonData, accessType: 'pack_classes', classCount: data.classCount, allowedStyles: data.allowedStyles };
+            break;
+        case 'trial_class':
+            planToSave = { ...commonData, accessType: 'trial_class', classCount: data.classCount, allowedStyles: data.allowedStyles };
+            break;
+    }
 
     if (editingPlan) {
       setPlans(plans.map(p => p.id === editingPlan.id ? planToSave : p));
@@ -164,6 +193,7 @@ export default function AdminMembershipsPage() {
                   <TableHead>Plan</TableHead>
                   <TableHead className="hidden sm:table-cell">Tipo de Acceso</TableHead>
                   <TableHead className="hidden md:table-cell">Precio</TableHead>
+                  <TableHead className="hidden lg:table-cell">Validez</TableHead>
                   <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -188,9 +218,8 @@ export default function AdminMembershipsPage() {
                         </span>
                         </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      ${plan.price} / {plan.pricePeriod}
-                    </TableCell>
+                    <TableCell className="hidden md:table-cell">${plan.price}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{formatDuration(plan.durationValue, plan.durationUnit)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -262,17 +291,13 @@ export default function AdminMembershipsPage() {
               <FormField control={form.control} name="description" render={({ field }) => (
                 <FormItem><FormLabel>Descripción Corta</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="price" render={({ field }) => (
-                  <FormItem><FormLabel>Precio ($)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="pricePeriod" render={({ field }) => (
-                  <FormItem><FormLabel>Período</FormLabel><FormControl><Input placeholder="ej: por mes" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-              </div>
-
-              {accessType === 'unlimited' && (
-                  <div className="grid grid-cols-2 gap-4 p-4 border rounded-md">
+              <FormField control={form.control} name="price" render={({ field }) => (
+                <FormItem><FormLabel>Precio ($)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              
+              <div className="p-4 border rounded-md space-y-4">
+                  <FormLabel>Validez del Plan</FormLabel>
+                  <div className="grid grid-cols-2 gap-4">
                       <FormField control={form.control} name="durationValue" render={({ field }) => (
                           <FormItem><FormLabel>Duración</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem>
                       )} />
@@ -281,17 +306,26 @@ export default function AdminMembershipsPage() {
                               <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                               <SelectContent>
                                   <SelectItem value="days">Días</SelectItem>
+                                  <SelectItem value="weeks">Semanas</SelectItem>
                                   <SelectItem value="months">Meses</SelectItem>
                               </SelectContent>
                           </Select><FormMessage /></FormItem>
                       )} />
                   </div>
-              )}
+              </div>
 
-              {accessType === 'pack_classes' && (
+
+              {(accessType === 'pack_classes' || accessType === 'trial_class') && (
                   <div className="space-y-4 p-4 border rounded-md">
                      <FormField control={form.control} name="classCount" render={({ field }) => (
-                          <FormItem><FormLabel>Cantidad de Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem>
+                          <FormItem>
+                            <FormLabel>Cantidad de Clases</FormLabel>
+                            <FormControl><Input type="number" min="1" {...field} /></FormControl>
+                            <FormDescription>
+                              {accessType === 'trial_class' ? 'Normalmente 1 para una clase de prueba.' : 'Número de clases incluidas en el paquete.'}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
                       )} />
                       <FormField
                         control={form.control}
@@ -301,7 +335,7 @@ export default function AdminMembershipsPage() {
                             <div className="mb-4">
                               <FormLabel className="text-base">Estilos Permitidos</FormLabel>
                               <FormDescription>
-                                Selecciona los estilos de baile a los que da acceso este pack. Deja todos sin marcar para permitir todos los estilos.
+                                Selecciona los estilos a los que da acceso este plan. Si no marcas ninguno, se permitirá el acceso a todos.
                               </FormDescription>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -311,6 +345,8 @@ export default function AdminMembershipsPage() {
                                 control={form.control}
                                 name="allowedStyles"
                                 render={({ field }) => {
+                                  // Ensure field.value is an array
+                                  const fieldValue = Array.isArray(field.value) ? field.value : [];
                                   return (
                                     <FormItem
                                       key={item.id}
@@ -318,12 +354,12 @@ export default function AdminMembershipsPage() {
                                     >
                                       <FormControl>
                                         <Checkbox
-                                          checked={field.value?.includes(item.id)}
+                                          checked={fieldValue.includes(item.id)}
                                           onCheckedChange={(checked) => {
                                             return checked
-                                              ? field.onChange([...(field.value || []), item.id])
+                                              ? field.onChange([...fieldValue, item.id])
                                               : field.onChange(
-                                                  field.value?.filter(
+                                                  fieldValue.filter(
                                                     (value) => value !== item.id
                                                   )
                                                 )
@@ -352,6 +388,7 @@ export default function AdminMembershipsPage() {
               <FormField control={form.control} name="isPopular" render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm"><div className="space-y-0.5">
                     <FormLabel>Marcar como Popular</FormLabel>
+                    <FormDescription>Resalta este plan en la página de membresías.</FormDescription>
                 </div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
               )} />
               <DialogFooter>
@@ -365,3 +402,5 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
+
+    

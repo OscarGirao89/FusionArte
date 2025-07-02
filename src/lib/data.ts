@@ -33,20 +33,24 @@ export const membershipPlans: MembershipPlan[] = [
     title: 'Clase de Prueba',
     description: 'Una clase para que pruebes la que más te guste.',
     price: 15,
-    pricePeriod: 'única vez',
-    features: ['1 clase a tu elección', 'Válido por 7 días', 'Experimenta nuestra comunidad'],
+    features: ['1 clase a tu elección', 'Experimenta nuestra comunidad'],
     accessType: 'trial_class',
+    classCount: 1,
+    allowedStyles: [],
+    durationUnit: 'days',
+    durationValue: 7,
   },
   {
     id: 'pack-10',
     title: 'Paquete de 10 Clases',
     description: 'Un paquete flexible para que uses cuando quieras.',
     price: 120,
-    pricePeriod: 'por paquete',
-    features: ['10 clases de cualquier estilo', 'Válido por 3 meses', 'Horario flexible'],
+    features: ['10 clases de cualquier estilo', 'Horario flexible'],
     accessType: 'pack_classes',
     classCount: 10,
     allowedStyles: [],
+    durationUnit: 'months',
+    durationValue: 3,
     isPopular: true,
   },
   {
@@ -54,7 +58,6 @@ export const membershipPlans: MembershipPlan[] = [
     title: 'Ilimitado Mensual',
     description: 'Baila todo lo que quieras durante un mes.',
     price: 99,
-    pricePeriod: 'por mes',
     features: ['Clases ilimitadas', 'Acceso a todos los estilos y niveles', 'Reserva prioritaria en talleres'],
     accessType: 'unlimited',
     durationUnit: 'months',
@@ -65,7 +68,6 @@ export const membershipPlans: MembershipPlan[] = [
     title: 'Pase de Principiante',
     description: 'Acceso a todas las clases para principiantes.',
     price: 75,
-    pricePeriod: 'por mes',
     features: ['Acceso a todas las clases de principiantes', 'Perfecto para nuevos bailarines', 'Únete a un grupo de apoyo'],
     accessType: 'unlimited',
     durationUnit: 'months',
@@ -84,6 +86,8 @@ export const danceClasses: DanceClass[] = [
     { id: 'clase-8', name: 'Contemporáneo Floorwork', styleId: 'contemporaneo', levelId: 'intermedio', teacher: 'Liam Smith', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Jueves', time: '20:15', room: 'Estudio 3', duration: '75 min', recurrence: 'recurring', recurrenceMonths: 2 },
     { id: 'clase-9', name: 'Salsa On2', styleId: 'salsa', levelId: 'avanzado', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '19:00', room: 'Estudio 1', duration: '90 min', recurrence: 'one-time' },
     { id: 'clase-10', name: 'Práctica Libre', styleId: 'practica', levelId: 'todos', teacher: 'Estudio', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min', recurrence: 'recurring', recurrenceMonths: 12 },
+    { id: 'clase-11', name: 'Tango Salón', styleId: 'tango', levelId: 'principiante', teacher: 'Carlos Ruiz', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Sábado', time: '12:00', room: 'Estudio 2', duration: '90 min', recurrence: 'one-time' },
+    { id: 'clase-12', name: 'Flamenco', styleId: 'flamenco', levelId: 'intermedio', teacher: 'Elena Garcia', teacherAvatar: 'https://placehold.co/100x100.png', day: 'Sábado', time: '14:00', room: 'Estudio 1', duration: '75 min', recurrence: 'recurring', recurrenceMonths: 4 },
 ];
 
 export const teachers: Teacher[] = [
@@ -112,3 +116,5 @@ export const teachers: Teacher[] = [
     specialties: ['Lírico', 'Trabajo de Suelo', 'Improvisación', 'Técnica'],
   },
 ];
+
+    

@@ -1,9 +1,25 @@
+
 import { membershipPlans } from '@/lib/data';
 import type { MembershipPlan } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const getPlanPriceDisplay = (plan: MembershipPlan) => {
+  if (plan.accessType === 'unlimited') {
+    const unitMap = {
+      days: plan.durationValue === 1 ? 'día' : 'días',
+      weeks: plan.durationValue === 1 ? 'semana' : 'semanas',
+      months: plan.durationValue === 1 ? 'mes' : 'meses',
+    };
+    return `/${plan.durationValue} ${unitMap[plan.durationUnit]}`;
+  }
+  if (plan.accessType === 'pack_classes') {
+    return ` / ${plan.classCount} clases`;
+  }
+  return '/ pago único';
+};
 
 function PlanCard({ plan }: { plan: MembershipPlan }) {
   return (
@@ -21,7 +37,7 @@ function PlanCard({ plan }: { plan: MembershipPlan }) {
         <CardTitle className="font-headline text-2xl">{plan.title}</CardTitle>
         <CardDescription>
           <span className="text-4xl font-bold text-foreground">${plan.price}</span>
-          <span className="text-muted-foreground">/{plan.pricePeriod}</span>
+          <span className="text-muted-foreground">{getPlanPriceDisplay(plan)}</span>
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
@@ -55,9 +71,11 @@ export default function MembershipsPage() {
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
         {membershipPlans.map(plan => (
-          <PlanCard key={plan.title} plan={plan} />
+          <PlanCard key={plan.id} plan={plan} />
         ))}
       </div>
     </div>
   );
 }
+
+    

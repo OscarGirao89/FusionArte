@@ -10,25 +10,34 @@ export type DanceLevel = {
   description: string;
 };
 
-export type MembershipPlan = {
+type MembershipPlanBase = {
   id: string;
   title: string;
   price: number;
-  pricePeriod: string; // 'única vez', 'por mes', 'por paquete'
   description: string;
   features: string[];
-  accessType: 'pack_classes' | 'unlimited' | 'trial_class';
-  
-  // For pack_classes
-  classCount?: number;
-  allowedStyles?: string[]; // array of style ids, empty for all styles
-
-  // For unlimited
-  durationUnit?: 'days' | 'months';
-  durationValue?: number;
-
   isPopular?: boolean;
+  durationUnit: 'days' | 'weeks' | 'months';
+  durationValue: number;
 };
+
+type UnlimitedPlan = MembershipPlanBase & {
+  accessType: 'unlimited';
+};
+
+type PackClassesPlan = MembershipPlanBase & {
+  accessType: 'pack_classes';
+  classCount: number;
+  allowedStyles: string[];
+};
+
+type TrialClassPlan = MembershipPlanBase & {
+  accessType: 'trial_class';
+  classCount: number;
+  allowedStyles: string[];
+};
+
+export type MembershipPlan = UnlimitedPlan | PackClassesPlan | TrialClassPlan;
 
 export type DanceClass = {
   id: string;
@@ -60,3 +69,5 @@ export type User = {
     joined: string;
     avatar: string;
 }
+
+    

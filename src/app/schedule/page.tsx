@@ -1,64 +1,64 @@
+
 'use client';
 import { useState } from 'react';
-import { danceClasses } from '@/lib/data';
+import { danceClasses, danceLevels as allLevels, danceStyles as allStyles } from '@/lib/data';
 import type { DanceClass } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, MapPin, Users, Award } from 'lucide-react';
+import { Clock, User, Award, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-function ClassCard({ danceClass }: { danceClass: DanceClass }) {
+const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+function CalendarClassCard({ danceClass }: { danceClass: DanceClass }) {
+  const level = allLevels.find(l => l.id === danceClass.levelId);
+  const style = allStyles.find(s => s.id === danceClass.styleId);
+
   return (
-    <Card className="flex flex-col overflow-hidden transition-transform transform hover:-translate-y-1 hover:shadow-xl">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-            <div>
-                <CardTitle className="font-headline text-2xl">{danceClass.name}</CardTitle>
-                <CardDescription className="flex items-center gap-2 pt-1">
-                    <Award className="h-4 w-4" /> {danceClass.level}
-                </CardDescription>
-            </div>
-            <div className="text-right">
-                <Avatar>
-                    <AvatarImage src={danceClass.teacherAvatar} alt={danceClass.teacher} />
-                    <AvatarFallback>{danceClass.teacher.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <p className="text-xs text-muted-foreground mt-1">{danceClass.teacher}</p>
-            </div>
-        </div>
+    <Card className="mb-4 overflow-hidden transition-shadow hover:shadow-lg bg-card/80 backdrop-blur-sm">
+      <CardHeader className="p-3">
+         <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-bold">{danceClass.name}</CardTitle>
+            <Avatar className="h-8 w-8">
+                <AvatarImage src={danceClass.teacherAvatar} alt={danceClass.teacher} />
+                <AvatarFallback>{danceClass.teacher.charAt(0)}</AvatarFallback>
+            </Avatar>
+         </div>
+         <CardDescription className="text-xs">{style?.name}</CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow space-y-3 text-sm">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Calendar className="h-4 w-4" /> <span>{danceClass.day} a las {danceClass.time}</span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Clock className="h-4 w-4" /> <span>{danceClass.duration}</span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <MapPin className="h-4 w-4" /> <span>{danceClass.room}</span>
-        </div>
+      <CardContent className="p-3 pt-0 text-xs space-y-2">
+         <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-3 w-3" /> {danceClass.time} ({danceClass.duration})</div>
+         <div className="flex items-center gap-2 text-muted-foreground"><User className="h-3 w-3" /> {danceClass.teacher}</div>
+         <div className="flex items-center gap-2"><Award className="h-3 w-3" /> <Badge variant="secondary" className="px-1.5 py-0.5 text-[10px]">{level?.name}</Badge></div>
       </CardContent>
-      <CardFooter>
-        <Button className="w-full bg-primary hover:bg-primary/90">Inscribirse Ahora</Button>
-      </CardFooter>
     </Card>
   );
 }
 
 export default function SchedulePage() {
   const [styleFilter, setStyleFilter] = useState('Todos');
-  const [levelFilter, setLevelFilter] = useState('Todos los Niveles');
+  const [levelFilter, setLevelFilter] = useState('Todos');
 
-  const styles = ['Todos', ...Array.from(new Set(danceClasses.map(c => c.style)))];
-  const levels = ['Todos los Niveles', ...Array.from(new Set(danceClasses.map(c => c.level)))];
+  const styles = ['Todos', ...Array.from(new Set(allStyles.map(s => s.name)))];
+  const levels = ['Todos', ...Array.from(new Set(allLevels.map(l => l.name)))];
 
-  const filteredClasses = danceClasses.filter(c => {
-    const styleMatch = styleFilter === 'Todos' || c.style === styleFilter;
-    const levelMatch = levelFilter === 'Todos los Niveles' || c.level === levelFilter;
-    return styleMatch && levelMatch;
-  });
+  const filteredClasses = danceClasses
+    .filter(c => {
+      const styleName = allStyles.find(s => s.id === c.styleId)?.name;
+      const levelName = allLevels.find(l => l.id === c.levelId)?.name;
+      const styleMatch = styleFilter === 'Todos' || styleName === styleFilter;
+      const levelMatch = levelFilter === 'Todos' || levelName === levelFilter;
+      return styleMatch && levelMatch;
+    })
+    .sort((a, b) => a.time.localeCompare(b.time));
+
+  const classesByDay = daysOfWeek.reduce((acc, day) => {
+    acc[day] = filteredClasses.filter(c => c.day === day);
+    return acc;
+  }, {} as Record<string, DanceClass[]>);
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -67,15 +67,15 @@ export default function SchedulePage() {
         <p className="text-lg text-muted-foreground">Encuentra tu ritmo. Reserva tu próxima clase.</p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
+      <div className="flex flex-col md:flex-row gap-4 mb-8 p-4 bg-muted/50 rounded-lg sticky top-0 z-10 backdrop-blur-sm">
         <Tabs value={styleFilter} onValueChange={setStyleFilter} className="w-full md:w-auto">
-          <TabsList className="grid grid-cols-3 sm:grid-cols-6 md:inline-flex">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-4 md:inline-flex h-auto flex-wrap">
             {styles.map(style => (
               <TabsTrigger key={style} value={style}>{style}</TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
-        <div className="w-full md:w-48">
+        <div className="w-full md:w-56">
           <Select value={levelFilter} onValueChange={setLevelFilter}>
             <SelectTrigger>
               <SelectValue placeholder="Filtrar por nivel" />
@@ -90,9 +90,20 @@ export default function SchedulePage() {
       </div>
 
       {filteredClasses.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredClasses.map(c => (
-            <ClassCard key={c.id} danceClass={c} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+          {daysOfWeek.map(day => (
+            <div key={day} className="rounded-lg bg-muted/30 p-2">
+              <h2 className="font-headline text-lg text-center font-bold mb-4 sticky top-28">{day}</h2>
+              <div className="space-y-2">
+                {classesByDay[day].length > 0 ? (
+                  classesByDay[day].map(c => (
+                    <CalendarClassCard key={c.id} danceClass={c} />
+                  ))
+                ) : (
+                  <p className="text-xs text-center text-muted-foreground py-4">No hay clases programadas.</p>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       ) : (
@@ -107,3 +118,5 @@ export default function SchedulePage() {
     </div>
   );
 }
+
+    
