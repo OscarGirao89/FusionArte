@@ -181,7 +181,46 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <h1 className="text-3xl font-bold tracking-tight font-headline mb-8">Pagos de Alumnos</h1>
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-2 no-print">
+        <h1 className="text-3xl font-bold tracking-tight font-headline">Pagos de Alumnos</h1>
+         {canCreate && (
+            <Dialog open={isNewInvoiceOpen} onOpenChange={setIsNewInvoiceOpen}>
+                <DialogTrigger asChild>
+                    <Button><PlusCircle className="mr-2 h-4 w-4"/> Crear Factura</Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Crear Nueva Factura</DialogTitle>
+                        <DialogDescription>Genera una nueva factura para un alumno.</DialogDescription>
+                    </DialogHeader>
+                    <Form {...newInvoiceForm}>
+                        <form onSubmit={newInvoiceForm.handleSubmit(onNewInvoiceSubmit)} className="space-y-4 py-4">
+                              <FormField control={newInvoiceForm.control} name="studentId" render={({ field }) => (
+                              <FormItem><FormLabel>Alumno</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar alumno..." /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                  {students.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                                </SelectContent>
+                              </Select><FormMessage /></FormItem>
+                            )} />
+                              <FormField control={newInvoiceForm.control} name="planId" render={({ field }) => (
+                              <FormItem><FormLabel>Plan de Membresía</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                  {membershipPlans.map(p => <SelectItem key={p.id} value={p.id}>{p.title} (€{p.price})</SelectItem>)}
+                                </SelectContent>
+                              </Select><FormMessage /></FormItem>
+                            )} />
+                            <DialogFooter>
+                                <Button type="button" variant="ghost" onClick={() => setIsNewInvoiceOpen(false)}>Cancelar</Button>
+                                <Button type="submit">Crear Factura</Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+        )}
+      </div>
       
       <div className="grid gap-4 md:grid-cols-3 mb-8 no-print">
         <Card>
@@ -227,43 +266,6 @@ export default function AdminPaymentsPage() {
                     <Button variant="outline" size="sm" onClick={handlePrint}>
                         <Printer className="mr-2 h-4 w-4" /> Imprimir
                     </Button>
-                    {canCreate && (
-                    <Dialog open={isNewInvoiceOpen} onOpenChange={setIsNewInvoiceOpen}>
-                        <DialogTrigger asChild>
-                            <Button size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Crear Factura</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Crear Nueva Factura</DialogTitle>
-                                <DialogDescription>Genera una nueva factura para un alumno.</DialogDescription>
-                            </DialogHeader>
-                            <Form {...newInvoiceForm}>
-                                <form onSubmit={newInvoiceForm.handleSubmit(onNewInvoiceSubmit)} className="space-y-4 py-4">
-                                     <FormField control={newInvoiceForm.control} name="studentId" render={({ field }) => (
-                                      <FormItem><FormLabel>Alumno</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar alumno..." /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                          {students.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
-                                        </SelectContent>
-                                      </Select><FormMessage /></FormItem>
-                                    )} />
-                                     <FormField control={newInvoiceForm.control} name="planId" render={({ field }) => (
-                                      <FormItem><FormLabel>Plan de Membresía</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                          {membershipPlans.map(p => <SelectItem key={p.id} value={p.id}>{p.title} (€{p.price})</SelectItem>)}
-                                        </SelectContent>
-                                      </Select><FormMessage /></FormItem>
-                                    )} />
-                                    <DialogFooter>
-                                        <Button type="button" variant="ghost" onClick={() => setIsNewInvoiceOpen(false)}>Cancelar</Button>
-                                        <Button type="submit">Crear Factura</Button>
-                                    </DialogFooter>
-                                </form>
-                            </Form>
-                        </DialogContent>
-                    </Dialog>
-                    )}
                 </div>
             </div>
         </CardHeader>

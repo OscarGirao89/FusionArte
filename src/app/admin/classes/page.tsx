@@ -315,9 +315,9 @@ export default function AdminClassesPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-2 no-print">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Clases y Eventos</h1>
-        <Button onClick={() => handleOpenDialog()} className="no-print">
+        <Button onClick={() => handleOpenDialog()}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Añadir Evento
         </Button>

@@ -258,25 +258,27 @@ export default function AdminStudentsPage() {
 
   return (
     <div className="p-4 md:p-8">
-        <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-2 no-print">
             <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Alumnos</h1>
-            <div className="flex gap-2 flex-wrap no-print">
-                <Button variant="outline" onClick={handleExportCSV}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Exportar a CSV
-                </Button>
-                <Button variant="outline" onClick={handlePrint}>
-                    <Printer className="mr-2 h-4 w-4" />
-                    Imprimir
-                </Button>
-            </div>
         </div>
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
             <Card>
                 <CardHeader>
-                <CardTitle>Alumnos Registrados</CardTitle>
-                <CardDescription>Aquí puedes ver y editar los perfiles de los estudiantes.</CardDescription>
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+                        <div>
+                            <CardTitle>Alumnos Registrados</CardTitle>
+                            <CardDescription>Aquí puedes ver y editar los perfiles de los estudiantes.</CardDescription>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0 flex-wrap no-print">
+                            <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                                <Download className="mr-2 h-4 w-4" /> Exportar CSV
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={handlePrint}>
+                                <Printer className="mr-2 h-4 w-4" /> Imprimir
+                            </Button>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                 <Table>
@@ -525,5 +527,3 @@ export default function AdminStudentsPage() {
     </div>
   );
 }
-
-    

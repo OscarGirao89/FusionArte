@@ -211,15 +211,9 @@ export default function AdminUsersPage() {
 
   return (
     <div className="p-4 md:p-8">
-        <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-2 no-print">
             <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Usuarios</h1>
-            <div className="flex items-center gap-2 flex-wrap no-print">
-                 <Button variant="outline" onClick={handleExportCSV}>
-                    <Download className="mr-2 h-4 w-4" /> Exportar CSV
-                </Button>
-                <Button variant="outline" onClick={handlePrint}>
-                    <Printer className="mr-2 h-4 w-4" /> Imprimir
-                </Button>
+            <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={() => router.push('/admin/roles')}>
                     <ShieldCheck className="mr-2 h-4 w-4" />
                     Gestionar Roles
@@ -232,8 +226,20 @@ export default function AdminUsersPage() {
         </div>
       <Card>
         <CardHeader>
-          <CardTitle>Usuarios Registrados</CardTitle>
-          <CardDescription>Aquí puedes ver y gestionar todos los usuarios de la plataforma.</CardDescription>
+          <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+            <div>
+              <CardTitle>Usuarios Registrados</CardTitle>
+              <CardDescription>Aquí puedes ver y gestionar todos los usuarios de la plataforma.</CardDescription>
+            </div>
+            <div className="flex gap-2 flex-shrink-0 flex-wrap no-print">
+              <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                <Download className="mr-2 h-4 w-4" /> Exportar CSV
+              </Button>
+              <Button variant="outline" size="sm" onClick={handlePrint}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimir
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>

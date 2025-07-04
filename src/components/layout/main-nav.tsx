@@ -192,7 +192,7 @@ export function MainNav() {
     }
   
     return (
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 no-print">
         <div className="container flex h-20 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 mr-6">
             <LogoIcon className="h-8 w-8 text-primary" />
