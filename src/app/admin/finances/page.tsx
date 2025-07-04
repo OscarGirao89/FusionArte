@@ -17,61 +17,6 @@ import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-const getStudentName = (id: number) => users.find(u => u.id === id)?.name || 'Desconocido';
-const getPlanName = (id: string) => membershipPlans.find(p => p.id === id)?.title || 'Desconocido';
-
-const PartnerStudentPayments = ({ partnerId }: { partnerId: number }) => {
-    const { studentPayments } = useAuth();
-
-    const filteredPayments = useMemo(() => {
-        if (!partnerId) return [];
-        const partnerClasses = danceClasses.filter(c => c.teacherIds.includes(partnerId));
-        const partnerStudentIds = [...new Set(partnerClasses.flatMap(c => c.enrolledStudentIds))];
-        return studentPayments.filter(p => partnerStudentIds.includes(p.studentId));
-    }, [partnerId, studentPayments]);
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><FileText /> Facturas de Alumnos del Socio</CardTitle>
-                <CardDescription>Facturas generadas para los alumnos inscritos en las clases de este socio.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {filteredPayments.length > 0 ? (
-                    <div className="overflow-y-auto max-h-96">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Alumno</TableHead>
-                                    <TableHead>Plan</TableHead>
-                                    <TableHead>Estado</TableHead>
-                                    <TableHead className="text-right">Monto</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredPayments.map((p) => (
-                                    <TableRow key={p.id}>
-                                        <TableCell>{getStudentName(p.studentId)}</TableCell>
-                                        <TableCell>{getPlanName(p.planId)}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={p.status === 'paid' ? 'default' : p.status === 'pending' ? 'destructive' : 'secondary'}>
-                                                {{ paid: 'Pagado', pending: 'Pendiente', deposit: 'Adelanto' }[p.status]}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono">€{p.totalAmount.toFixed(2)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">No hay pagos de alumnos para mostrar para este socio.</p>
-                )}
-            </CardContent>
-        </Card>
-    );
-};
-
 export default function AdminFinancesPage() {
   const { userRole, userId, studentPayments } = useAuth();
   const router = useRouter();
@@ -141,11 +86,7 @@ export default function AdminFinancesPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {selectedPartnerId && (
-                        <>
-                            <TeacherPayroll mode="partner_income" partnerId={parseInt(selectedPartnerId, 10)} />
-                            <Separator className="my-6" />
-                            <PartnerStudentPayments partnerId={parseInt(selectedPartnerId, 10)} />
-                        </>
+                        <TeacherPayroll mode="partner_income" partnerId={parseInt(selectedPartnerId, 10)} />
                     )}
                 </CardContent>
             </Card>
@@ -154,15 +95,6 @@ export default function AdminFinancesPage() {
   );
 
   const PartnerView = () => {
-    const { studentPayments: allPayments } = useAuth();
-    
-    const partnerStudentPayments = useMemo(() => {
-        if (!userId) return [];
-        const partnerClasses = danceClasses.filter(c => c.teacherIds.includes(userId));
-        const partnerStudentIds = [...new Set(partnerClasses.flatMap(c => c.enrolledStudentIds))];
-        return allPayments.filter(p => partnerStudentIds.includes(p.studentId));
-    }, [allPayments, userId]);
-
     return (
     <Tabs defaultValue="personal" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -171,8 +103,6 @@ export default function AdminFinancesPage() {
         </TabsList>
         <TabsContent value="personal" className="mt-6 space-y-8">
             <TeacherPayroll mode="partner_income" partnerId={userId} />
-            <Separator />
-            <PartnerStudentPayments partnerId={userId!} />
         </TabsContent>
         <TabsContent value="studio" className="mt-6 space-y-8">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

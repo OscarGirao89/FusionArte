@@ -82,6 +82,9 @@ export const users: User[] = [
   },
   { id: 11, name: 'Carlos Ruiz', email: 'carlos.r@example.com', role: 'Estudiante', joined: '2024-05-10', avatar: 'https://placehold.co/100x100.png?text=CR', dob: '1994-11-05', attendanceHistory: [] },
   { id: 12, name: 'Elena Vega', email: 'elena.v@example.com', role: 'Estudiante', joined: '2024-06-01', avatar: 'https://placehold.co/100x100.png?text=EV', dob: '2000-03-22', attendanceHistory: [] },
+  { id: 13, name: 'Martin Gomez', email: 'martin.g@example.com', role: 'Estudiante', joined: '2024-07-02', avatar: 'https://placehold.co/100x100.png?text=MG', dob: '1997-09-18', attendanceHistory: [] },
+  { id: 14, name: 'Lucia Fernandez', email: 'lucia.f@example.com', role: 'Estudiante', joined: '2024-07-05', avatar: 'https://placehold.co/100x100.png?text=LF', dob: '2002-01-30', attendanceHistory: [] },
+  { id: 15, name: 'Javier Moreno', email: 'javier.m@example.com', role: 'Estudiante', joined: '2024-07-10', avatar: 'https://placehold.co/100x100.png?text=JM', dob: '1996-06-15', attendanceHistory: [] },
 ];
 
 export const membershipPlans: MembershipPlan[] = [
@@ -143,37 +146,42 @@ export const studentMemberships: StudentMembership[] = [
     { userId: 9, planId: 'pack-10', startDate: '2024-03-01', endDate: '2024-06-01' }, // Expired
     { userId: 11, planId: 'unlimited-1', startDate: '2024-07-01', endDate: '2024-07-31' },
     { userId: 12, planId: 'pack-10', startDate: '2024-07-01', endDate: '2024-10-01', classesRemaining: 10 },
+    { userId: 13, planId: 'unlimited-1', startDate: '2024-07-02', endDate: '2024-08-02' },
+    { userId: 14, planId: 'pack-10', startDate: '2024-07-05', endDate: '2024-10-05', classesRemaining: 10 },
+    { userId: 15, planId: 'trial-1', startDate: '2024-07-10', endDate: '2024-07-17', classesRemaining: 1 },
 ];
 
 export const danceClasses: DanceClass[] = [
     // Lunes
     { id: 'clase-1', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacherIds: [5], day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 3, 8], cancellationPolicyHours: 24 },
-    { id: 'clase-2', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacherIds: [2, 5], day: 'Lunes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 9], cancellationPolicyHours: 24 },
+    { id: 'clase-2', name: 'Bachata (Compartida O+F)', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacherIds: [2, 5], day: 'Lunes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [1, 9, 13], cancellationPolicyHours: 24 },
     { id: 'clase-3', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'principiante', teacherIds: [2], day: 'Lunes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 25, recurrenceMonths: 6, status: 'completed', enrolledStudentIds: [3], cancellationPolicyHours: 24 },
     
     // Martes
-    { id: 'clase-4', name: 'Elongación', type: 'recurring', styleId: 'elongacion', levelId: 'todos', teacherIds: [6], day: 'Martes', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 15, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [8, 9], cancellationPolicyHours: 24 },
+    { id: 'clase-4', name: 'Elongación', type: 'recurring', styleId: 'elongacion', levelId: 'todos', teacherIds: [6], day: 'Martes', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 15, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [8, 9, 14], cancellationPolicyHours: 24 },
     { id: 'clase-5', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'principiante', teacherIds: [5], day: 'Martes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [1, 3], cancellationPolicyHours: 24 },
     { id: 'clase-6', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'principiante', teacherIds: [2], day: 'Martes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'cancelled-low-attendance', enrolledStudentIds: [9], cancellationPolicyHours: 24 },
     
     // Miercoles
     { id: 'clase-7', name: 'Aeroyoga', type: 'recurring', styleId: 'aeroyoga', levelId: 'todos', teacherIds: [10], day: 'Miércoles', time: '18:00', room: 'Estudio 3', duration: '60 min', capacity: 10, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [3, 8], cancellationPolicyHours: 24 },
-    { id: 'clase-8', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacherIds: [5], day: 'Miércoles', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 2, status: 'completed', enrolledStudentIds: [1], cancellationPolicyHours: 24 },
+    { id: 'clase-8', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'intermedio', teacherIds: [5], day: 'Miércoles', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 2, status: 'completed', enrolledStudentIds: [1, 15], cancellationPolicyHours: 24 },
     { id: 'clase-9', name: 'Taller de Salsa On2', type: 'workshop', styleId: 'salsa', levelId: 'avanzado', teacherIds: [2], time: '21:00', room: 'Estudio 1', duration: '90 min', capacity: 20, date: '2024-08-30', status: 'scheduled', enrolledStudentIds: [1, 9], workshopPaymentType: 'percentage', workshopPaymentValue: 50, day: 'Miércoles' },
 
     // Jueves
     { id: 'clase-10', name: 'Gimnasia Rítmica', type: 'recurring', styleId: 'gimnasia-ritmica', levelId: 'principiante', teacherIds: [6], day: 'Jueves', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 20, recurrenceMonths: 4, status: 'completed', enrolledStudentIds: [1, 3, 8], cancellationPolicyHours: 24 },
-    { id: 'clase-11', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'intermedio', teacherIds: [2], day: 'Jueves', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 16, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [], cancellationPolicyHours: 24 },
+    { id: 'clase-11', name: 'M-Zouk (Compartida O+J)', type: 'recurring', styleId: 'm-zouk', levelId: 'intermedio', teacherIds: [2, 6], day: 'Jueves', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 16, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [13, 14], cancellationPolicyHours: 24 },
     { id: 'clase-12', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacherIds: [5], day: 'Jueves', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 4, status: 'cancelled-teacher', enrolledStudentIds: [1, 3], cancellationPolicyHours: 24 },
     
     // Viernes
     { id: 'rental-1', name: 'Alquiler: Ensayo Teatro', type: 'rental', styleId: 'practica', levelId: 'todos', teacherIds: [], time: '10:00', room: 'Estudio 3', duration: '180 min', capacity: 30, date: '2024-09-01', status: 'scheduled', enrolledStudentIds: [], isVisibleToStudents: false, rentalContact: 'Compañía de Teatro Local', rentalPrice: 150, day: 'Viernes' },
     { id: 'clase-13', name: 'Práctica Libre', type: 'recurring', styleId: 'practica', levelId: 'todos', teacherIds: [], day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min', capacity: 50, recurrenceMonths: 12, status: 'completed', enrolledStudentIds: [1, 3, 8, 9] },
-    { id: 'clase-14', name: 'Bachata Sensual', type: 'recurring', styleId: 'bachata', levelId: 'avanzado', teacherIds: [2], day: 'Viernes', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 15, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [1, 11], cancellationPolicyHours: 24 },
-    { id: 'clase-15', name: 'Rueda de Casino', type: 'workshop', styleId: 'salsa', levelId: 'intermedio', teacherIds: [2, 5], time: '20:00', room: 'Estudio 1', duration: '90 min', capacity: 20, date: '2024-09-06', status: 'scheduled', enrolledStudentIds: [3, 11, 12], workshopPaymentType: 'fixed', workshopPaymentValue: 100, day: 'Viernes' },
+    { id: 'clase-14', name: 'Bachata Sensual', type: 'recurring', styleId: 'bachata', levelId: 'avanzado', teacherIds: [2], day: 'Viernes', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 15, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [1, 11, 13], cancellationPolicyHours: 24 },
+    { id: 'clase-15', name: 'Rueda de Casino (Compartida O+F)', type: 'workshop', styleId: 'salsa', levelId: 'intermedio', teacherIds: [2, 5], time: '20:00', room: 'Estudio 1', duration: '90 min', capacity: 20, date: '2024-09-06', status: 'scheduled', enrolledStudentIds: [3, 11, 12], workshopPaymentType: 'fixed', workshopPaymentValue: 100, day: 'Viernes' },
 
     // Sabado
-    { id: 'clase-16', name: 'Taller de Conexión', type: 'workshop', styleId: 'm-zouk', levelId: 'todos', teacherIds: [2, 6], time: '12:00', room: 'Estudio 3', duration: '120 min', capacity: 20, date: '2024-09-07', status: 'scheduled', enrolledStudentIds: [1, 9, 12], workshopPaymentType: 'percentage', workshopPaymentValue: 60, day: 'Sábado' },
+    { id: 'clase-16', name: 'Taller de Conexión (Compartida O+J)', type: 'workshop', styleId: 'm-zouk', levelId: 'todos', teacherIds: [2, 6], time: '12:00', room: 'Estudio 3', duration: '120 min', capacity: 20, date: '2024-09-07', status: 'scheduled', enrolledStudentIds: [1, 9, 12], workshopPaymentType: 'percentage', workshopPaymentValue: 60, day: 'Sábado' },
+    { id: 'clase-17', name: 'Tango (Compartida F+J)', type: 'recurring', styleId: 'tango', levelId: 'principiante', teacherIds: [5, 6], day: 'Sábado', time: '18:00', room: 'Estudio 2', duration: '75 min', capacity: 14, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [14, 15], cancellationPolicyHours: 24 },
+    { id: 'clase-18', name: 'Hip Hop (Individual O)', type: 'recurring', styleId: 'hip-hop', levelId: 'todos', teacherIds: [2], day: 'Sábado', time: '19:30', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [13, 15], cancellationPolicyHours: 24 },
 ];
 
 export const roles: Role[] = [

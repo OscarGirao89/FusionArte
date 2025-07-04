@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { users, danceClasses } from '@/lib/data';
+import { users, danceClasses, membershipPlans } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,7 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertCircle, CheckCircle2, DollarSign, Handshake, MinusCircle, Percent, Users, XCircle, Shield, FileText, UserCheck, Briefcase } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
+import { useAuth } from '@/context/auth-context';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; color: string } => {
     switch (status) {
@@ -21,9 +23,74 @@ const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; c
     }
 }
 
+const getStudentName = (id: number) => users.find(u => u.id === id)?.name || 'Desconocido';
+const getPlanName = (id: string) => membershipPlans.find(p => p.id === id)?.title || 'Desconocido';
+
+const PartnerStudentPaymentsTable = ({ classes }: { classes: any[] }) => {
+    const { studentPayments } = useAuth();
+    
+    const relevantStudentIds = useMemo(() => {
+        return [...new Set(classes.flatMap(c => c.enrolledStudentIds))];
+    }, [classes]);
+
+    const filteredPayments = useMemo(() => {
+        return studentPayments.filter(p => relevantStudentIds.includes(p.studentId));
+    }, [studentPayments, relevantStudentIds]);
+
+    if (filteredPayments.length === 0) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2"><FileText /> Pagos de Alumnos Relacionados</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground text-center py-4">No hay pagos de alumnos para las clases de esta categoría.</p>
+                </CardContent>
+            </Card>
+        );
+    }
+    
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2"><FileText /> Pagos de Alumnos Relacionados</CardTitle>
+                <CardDescription>Facturas de los alumnos inscritos en las clases de esta categoría.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="overflow-y-auto max-h-96">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Alumno</TableHead>
+                                <TableHead>Plan</TableHead>
+                                <TableHead>Estado</TableHead>
+                                <TableHead className="text-right">Monto</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredPayments.map((p) => (
+                                <TableRow key={p.id}>
+                                    <TableCell>{getStudentName(p.studentId)}</TableCell>
+                                    <TableCell>{getPlanName(p.planId)}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={p.status === 'paid' ? 'default' : p.status === 'pending' ? 'destructive' : 'secondary'}>
+                                            {{ paid: 'Pagado', pending: 'Pendiente', deposit: 'Adelanto' }[p.status]}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono">€{p.totalAmount.toFixed(2)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 type TeacherPayrollProps = {
     mode: 'studio_expenses' | 'partner_income';
-    partnerId?: number;
+    partnerId?: number | null;
 };
 
 export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
@@ -126,7 +193,7 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
             }, {} as Record<string, any[]>);
 
 
-            return { partner, individualClasses, groupedSharedClasses, individualIncome, sharedIncome, totalIncome };
+            return { partner, individualClasses, sharedClasses, groupedSharedClasses, individualIncome, sharedIncome, totalIncome };
         }
 
         return null;
@@ -180,7 +247,7 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
 
     const PartnerIncomeView = () => {
         if (!calculation || !('partner' in calculation) || !calculation.partner) return null;
-        const { partner, individualClasses, groupedSharedClasses, individualIncome, sharedIncome, totalIncome } = calculation;
+        const { partner, individualClasses, sharedClasses, groupedSharedClasses, individualIncome, sharedIncome, totalIncome } = calculation;
 
         const renderTableContent = (classes: any[]) => (
             <>
@@ -194,7 +261,7 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
                                     <TableRow key={c.id}>
                                         <TableCell>
                                             <p className="font-medium">{c.name}</p>
-                                            <p className="text-xs text-muted-foreground capitalize">{c.type} - {c.date ? c.date : c.day}</p>
+                                            <p className="text-xs text-muted-foreground capitalize">{c.type} - {c.date ? format(parseISO(c.date), 'dd/MM/yy', { locale: es }) : c.day}</p>
                                         </TableCell>
                                         <TableCell><div className={`flex items-center gap-2 text-sm ${statusInfo.color}`}>{statusInfo.icon} {statusInfo.text}</div></TableCell>
                                         <TableCell className="text-right">
@@ -218,52 +285,60 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
         );
 
         return (
-            <div className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Resumen de Ingresos de {partner.name}</CardTitle>
-                        <CardDescription>Desglose de los ingresos generados por las clases y talleres impartidos.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Card className="bg-muted/50"><CardHeader><CardTitle className="text-base">Ingresos Individuales</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-green-600">€{individualIncome.toFixed(2)}</p></CardContent></Card>
-                        <Card className="bg-muted/50"><CardHeader><CardTitle className="text-base">Ingresos Compartidos</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-green-600">€{sharedIncome.toFixed(2)}</p></CardContent></Card>
-                        <Card className="bg-primary/10"><CardHeader><CardTitle className="text-base">Ingresos Totales</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-primary">€{totalIncome.toFixed(2)}</p></CardContent></Card>
-                    </CardContent>
-                </Card>
+             <Tabs defaultValue="summary" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="summary">Resumen</TabsTrigger>
+                    <TabsTrigger value="individual">Ingresos Individuales</TabsTrigger>
+                    <TabsTrigger value="shared">Ingresos Compartidos</TabsTrigger>
+                </TabsList>
 
-                <Tabs defaultValue="individual" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="individual">Ingresos Individuales</TabsTrigger>
-                        <TabsTrigger value="shared">Ingresos Compartidos</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="individual" className="mt-4">
-                       <Card>
-                            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><UserCheck /> Detalle de Clases Individuales</CardTitle></CardHeader>
-                            <CardContent className="p-0">
-                                {renderTableContent(individualClasses)}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                    <TabsContent value="shared" className="mt-4 space-y-4">
-                        {Object.keys(groupedSharedClasses).length > 0 ? (
-                             <Accordion type="single" collapsible className="w-full">
-                                {Object.entries(groupedSharedClasses).map(([partnerNames, classes]) => (
-                                    <AccordionItem value={partnerNames} key={partnerNames}>
-                                        <AccordionTrigger className="text-lg font-medium px-4">Clases con {partnerNames}</AccordionTrigger>
-                                        <AccordionContent>
-                                            <div className="pt-2">
+                <TabsContent value="summary" className="mt-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Resumen de Ingresos de {partner.name}</CardTitle>
+                            <CardDescription>Desglose de los ingresos generados por las clases y talleres impartidos.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <Card className="bg-muted/50"><CardHeader><CardTitle className="text-base">Ingresos Individuales</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-green-600">€{individualIncome.toFixed(2)}</p></CardContent></Card>
+                            <Card className="bg-muted/50"><CardHeader><CardTitle className="text-base">Ingresos Compartidos</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-green-600">€{sharedIncome.toFixed(2)}</p></CardContent></Card>
+                            <Card className="bg-primary/10"><CardHeader><CardTitle className="text-base">Ingresos Totales</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-primary">€{totalIncome.toFixed(2)}</p></CardContent></Card>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                
+                <TabsContent value="individual" className="mt-6 space-y-6">
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><UserCheck /> Detalle de Clases Individuales</CardTitle></CardHeader>
+                        <CardContent className="p-0">
+                            {renderTableContent(individualClasses)}
+                        </CardContent>
+                    </Card>
+                    <PartnerStudentPaymentsTable classes={individualClasses} />
+                </TabsContent>
+
+                <TabsContent value="shared" className="mt-6 space-y-6">
+                    <Card>
+                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Users /> Detalle de Clases Compartidas</CardTitle></CardHeader>
+                         <CardContent>
+                            {Object.keys(groupedSharedClasses).length > 0 ? (
+                                <Accordion type="single" collapsible className="w-full">
+                                    {Object.entries(groupedSharedClasses).map(([partnerNames, classes]) => (
+                                        <AccordionItem value={partnerNames} key={partnerNames}>
+                                            <AccordionTrigger className="text-base font-medium">Clases con {partnerNames}</AccordionTrigger>
+                                            <AccordionContent className="pt-2">
                                                 {renderTableContent(classes)}
-                                            </div>
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                ))}
-                            </Accordion>
-                        ) : (
-                            <Card><CardContent><p className="text-sm text-muted-foreground text-center py-8">No hay clases compartidas este mes.</p></CardContent></Card>
-                        )}
-                    </TabsContent>
-                </Tabs>
-            </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    ))}
+                                </Accordion>
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-8">No hay clases compartidas este mes.</p>
+                            )}
+                         </CardContent>
+                    </Card>
+                    <PartnerStudentPaymentsTable classes={sharedClasses} />
+                </TabsContent>
+            </Tabs>
         )
     }
 
