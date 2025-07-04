@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { PublicHeader } from '@/components/layout/public-header';
 import { PublicFooter } from '@/components/layout/public-footer';
+import { SettingsProvider } from '@/context/settings-context';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -48,9 +49,11 @@ export default function RootLayout({
         <meta name="description" content="Sistema de gestión integral para la escuela de baile FusionArte." />
       </head>
       <body className="font-body antialiased">
-        <AuthProvider>
-          <AppLayout>{children}</AppLayout>
-        </AuthProvider>
+        <SettingsProvider>
+          <AuthProvider>
+            <AppLayout>{children}</AppLayout>
+          </AuthProvider>
+        </SettingsProvider>
       </body>
     </html>
   );

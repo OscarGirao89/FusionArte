@@ -1,5 +1,4 @@
 
-
 export type DanceStyle = {
   id: string;
   name: string;
@@ -168,4 +167,19 @@ export type Role = {
   id: string;
   name: string;
   permissions: Permission[];
+};
+
+
+export type AcademySettings = {
+  academyName: string;
+  contactEmail: string;
+  phone?: string;
+  address?: string;
+  welcomeMessage?: string;
+  enableNewSignups: boolean;
+  maintenanceMode: boolean;
+  logoUrl?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
 };

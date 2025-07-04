@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSettings } from '@/context/settings-context';
+import Image from 'next/image';
 
 const navLinks = [
   { href: '/', label: 'Principal' },
@@ -19,13 +21,18 @@ const navLinks = [
 
 export function PublicHeader() {
   const pathname = usePathname();
+  const { settings } = useSettings();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-20 items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <LogoIcon className="h-8 w-8 text-primary" />
-          <span className="font-bold text-lg font-headline">FusionArte</span>
+            {settings.logoUrl ? (
+                <Image src={settings.logoUrl} alt={settings.academyName} width={40} height={40} className="h-8 w-auto" />
+            ) : (
+                <LogoIcon className="h-8 w-8 text-primary" />
+            )}
+          <span className="font-bold text-lg font-headline">{settings.academyName}</span>
         </Link>
         <nav className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (

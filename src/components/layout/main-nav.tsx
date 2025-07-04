@@ -11,6 +11,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Settings, BookMarked, User, LogOut, ChevronDown, CreditCard, Calendar, Users, ClipboardList, Banknote, GraduationCap, Wallet } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
+import { useSettings } from '@/context/settings-context';
+import Image from 'next/image';
 
 const publicNav = [
     { href: '/', label: 'Principal' },
@@ -116,7 +118,7 @@ function UserMenu() {
                 <DropdownMenuGroup>
                     <DropdownMenuItem onClick={() => router.push('/profile')}><User className="mr-2 h-4 w-4"/> Mi Perfil</DropdownMenuItem>
                     {(userRole === 'teacher' || userRole === 'socio') && <DropdownMenuItem onClick={() => router.push('/my-classes')}><BookMarked className="mr-2 h-4 w-4"/> Mis Clases</DropdownMenuItem>}
-                    {userRole === 'admin' && <DropdownMenuItem onClick={() => router.push('/admin/settings')}><Settings className="mr-2 h-4 w-4"/> Configuración</DropdownMenuItem>}
+                    {(userRole === 'admin' || userRole === 'socio') && <DropdownMenuItem onClick={() => router.push('/admin/settings')}><Settings className="mr-2 h-4 w-4"/> Configuración</DropdownMenuItem>}
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
@@ -166,6 +168,7 @@ function MobileNav({ mainNav, managementNav }: { mainNav: { href: string, label:
 
 export function MainNav() {
     const { userRole } = useAuth();
+    const { settings } = useSettings();
     
     let mainNavItems: { href: string; label: string; icon?: React.ElementType }[] = [];
     let managementNavItems: { href: string, label: string, icon: React.ElementType }[] | undefined = undefined;
@@ -193,8 +196,12 @@ export function MainNav() {
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 no-print">
         <div className="container flex h-20 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 mr-6">
-            <LogoIcon className="h-8 w-8 text-primary" />
-            <span className="hidden sm:inline-block font-bold text-lg font-headline">FusionArte</span>
+            {settings.logoUrl ? (
+                <Image src={settings.logoUrl} alt={settings.academyName} width={40} height={40} className="h-8 w-auto" />
+            ) : (
+                <LogoIcon className="h-8 w-8 text-primary" />
+            )}
+            <span className="hidden sm:inline-block font-bold text-lg font-headline">{settings.academyName}</span>
           </Link>
           <div className="flex-1 hidden md:flex items-center gap-4">
               <NavLinks items={mainNavItems} />

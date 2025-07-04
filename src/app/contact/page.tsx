@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
 import { Mail, MapPin, Phone } from "lucide-react"
+import { useSettings } from "@/context/settings-context"
 
 const contactFormSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
@@ -20,6 +21,7 @@ const contactFormSchema = z.object({
 type ContactFormValues = z.infer<typeof contactFormSchema>;
 
 export default function ContactPage() {
+    const { settings } = useSettings();
     const form = useForm<ContactFormValues>({
         resolver: zodResolver(contactFormSchema),
         defaultValues: {
@@ -59,21 +61,21 @@ export default function ContactPage() {
                                 <MapPin className="h-6 w-6 text-primary flex-shrink-0" />
                                 <div>
                                     <p className="font-semibold">Dirección</p>
-                                    <p className="text-muted-foreground">Calle Falsa 123, Ciudad Danza, 45678</p>
+                                    <p className="text-muted-foreground">{settings.address || 'No especificada'}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
                                 <Phone className="h-6 w-6 text-primary flex-shrink-0" />
                                 <div>
                                     <p className="font-semibold">Teléfono</p>
-                                    <p className="text-muted-foreground">+34 123 456 789</p>
+                                    <p className="text-muted-foreground">{settings.phone || 'No especificado'}</p>
                                 </div>
                             </div>
                              <div className="flex items-center gap-4">
                                 <Mail className="h-6 w-6 text-primary flex-shrink-0" />
                                 <div>
                                     <p className="font-semibold">Email</p>
-                                    <p className="text-muted-foreground">contacto@fusionarte.com</p>
+                                    <p className="text-muted-foreground">{settings.contactEmail}</p>
                                 </div>
                             </div>
                         </CardContent>
