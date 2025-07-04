@@ -7,11 +7,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { StudentMembership, StudentPayment } from '@/lib/types';
 import { studentMemberships as initialMemberships } from '@/lib/data';
 import { studentPayments as initialPayments } from '@/lib/finances-data';
+import { userProfiles } from '@/components/layout/main-nav';
 
 export type UserRole = 'admin' | 'teacher' | 'student' | 'administrativo' | 'socio';
 
 export interface AuthContextType {
   userRole: UserRole | null;
+  userId: number | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (role: UserRole) => void;
@@ -26,6 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [studentMemberships, setStudentMemberships] = useState<StudentMembership[]>(initialMemberships);
   const [studentPayments, setStudentPayments] = useState<StudentPayment[]>(initialPayments);
@@ -38,6 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const storedRole = localStorage.getItem('userRole') as UserRole | null;
       if (storedRole) {
         setUserRole(storedRole);
+        setUserId(userProfiles[storedRole]?.id || null);
       } else if (pathname !== '/login') {
          router.push('/login');
       }
@@ -61,6 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       localStorage.setItem('userRole', role);
       setUserRole(role);
+      setUserId(userProfiles[role]?.id || null);
       router.push('/');
     } catch (error) {
        console.error("Could not access localStorage", error);
@@ -71,6 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       localStorage.removeItem('userRole');
       setUserRole(null);
+      setUserId(null);
       router.push('/login');
     } catch (error) {
       console.error("Could not access localStorage", error);
@@ -104,6 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     userRole,
+    userId,
     isAuthenticated: !!userRole,
     isLoading,
     login,
