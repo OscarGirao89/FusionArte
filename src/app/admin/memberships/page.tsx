@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { membershipPlans as initialPlans, danceClasses } from '@/lib/data';
+import { membershipPlans as initialPlans, danceClasses, danceStyles } from '@/lib/data';
 import type { MembershipPlan } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
@@ -26,12 +26,14 @@ import { MoreHorizontal, PlusCircle, Pencil, Trash2, TicketPercent, InfinityIcon
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 const baseSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, "El título es obligatorio."),
   description: z.string().min(1, "La descripción es obligatoria."),
-  price: z.coerce.number().min(0, "El precio debe ser un número positivo."),
+  price: z.coerce.number().min(0, "El precio debe ser un número no negativo."),
   features: z.string().min(10, "Añade al menos una característica."),
   isPopular: z.boolean().default(false),
   durationUnit: z.enum(['days', 'weeks', 'months'], { required_error: "Debes seleccionar una unidad." }),
@@ -57,11 +59,27 @@ const formSchema = z.discriminatedUnion("accessType", [
         message: "Debes seleccionar al menos una clase.",
     }),
   }).merge(baseSchema),
-]);
+  z.object({
+    accessType: z.literal("custom_pack"),
+    pricePerClass: z.coerce.number().min(1, "El precio por clase debe ser al menos 1."),
+    minClasses: z.coerce.number().int().min(1, "Debe ser al menos 1."),
+    maxClasses: z.coerce.number().int().min(1, "Debe ser al menos 1."),
+    allowedStyles: z.array(z.string()).refine((value) => value.length > 0, {
+        message: "Debes seleccionar al menos un estilo.",
+    }),
+  }).merge(baseSchema),
+]).refine(data => {
+    if (data.accessType === 'custom_pack') {
+        return data.maxClasses >= data.minClasses;
+    }
+    return true;
+}, {
+    message: 'El máximo de clases debe ser mayor o igual al mínimo.',
+    path: ['maxClasses']
+});
 
 type MembershipFormValues = z.infer<typeof formSchema>;
 
-// Helper to convert plan data to form values
 const planToForm = (plan: MembershipPlan): MembershipFormValues => {
   const common = {
     ...plan,
@@ -76,11 +94,12 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
     case 'trial_class':
       return { ...common, accessType: 'trial_class', allowedClasses: plan.allowedClasses || [] };
     case 'course_pass':
-        return { ...common, accessType: 'course_pass', allowedClasses: plan.allowedClasses || [] };
+      return { ...common, accessType: 'course_pass', allowedClasses: plan.allowedClasses || [] };
+    case 'custom_pack':
+      return { ...common, accessType: 'custom_pack', allowedStyles: plan.allowedStyles || [] };
   }
 };
 
-// Helper to format duration for display
 const formatDuration = (value: number, unit: 'days' | 'weeks' | 'months') => {
   if (!value || !unit) return '';
   const labels = {
@@ -134,6 +153,10 @@ export default function AdminMembershipsPage() {
         classCount: 10,
         allowedClasses: [],
         visibility: 'public',
+        pricePerClass: 10,
+        minClasses: 2,
+        maxClasses: 12,
+        allowedStyles: [],
       });
     }
     setIsDialogOpen(true);
@@ -142,7 +165,7 @@ export default function AdminMembershipsPage() {
   const onSubmit = (data: MembershipFormValues) => {
     toast({
       title: `Plan ${editingPlan ? 'actualizado' : 'creado'} con éxito`,
-      description: `El plan "${data.title}" ha sido guardado (simulación).`,
+      description: `El plan "${data.title}" ha sido guardado.`,
     });
     
     let planToSave: MembershipPlan;
@@ -172,6 +195,9 @@ export default function AdminMembershipsPage() {
         case 'course_pass':
             planToSave = { ...commonData, accessType: 'course_pass', allowedClasses: data.allowedClasses };
             break;
+        case 'custom_pack':
+            planToSave = { ...commonData, accessType: 'custom_pack', pricePerClass: data.pricePerClass, minClasses: data.minClasses, maxClasses: data.maxClasses, allowedStyles: data.allowedStyles };
+            break;
     }
 
     if (editingPlan) {
@@ -188,7 +214,7 @@ export default function AdminMembershipsPage() {
     setPlans(plans.filter(p => p.id !== planId));
     toast({
       title: "Plan eliminado",
-      description: `El plan ha sido eliminado (simulación).`,
+      description: `El plan ha sido eliminado.`,
       variant: "destructive"
     });
   }
@@ -241,13 +267,16 @@ export default function AdminMembershipsPage() {
                                     'unlimited': 'Pase Ilimitado',
                                     'class_pack': 'Bono de Clases',
                                     'trial_class': 'Clase de Prueba',
-                                    'course_pass': 'Pase por Curso'
+                                    'course_pass': 'Pase por Curso',
+                                    'custom_pack': 'Bono Personalizado'
                                 }[plan.accessType]
                             }
                         </span>
                         </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">€{plan.price}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {plan.accessType === 'custom_pack' ? `€${plan.pricePerClass} / clase` : `€${plan.price}`}
+                    </TableCell>
                     <TableCell className="hidden lg:table-cell">
                         <Badge variant={plan.visibility === 'public' ? 'default' : 'outline'}>
                             {plan.visibility === 'public' ? 'Público' : 'No Listado'}
@@ -313,6 +342,7 @@ export default function AdminMembershipsPage() {
                         <SelectItem value="unlimited">Pase Ilimitado (Todas las clases)</SelectItem>
                         <SelectItem value="course_pass">Pase por Curso/Estilo (Acceso limitado por tiempo)</SelectItem>
                         <SelectItem value="class_pack">Bono de Clases (Número de clases fijo)</SelectItem>
+                        <SelectItem value="custom_pack">Bono Personalizado (por clases y estilos)</SelectItem>
                         <SelectItem value="trial_class">Clase de Prueba</SelectItem>
                       </SelectContent>
                     </Select><FormMessage />
@@ -325,9 +355,12 @@ export default function AdminMembershipsPage() {
               <FormField control={form.control} name="description" render={({ field }) => (
                 <FormItem><FormLabel>Descripción Corta</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
-              <FormField control={form.control} name="price" render={({ field }) => (
-                <FormItem><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
+              
+              { accessType !== 'custom_pack' && (
+                <FormField control={form.control} name="price" render={({ field }) => (
+                  <FormItem><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+              )}
               
               <div className="p-4 border rounded-md space-y-4">
                   <FormLabel>Validez del Plan</FormLabel>
@@ -435,6 +468,59 @@ export default function AdminMembershipsPage() {
                       />
                   </div>
               )}
+
+              {accessType === 'custom_pack' && (
+                <div className="space-y-4 p-4 border rounded-md">
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField control={form.control} name="pricePerClass" render={({ field }) => (
+                      <FormItem><FormLabel>Precio por Clase (€)</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="minClasses" render={({ field }) => (
+                      <FormItem><FormLabel>Mín. de Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="maxClasses" render={({ field }) => (
+                      <FormItem><FormLabel>Máx. de Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
+                   <FormField
+                        control={form.control}
+                        name="allowedStyles"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Estilos Permitidos</FormLabel>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-start font-normal">
+                                        {field.value?.length > 0 ? field.value.map(styleId => danceStyles.find(s => s.id === styleId)?.name).join(', ') : 'Seleccionar estilos'}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <ScrollArea className="h-48">
+                                    {danceStyles.map((style) => (
+                                        <div key={style.id} className="flex items-center space-x-2 p-2">
+                                            <Checkbox
+                                                id={`style-${style.id}`}
+                                                checked={field.value?.includes(style.id)}
+                                                onCheckedChange={(checked) => {
+                                                    const currentIds = field.value || [];
+                                                    return checked
+                                                        ? field.onChange([...currentIds, style.id])
+                                                        : field.onChange(currentIds.filter((id) => id !== style.id));
+                                                }}
+                                            />
+                                            <label htmlFor={`style-${style.id}`} className="font-normal">{style.name}</label>
+                                        </div>
+                                    ))}
+                                    </ScrollArea>
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                </div>
+              )}
+
 
               <FormField control={form.control} name="features" render={({ field }) => (
                 <FormItem><FormLabel>Características (una por línea)</FormLabel><FormControl><Textarea rows={4} {...field} /></FormControl><FormMessage /></FormItem>

@@ -58,7 +58,16 @@ type CoursePassPlan = MembershipPlanBase & {
   allowedClasses: string[];
 };
 
-export type MembershipPlan = UnlimitedPlan | ClassPackPlan | TrialClassPlan | CoursePassPlan;
+type CustomPackPlan = MembershipPlanBase & {
+  accessType: 'custom_pack';
+  pricePerClass: number;
+  minClasses: number;
+  maxClasses: number;
+  allowedStyles: string[];
+};
+
+export type MembershipPlan = UnlimitedPlan | ClassPackPlan | TrialClassPlan | CoursePassPlan | CustomPackPlan;
+
 
 export type ClassType = 'recurring' | 'one-time' | 'workshop' | 'rental';
 
@@ -204,5 +213,3 @@ export type AcademySettings = {
   aboutUsTeamTitle: string;
   aboutUsTeamDescription: string;
 };
-
-    

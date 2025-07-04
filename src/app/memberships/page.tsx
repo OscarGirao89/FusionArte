@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { userProfiles } from '@/components/layout/main-nav';
 import { ClassSelectorModal } from '@/components/shared/ClassSelectorModal';
+import { CustomPackModal } from '@/components/shared/CustomPackModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { LoginRequiredDialog } from '@/components/shared/login-required-dialog';
 
@@ -27,6 +28,9 @@ const getPlanPriceDisplay = (plan: MembershipPlan) => {
   }
   if (plan.accessType === 'class_pack') {
     return ` / ${plan.classCount} clases`;
+  }
+  if (plan.accessType === 'custom_pack') {
+    return `/ desde €${plan.pricePerClass} por clase`;
   }
   return '/ pago único';
 };
@@ -46,7 +50,10 @@ function PlanCard({ plan, onPurchaseRequest }: { plan: MembershipPlan, onPurchas
       <CardHeader className="text-center">
         <CardTitle className="font-headline text-2xl">{plan.title}</CardTitle>
         <CardDescription>
-          <span className="text-4xl font-bold text-foreground">€{plan.price}</span>
+          {plan.accessType === 'custom_pack' 
+            ? <span className="text-muted-foreground">Personaliza tu bono</span>
+            : <span className="text-4xl font-bold text-foreground">€{plan.price}</span>
+          }
           <span className="text-muted-foreground">{getPlanPriceDisplay(plan)}</span>
         </CardDescription>
       </CardHeader>
@@ -62,7 +69,7 @@ function PlanCard({ plan, onPurchaseRequest }: { plan: MembershipPlan, onPurchas
       </CardContent>
       <CardFooter>
         <Button className="w-full" variant={plan.isPopular ? 'default' : 'outline'} onClick={() => onPurchaseRequest(plan)}>
-          Adquirir Plan
+          {plan.accessType === 'custom_pack' ? 'Personalizar Bono' : 'Adquirir Plan'}
         </Button>
       </CardFooter>
     </Card>
@@ -75,6 +82,7 @@ export default function MembershipsPage() {
   const { userRole, userId, isAuthenticated, addStudentPayment, updateStudentMembership } = useAuth();
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+  const [isCustomPackOpen, setIsCustomPackOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
   const [planToConfirm, setPlanToConfirm] = useState<MembershipPlan | null>(null);
 
@@ -91,11 +99,14 @@ export default function MembershipsPage() {
         });
         return;
     }
+    
+    setSelectedPlan(plan);
 
     if (plan.accessType === 'unlimited' || plan.accessType === 'course_pass') {
         setPlanToConfirm(plan);
+    } else if (plan.accessType === 'custom_pack') {
+        setIsCustomPackOpen(true);
     } else {
-        setSelectedPlan(plan);
         setIsSelectorOpen(true);
     }
   };
@@ -168,12 +179,14 @@ export default function MembershipsPage() {
     const membershipEndDate = new Date();
     membershipEndDate.setMonth(membershipEndDate.getMonth() + selectedPlan.durationValue);
     
-    updateStudentMembership(student.id, {
-        planId: selectedPlan.id,
-        startDate: new Date().toISOString(),
-        endDate: membershipEndDate.toISOString(),
-        classesRemaining: selectedPlan.accessType === 'class_pack' ? selectedPlan.classCount : undefined,
-    });
+    if (selectedPlan.accessType === 'class_pack' || selectedPlan.accessType === 'trial_class') {
+      updateStudentMembership(student.id, {
+          planId: selectedPlan.id,
+          startDate: new Date().toISOString(),
+          endDate: membershipEndDate.toISOString(),
+          classesRemaining: selectedPlan.classCount,
+      });
+    }
     
     console.log(`Enrolling student ${userId} in classes:`, classIds);
 
@@ -184,6 +197,48 @@ export default function MembershipsPage() {
         description: "Te has inscrito en las clases seleccionadas y se ha generado tu factura.",
     });
   };
+
+  const handleConfirmCustomPack = (plan: MembershipPlan, classCount: number, totalPrice: number) => {
+    if (userRole !== 'student' || !userId) return;
+    
+    const newPayment: StudentPayment = {
+        id: `inv-${Date.now()}`,
+        studentId: userId,
+        planId: plan.id,
+        invoiceDate: new Date().toISOString(),
+        totalAmount: totalPrice,
+        status: 'pending',
+        amountPaid: 0,
+        amountDue: totalPrice,
+        lastUpdatedBy: 'Sistema',
+        lastUpdatedDate: new Date().toISOString(),
+    };
+    addStudentPayment(newPayment);
+
+    const membershipEndDate = new Date();
+    if (plan.durationUnit === 'months') {
+        membershipEndDate.setMonth(membershipEndDate.getMonth() + plan.durationValue);
+    } else if (plan.durationUnit === 'weeks') {
+        membershipEndDate.setDate(membershipEndDate.getDate() + plan.durationValue * 7);
+    } else { // days
+        membershipEndDate.setDate(membershipEndDate.getDate() + plan.durationValue);
+    }
+    
+    updateStudentMembership(userId, {
+        planId: plan.id,
+        startDate: new Date().toISOString(),
+        endDate: membershipEndDate.toISOString(),
+        classesRemaining: classCount,
+    });
+    
+    toast({
+        title: "Bono personalizado creado con éxito",
+        description: "Tu factura ha sido creada. ¡Revisa tu perfil y a bailar!",
+    });
+
+    setIsCustomPackOpen(false);
+    setSelectedPlan(null);
+  }
 
   return (
     <>
@@ -219,12 +274,21 @@ export default function MembershipsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {selectedPlan && (
+      {selectedPlan && (selectedPlan.accessType === 'class_pack' || selectedPlan.accessType === 'trial_class') && (
         <ClassSelectorModal
           plan={selectedPlan}
           isOpen={isSelectorOpen}
           onClose={() => setIsSelectorOpen(false)}
           onConfirm={handleConfirmSelection}
+        />
+      )}
+
+      {selectedPlan && selectedPlan.accessType === 'custom_pack' && (
+        <CustomPackModal
+          plan={selectedPlan}
+          isOpen={isCustomPackOpen}
+          onClose={() => setIsCustomPackOpen(false)}
+          onConfirm={handleConfirmCustomPack}
         />
       )}
     </>
