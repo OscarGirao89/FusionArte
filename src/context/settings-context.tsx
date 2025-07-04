@@ -36,7 +36,8 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     try {
       const storedSettings = localStorage.getItem('academySettings');
       if (storedSettings) {
-        setSettings(JSON.parse(storedSettings));
+        // Merge stored settings with defaults to handle new properties being added
+        setSettings({ ...initialSettings, ...JSON.parse(storedSettings) });
       }
     } catch (error) {
       console.error("Could not access localStorage for settings", error);
@@ -69,5 +70,3 @@ export const useSettings = (): SettingsContextType => {
   }
   return context;
 };
-
-    

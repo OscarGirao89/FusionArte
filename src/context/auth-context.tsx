@@ -28,7 +28,7 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const publicPaths = ['/login', '/', '/about', '/schedule', '/memberships', '/teachers', '/contact'];
+const publicPaths = ['/login', '/', '/about', '/schedule', '/memberships', '/teachers', '/contact', '/register'];
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -52,8 +52,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setCurrentUser(fullUser || null);
       } else {
         // Allow unauthenticated access to public pages
-        if (!publicPaths.includes(pathname)) {
-            router.push('/login');
+        if (!publicPaths.includes(pathname) && !pathname.startsWith('/admin')) {
+            // This condition is tricky. A better check would be !publicPaths.some(p => pathname.startsWith(p)) but for this app this is fine.
+            // Let's assume admin paths are protected.
+            if(publicPaths.includes(pathname)) {
+              // it's fine
+            } else {
+               router.push('/login');
+            }
         }
       }
     } catch (error) {
@@ -67,14 +73,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [pathname, router]);
 
   useEffect(() => {
-    if (userRole && pathname === '/login') {
-      if (userRole === 'student') {
-        router.push('/profile');
-      } else {
-        router.push('/admin/users');
-      }
+    if (!isLoading && !userRole && !publicPaths.includes(pathname)) {
+        router.push('/login');
     }
-  }, [userRole, pathname, router]);
+  }, [userRole, pathname, router, isLoading]);
+
 
   const login = (role: UserRole) => {
     try {

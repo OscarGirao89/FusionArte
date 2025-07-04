@@ -4,12 +4,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, UserRole } from '@/context/auth-context';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LogIn, User } from 'lucide-react';
 import { LogoIcon } from '@/components/icons/logo-icon';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<UserRole>('student');
@@ -81,6 +82,15 @@ export default function LoginPage() {
             </Button>
           </div>
         </CardContent>
+        <CardFooter className="flex flex-col gap-4">
+          <div className="text-center text-sm">
+              <p className="text-muted-foreground">¿No tienes una cuenta?{' '}
+                  <Link href="/register" className="text-primary hover:underline font-medium">
+                      Regístrate
+                  </Link>
+              </p>
+          </div>
+        </CardFooter>
       </Card>
     </div>
   );
