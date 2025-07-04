@@ -24,6 +24,13 @@ const initialSettings: AcademySettings = {
   facebookUrl: "https://www.facebook.com",
   tiktokUrl: "https://www.tiktok.com",
   openingHours: "Lunes a Viernes: 10:00 - 22:00\nSábados: 10:00 - 14:00",
+  aboutUsTitle: "Nuestra Historia",
+  aboutUsStory: "FusionArte nació de un sueño compartido: crear un espacio donde la pasión por el baile pudiera florecer sin límites, uniendo a personas de todos los niveles en una comunidad vibrante y acogedora.",
+  aboutUsMission: "Ofrecer una enseñanza de la más alta calidad en un ambiente inclusivo y motivador, fomentando el crecimiento artístico y personal de cada alumno.",
+  aboutUsVision: "Ser un referente en la enseñanza de la danza, reconocidos por nuestra excelencia, innovación y la comunidad que hemos construido.",
+  aboutUsValues: "Pasión, Respeto, Comunidad, Excelencia y Alegría son los pilares que guían cada uno de nuestros pasos.",
+  aboutUsTeamTitle: "El Equipo Fundador",
+  aboutUsTeamDescription: "Las mentes y corazones detrás de FusionArte.",
   heroSlides: [
     {
       id: "slide1",

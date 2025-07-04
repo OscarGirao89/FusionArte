@@ -16,6 +16,8 @@ import { LogIn } from 'lucide-react';
 import { LogoIcon } from '@/components/icons/logo-icon';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { useSettings } from '@/context/settings-context';
+import Image from 'next/image';
 
 const loginFormSchema = z.object({
   email: z.string().email("Por favor, introduce un email válido."),
@@ -28,6 +30,7 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const { settings } = useSettings();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -50,8 +53,12 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <LogoIcon className="h-10 w-10 text-primary" />
-            <span className="font-bold text-3xl font-headline">FusionArte</span>
+            {settings.logoUrl ? (
+                <Image src={settings.logoUrl} alt={settings.academyName} width={40} height={40} className="h-10 w-auto" />
+            ) : (
+                <LogoIcon className="h-10 w-10 text-primary" />
+            )}
+            <span className="font-bold text-3xl font-headline">{settings.academyName}</span>
           </div>
           <CardTitle className="text-2xl">Bienvenido/a de Nuevo</CardTitle>
           <CardDescription>Introduce tus datos para acceder a tu cuenta.</CardDescription>

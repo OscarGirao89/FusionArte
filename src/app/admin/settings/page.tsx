@@ -40,6 +40,16 @@ const settingsFormSchema = z.object({
   facebookUrl: z.string().url("URL de Facebook inválida.").or(z.literal('')).optional(),
   tiktokUrl: z.string().url("URL de TikTok inválida.").or(z.literal('')).optional(),
   openingHours: z.string().optional(),
+  
+  // About Us Page Content
+  aboutUsTitle: z.string().min(1, "El título es obligatorio."),
+  aboutUsStory: z.string().min(1, "La historia es obligatoria."),
+  aboutUsMission: z.string().min(1, "La misión es obligatoria."),
+  aboutUsVision: z.string().min(1, "La visión es obligatoria."),
+  aboutUsValues: z.string().min(1, "Los valores son obligatorios."),
+  aboutUsTeamTitle: z.string().min(1, "El título del equipo es obligatorio."),
+  aboutUsTeamDescription: z.string().min(1, "La descripción del equipo es obligatoria."),
+
   heroSlides: z.array(heroSlideSchema).min(1, "Debe haber al menos una diapositiva."),
 });
 
@@ -190,6 +200,36 @@ export default function AdminSettingsPage() {
                         <div className="space-y-0.5"><FormLabel>Modo Mantenimiento</FormLabel><FormDescription>Desactiva el acceso a la aplicación para todos los usuarios excepto administradores.</FormDescription></div>
                         <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                         </FormItem>
+                    )} />
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Página 'Acerca de Nosotros'</CardTitle>
+                    <CardDescription>Gestiona el contenido que se muestra en la página "Acerca de Nosotros".</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                     <FormField control={form.control} name="aboutUsTitle" render={({ field }) => (
+                        <FormItem><FormLabel>Título Principal ("Nuestra Historia")</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="aboutUsStory" render={({ field }) => (
+                        <FormItem><FormLabel>Párrafo de la Historia</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="aboutUsMission" render={({ field }) => (
+                        <FormItem><FormLabel>Texto de Misión</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="aboutUsVision" render={({ field }) => (
+                        <FormItem><FormLabel>Texto de Visión</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="aboutUsValues" render={({ field }) => (
+                        <FormItem><FormLabel>Texto de Valores</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="aboutUsTeamTitle" render={({ field }) => (
+                        <FormItem><FormLabel>Título de la Sección de Equipo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                     <FormField control={form.control} name="aboutUsTeamDescription" render={({ field }) => (
+                        <FormItem><FormLabel>Descripción de la Sección de Equipo</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                 </CardContent>
             </Card>

@@ -27,6 +27,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { LogoIcon } from "@/components/icons/logo-icon";
 import { useToast } from "@/hooks/use-toast";
+import { useSettings } from '@/context/settings-context';
+import Image from 'next/image';
 
 const registerFormSchema = z.object({
     name: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }),
@@ -43,6 +45,7 @@ type RegisterFormValues = z.infer<typeof registerFormSchema>;
 export default function RegisterPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { settings } = useSettings();
 
     const form = useForm<RegisterFormValues>({
         resolver: zodResolver(registerFormSchema),
@@ -72,8 +75,12 @@ export default function RegisterPage() {
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <div className="flex items-center justify-center gap-2 mb-4">
-                        <LogoIcon className="h-10 w-10 text-primary" />
-                        <span className="font-bold text-3xl font-headline">FusionArte</span>
+                        {settings.logoUrl ? (
+                            <Image src={settings.logoUrl} alt={settings.academyName} width={40} height={40} className="h-10 w-auto" />
+                        ) : (
+                            <LogoIcon className="h-10 w-10 text-primary" />
+                        )}
+                        <span className="font-bold text-3xl font-headline">{settings.academyName}</span>
                     </div>
                     <CardTitle className="text-2xl">Crea tu Cuenta</CardTitle>
                     <CardDescription>Únete a nuestra comunidad y empieza a bailar.</CardDescription>

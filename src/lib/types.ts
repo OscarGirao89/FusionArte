@@ -194,6 +194,15 @@ export type AcademySettings = {
   tiktokUrl?: string;
   openingHours?: string;
   heroSlides: HeroSlide[];
+  
+  // About Us Page Content
+  aboutUsTitle: string;
+  aboutUsStory: string;
+  aboutUsMission: string;
+  aboutUsVision: string;
+  aboutUsValues: string;
+  aboutUsTeamTitle: string;
+  aboutUsTeamDescription: string;
 };
 
     
