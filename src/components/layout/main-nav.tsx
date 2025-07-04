@@ -12,7 +12,7 @@ import { Settings, BookMarked, User, LogOut, ChevronDown, CreditCard, Calendar, 
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 
-const studentNav = [
+const publicNav = [
     { href: '/', label: 'Principal' },
     { href: '/about', label: 'Acerca de Nosotros' },
     { href: '/schedule', label: 'Clases / Horarios' },
@@ -116,7 +116,7 @@ function UserMenu() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    {userRole === 'student' && <DropdownMenuItem onClick={() => router.push('/profile')}><User className="mr-2 h-4 w-4"/> Mi Perfil</DropdownMenuItem>}
+                    <DropdownMenuItem onClick={() => router.push('/profile')}><User className="mr-2 h-4 w-4"/> Mi Perfil</DropdownMenuItem>
                     {(userRole === 'teacher' || userRole === 'socio') && <DropdownMenuItem onClick={() => router.push('/my-classes')}><BookMarked className="mr-2 h-4 w-4"/> Mis Clases</DropdownMenuItem>}
                     {userRole === 'admin' && <DropdownMenuItem onClick={() => router.push('/admin/settings')}><Settings className="mr-2 h-4 w-4"/> Configuración</DropdownMenuItem>}
                 </DropdownMenuGroup>
@@ -175,7 +175,7 @@ export function MainNav() {
   
     switch (userRole) {
         case 'student':
-            mainNavItems = studentNav;
+            mainNavItems = publicNav;
             break;
         case 'teacher':
             mainNavItems = teacherNav;
