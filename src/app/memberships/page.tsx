@@ -17,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { LoginRequiredDialog } from '@/components/shared/login-required-dialog';
 
 const getPlanPriceDisplay = (plan: MembershipPlan) => {
-  if (plan.accessType === 'unlimited') {
+  if (plan.accessType === 'unlimited' || plan.accessType === 'course_pass') {
     const unitMap = {
       days: plan.durationValue === 1 ? 'día' : 'días',
       weeks: plan.durationValue === 1 ? 'semana' : 'semanas',
@@ -92,7 +92,7 @@ export default function MembershipsPage() {
         return;
     }
 
-    if (plan.accessType === 'unlimited') {
+    if (plan.accessType === 'unlimited' || plan.accessType === 'course_pass') {
         setPlanToConfirm(plan);
     } else {
         setSelectedPlan(plan);

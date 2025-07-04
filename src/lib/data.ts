@@ -127,6 +127,18 @@ export const membershipPlans: MembershipPlan[] = [
     visibility: 'public',
   },
   {
+    id: 'pass-salsa-monthly',
+    title: 'Pase Mensual de Salsa',
+    description: 'Acceso ilimitado a todas nuestras clases de Salsa por un mes.',
+    price: 65,
+    features: ['Todas las clases de Salsa, todos los niveles', 'Acceso a prácticas de Salsa', 'Válido por 30 días'],
+    accessType: 'course_pass',
+    allowedClasses: ['clase-1', 'clase-6', 'clase-9', 'clase-12', 'clase-15'],
+    durationUnit: 'months',
+    durationValue: 1,
+    visibility: 'public',
+  },
+  {
     id: 'beginner-pass',
     title: 'Pase de Principiante',
     description: 'Acceso a todas las clases para principiantes.',

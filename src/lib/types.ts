@@ -53,7 +53,12 @@ type TrialClassPlan = MembershipPlanBase & {
   allowedClasses: string[];
 };
 
-export type MembershipPlan = UnlimitedPlan | ClassPackPlan | TrialClassPlan;
+type CoursePassPlan = MembershipPlanBase & {
+  accessType: 'course_pass';
+  allowedClasses: string[];
+};
+
+export type MembershipPlan = UnlimitedPlan | ClassPackPlan | TrialClassPlan | CoursePassPlan;
 
 export type ClassType = 'recurring' | 'one-time' | 'workshop' | 'rental';
 

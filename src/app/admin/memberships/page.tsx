@@ -51,6 +51,12 @@ const formSchema = z.discriminatedUnion("accessType", [
     classCount: z.coerce.number().int().min(1, "El número de clases debe ser al menos 1.").default(1),
     allowedClasses: z.array(z.string()).default([]),
   }).merge(baseSchema),
+  z.object({
+    accessType: z.literal("course_pass"),
+    allowedClasses: z.array(z.string()).refine((value) => value.length > 0, {
+        message: "Debes seleccionar al menos una clase.",
+    }),
+  }).merge(baseSchema),
 ]);
 
 type MembershipFormValues = z.infer<typeof formSchema>;
@@ -69,6 +75,8 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
       return { ...common, accessType: 'class_pack', allowedClasses: plan.allowedClasses || [] };
     case 'trial_class':
       return { ...common, accessType: 'trial_class', allowedClasses: plan.allowedClasses || [] };
+    case 'course_pass':
+        return { ...common, accessType: 'course_pass', allowedClasses: plan.allowedClasses || [] };
   }
 };
 
@@ -161,6 +169,9 @@ export default function AdminMembershipsPage() {
         case 'trial_class':
             planToSave = { ...commonData, accessType: 'trial_class', classCount: data.classCount, allowedClasses: data.allowedClasses };
             break;
+        case 'course_pass':
+            planToSave = { ...commonData, accessType: 'course_pass', allowedClasses: data.allowedClasses };
+            break;
     }
 
     if (editingPlan) {
@@ -229,7 +240,8 @@ export default function AdminMembershipsPage() {
                                 {
                                     'unlimited': 'Pase Ilimitado',
                                     'class_pack': 'Bono de Clases',
-                                    'trial_class': 'Clase de Prueba'
+                                    'trial_class': 'Clase de Prueba',
+                                    'course_pass': 'Pase por Curso'
                                 }[plan.accessType]
                             }
                         </span>
@@ -298,8 +310,9 @@ export default function AdminMembershipsPage() {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un tipo" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="unlimited">Pase Ilimitado</SelectItem>
-                        <SelectItem value="class_pack">Bono de Clases</SelectItem>
+                        <SelectItem value="unlimited">Pase Ilimitado (Todas las clases)</SelectItem>
+                        <SelectItem value="course_pass">Pase por Curso/Estilo (Acceso limitado por tiempo)</SelectItem>
+                        <SelectItem value="class_pack">Bono de Clases (Número de clases fijo)</SelectItem>
                         <SelectItem value="trial_class">Clase de Prueba</SelectItem>
                       </SelectContent>
                     </Select><FormMessage />
@@ -336,18 +349,20 @@ export default function AdminMembershipsPage() {
               </div>
 
 
-              {(accessType === 'class_pack' || accessType === 'trial_class') && (
+              {(accessType === 'class_pack' || accessType === 'trial_class' || accessType === 'course_pass') && (
                   <div className="space-y-4 p-4 border rounded-md">
-                     <FormField control={form.control} name="classCount" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cantidad de Clases</FormLabel>
-                            <FormControl><Input type="number" min="1" {...field} /></FormControl>
-                            <FormDescription>
-                              {accessType === 'trial_class' ? 'Normalmente 1 para una clase de prueba.' : 'Número de clases incluidas en el bono.'}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                      )} />
+                     {(accessType === 'class_pack' || accessType === 'trial_class') && (
+                         <FormField control={form.control} name="classCount" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Cantidad de Clases</FormLabel>
+                                <FormControl><Input type="number" min="1" {...field} /></FormControl>
+                                <FormDescription>
+                                  {accessType === 'trial_class' ? 'Normalmente 1 para una clase de prueba.' : 'Número de clases incluidas en el bono.'}
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                          )} />
+                      )}
                       <FormField
                         control={form.control}
                         name="allowedClasses"
@@ -356,7 +371,10 @@ export default function AdminMembershipsPage() {
                             <div className="mb-4">
                               <FormLabel className="text-base">Clases Permitidas</FormLabel>
                               <FormDescription>
-                                Selecciona las clases a las que da acceso este plan. Si no marcas ninguna, se permitirá el acceso a todas.
+                                {accessType === 'course_pass' 
+                                  ? "Selecciona las clases a las que dará acceso este pase. Es obligatorio seleccionar al menos una."
+                                  : "Selecciona las clases a las que da acceso este plan. Si no marcas ninguna, se permitirá el acceso a todas."
+                                }
                               </FormDescription>
                             </div>
                             <ScrollArea className="h-40 rounded-md border p-4">
