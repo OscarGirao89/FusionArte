@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { users, membershipPlans } from '@/lib/data';
 import type { StudentPayment } from '@/lib/types';
@@ -20,7 +21,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { DollarSign, Download, Edit, Printer, TrendingDown, TrendingUp, Wallet, PlusCircle } from 'lucide-react';
+import { DollarSign, Download, Edit, Printer, TrendingDown, TrendingUp, Wallet, PlusCircle, ArrowLeft } from 'lucide-react';
 import { userProfiles } from '@/components/layout/main-nav';
 
 const paymentEditSchema = z.object({
@@ -42,6 +43,7 @@ export default function AdminPaymentsPage() {
   const [editingPayment, setEditingPayment] = useState<StudentPayment | null>(null);
   const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
   
   const canEdit = userRole === 'admin' || userRole === 'administrativo' || userRole === 'socio';
   const canCreate = userRole === 'admin' || userRole === 'administrativo' || userRole === 'socio';
@@ -181,8 +183,14 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex items-center justify-between mb-8 flex-wrap gap-2 no-print">
-        <h1 className="text-3xl font-bold tracking-tight font-headline">Pagos de Alumnos</h1>
+      <div className="flex items-start justify-between mb-8 flex-wrap gap-2 no-print">
+        <div>
+            <Button variant="ghost" onClick={() => router.push('/admin/finances')} className="mb-2">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Volver a Finanzas
+            </Button>
+            <h1 className="text-3xl font-bold tracking-tight font-headline">Pagos de Alumnos</h1>
+        </div>
          {canCreate && (
             <Dialog open={isNewInvoiceOpen} onOpenChange={setIsNewInvoiceOpen}>
                 <DialogTrigger asChild>

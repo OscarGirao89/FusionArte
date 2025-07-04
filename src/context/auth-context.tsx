@@ -51,32 +51,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserId(userProfile?.id || null);
         setCurrentUser(fullUser || null);
       } else {
-        // Allow unauthenticated access to public pages
-        if (!publicPaths.includes(pathname) && !pathname.startsWith('/admin')) {
-            // This condition is tricky. A better check would be !publicPaths.some(p => pathname.startsWith(p)) but for this app this is fine.
-            // Let's assume admin paths are protected.
-            if(publicPaths.includes(pathname)) {
-              // it's fine
-            } else {
-               router.push('/login');
-            }
+        const isPublic = publicPaths.some(path => pathname === path);
+        if (!isPublic) {
+            localStorage.setItem('redirectPath', pathname);
+            router.push('/login');
         }
       }
     } catch (error) {
       console.error("Could not access localStorage", error);
-      if (!publicPaths.includes(pathname)) {
-         router.push('/login');
-      }
     } finally {
       setIsLoading(false);
     }
   }, [pathname, router]);
-
-  useEffect(() => {
-    if (!isLoading && !userRole && !publicPaths.includes(pathname)) {
-        router.push('/login');
-    }
-  }, [userRole, pathname, router, isLoading]);
 
 
   const login = (role: UserRole) => {
@@ -87,7 +73,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUserRole(role);
       setUserId(userProfile?.id || null);
       setCurrentUser(fullUser || null);
-      // The redirect is now handled in the login page component
+      
+      const redirectPath = localStorage.getItem('redirectPath');
+      localStorage.removeItem('redirectPath');
+
+      if (redirectPath) {
+        router.push(redirectPath);
+      } else {
+         if (role === 'student') {
+            router.push('/profile');
+          } else if (role === 'teacher') {
+            router.push('/my-classes');
+          } else {
+            router.push('/admin/users');
+          }
+      }
     } catch (error) {
        console.error("Could not access localStorage", error);
     }

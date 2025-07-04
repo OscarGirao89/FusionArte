@@ -183,6 +183,12 @@ export type AcademySettings = {
   facebookUrl?: string;
   tiktokUrl?: string;
   openingHours?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
+  heroDescription?: string;
+  heroButtonText?: string;
+  heroButtonLink?: string;
+  heroImageUrl?: string;
 };
 
     

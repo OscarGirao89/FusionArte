@@ -28,13 +28,20 @@ const settingsFormSchema = z.object({
   facebookUrl: z.string().url("URL de Facebook inválida.").or(z.literal('')).optional(),
   tiktokUrl: z.string().url("URL de TikTok inválida.").or(z.literal('')).optional(),
   openingHours: z.string().optional(),
+  heroTitle: z.string().optional(),
+  heroSubtitle: z.string().optional(),
+  heroDescription: z.string().optional(),
+  heroButtonText: z.string().optional(),
+  heroButtonLink: z.string().url("Debe ser una URL válida.").or(z.literal('')).optional(),
+  heroImageUrl: z.string().optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 export default function AdminSettingsPage() {
     const { settings, updateSettings } = useSettings();
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const logoInputRef = useRef<HTMLInputElement>(null);
+    const heroImageInputRef = useRef<HTMLInputElement>(null);
 
     const form = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsFormSchema),
@@ -47,6 +54,7 @@ export default function AdminSettingsPage() {
     }, [settings, form]);
     
     const watchedLogo = form.watch('logoUrl');
+    const watchedHeroImage = form.watch('heroImageUrl');
 
     function onSubmit(data: SettingsFormValues) {
         updateSettings(data);
@@ -56,16 +64,16 @@ export default function AdminSettingsPage() {
         });
     }
 
-    const handleLogoClick = () => {
-        fileInputRef.current?.click();
+    const handleImageClick = (ref: React.RefObject<HTMLInputElement>) => {
+        ref.current?.click();
     };
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, field: keyof SettingsFormValues) => {
         const file = event.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                form.setValue('logoUrl', reader.result as string, { shouldDirty: true });
+                form.setValue(field, reader.result as string, { shouldDirty: true });
             };
             reader.readAsDataURL(file);
         }
@@ -78,6 +86,40 @@ export default function AdminSettingsPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <Card>
                 <CardHeader>
+                    <CardTitle>Página Principal</CardTitle>
+                    <CardDescription>Gestiona el contenido principal de la página de inicio.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <FormField control={form.control} name="heroTitle" render={({ field }) => (<FormItem><FormLabel>Título Principal</FormLabel><FormControl><Input {...field} /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="heroSubtitle" render={({ field }) => (<FormItem><FormLabel>Subtítulo</FormLabel><FormControl><Input {...field} /></FormControl><FormDescription>Texto más pequeño que aparece sobre el título.</FormDescription></FormItem> )} />
+                    <FormField control={form.control} name="heroDescription" render={({ field }) => (<FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} /></FormControl></FormItem> )} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="heroButtonText" render={({ field }) => (<FormItem><FormLabel>Texto del Botón</FormLabel><FormControl><Input {...field} /></FormControl></FormItem> )} />
+                        <FormField control={form.control} name="heroButtonLink" render={({ field }) => (<FormItem><FormLabel>Enlace del Botón</FormLabel><FormControl><Input {...field} placeholder="/schedule" /></FormControl></FormItem> )} />
+                    </div>
+                     <FormField
+                        control={form.control}
+                        name="heroImageUrl"
+                        render={() => (
+                            <FormItem>
+                                <FormLabel>Imagen Principal</FormLabel>
+                                <FormControl>
+                                    <div className="flex items-center gap-4">
+                                        <Image src={watchedHeroImage || "https://placehold.co/800x1200.png"} alt="Previsualización de imagen principal" width={100} height={150} className="object-contain border rounded-md" />
+                                        <Button type="button" variant="outline" onClick={() => handleImageClick(heroImageInputRef)}>Subir Imagen</Button>
+                                        <input type="file" ref={heroImageInputRef} onChange={(e) => handleFileChange(e, 'heroImageUrl')} className="hidden" accept="image/png, image/jpeg, image/gif" />
+                                    </div>
+                                </FormControl>
+                                <FormDescription>Imagen grande que aparece en la página principal. Se recomienda una imagen vertical (ej: 800x1200px).</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
                     <CardTitle>Identidad Visual</CardTitle>
                     <CardDescription>Gestiona el logo de tu academia.</CardDescription>
                 </CardHeader>
@@ -85,17 +127,17 @@ export default function AdminSettingsPage() {
                     <FormField
                         control={form.control}
                         name="logoUrl"
-                        render={({ field }) => (
+                        render={() => (
                             <FormItem>
                                 <FormLabel>Logo de la Academia</FormLabel>
                                 <FormControl>
                                     <div className="flex items-center gap-4">
-                                        <Avatar className="h-20 w-20 rounded-md cursor-pointer hover:opacity-80 transition-opacity" onClick={handleLogoClick}>
+                                        <Avatar className="h-20 w-20 rounded-md cursor-pointer hover:opacity-80 transition-opacity" onClick={() => handleImageClick(logoInputRef)}>
                                             <AvatarImage src={watchedLogo} className="object-contain" />
                                             <AvatarFallback className="rounded-md">{settings.academyName.charAt(0)}</AvatarFallback>
                                         </Avatar>
-                                        <Button type="button" variant="outline" onClick={handleLogoClick}>Subir Logo</Button>
-                                        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/png, image/jpeg, image/gif, image/svg+xml" />
+                                        <Button type="button" variant="outline" onClick={() => handleImageClick(logoInputRef)}>Subir Logo</Button>
+                                        <input type="file" ref={logoInputRef} onChange={(e) => handleFileChange(e, 'logoUrl')} className="hidden" accept="image/png, image/jpeg, image/gif, image/svg+xml" />
                                     </div>
                                 </FormControl>
                                 <FormDescription>Haz clic en el logo o en el botón para subir una nueva imagen (PNG, JPG, SVG).</FormDescription>

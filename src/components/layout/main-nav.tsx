@@ -118,7 +118,6 @@ function UserMenu() {
                 <DropdownMenuGroup>
                     <DropdownMenuItem onClick={() => router.push('/profile')}><User className="mr-2 h-4 w-4"/> Mi Perfil</DropdownMenuItem>
                     {(userRole === 'teacher' || userRole === 'socio') && <DropdownMenuItem onClick={() => router.push('/my-classes')}><BookMarked className="mr-2 h-4 w-4"/> Mis Clases</DropdownMenuItem>}
-                    {(userRole === 'admin' || userRole === 'socio') && <DropdownMenuItem onClick={() => router.push('/admin/settings')}><Settings className="mr-2 h-4 w-4"/> Configuración</DropdownMenuItem>}
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>

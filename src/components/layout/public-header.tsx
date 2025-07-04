@@ -47,9 +47,12 @@ export function PublicHeader() {
             </Link>
           ))}
         </nav>
-        <div className="hidden md:block">
-          <Button asChild>
+        <div className="hidden md:flex items-center gap-2">
+          <Button asChild variant="ghost">
             <Link href="/login">Acceder</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/register">Registrar</Link>
           </Button>
         </div>
         <div className="md:hidden">
@@ -68,6 +71,9 @@ export function PublicHeader() {
                 ))}
                  <Button asChild className="mt-4">
                   <Link href="/login">Acceder</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/register">Registrar</Link>
                 </Button>
               </div>
             </SheetContent>

@@ -58,7 +58,7 @@ export default function AdminFinancesPage() {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <Card>
+                <Card className="lg:col-span-1">
                     <CardHeader>
                         <CardTitle>Pagos de Alumnos</CardTitle>
                         <CardDescription>Gestiona las facturas y los pagos de las membresías.</CardDescription>
@@ -68,18 +68,18 @@ export default function AdminFinancesPage() {
                     </CardContent>
                     <CardFooter>
                         <Button asChild>
-                            <Link href="/admin/payments">Gestionar Pagos</Link>
+                            <Link href="/admin/payments">Gestionar Pagos de Alumnos</Link>
                         </Button>
                     </CardFooter>
                 </Card>
-                <Card>
+                <Card className="lg:col-span-2">
                     <CardHeader>
                       <CardTitle>Libro de Transacciones (General)</CardTitle>
                       <CardDescription>Otros ingresos y egresos operativos.</CardDescription>
                     </CardHeader>
                     <CardContent><IncomeExpenseLedger /></CardContent>
                 </Card>
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-3">
                     <TeacherPayroll mode="studio_expenses" />
                 </div>
             </div>

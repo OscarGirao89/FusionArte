@@ -6,9 +6,11 @@ import { users } from '@/lib/data';
 import { Award, Music, Users, Heart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSettings } from '@/context/settings-context';
 
 export default function HomePage() {
   const featuredTeachers = users.filter(u => (u.role === 'Profesor' || u.role === 'Socio') && u.isVisibleToStudents).slice(0, 3);
+  const { settings } = useSettings();
 
   return (
     <div className="flex-1 bg-background">
@@ -22,17 +24,17 @@ export default function HomePage() {
 
             <div className="relative z-10 py-16 md:py-0">
               <p className="font-semibold text-primary uppercase tracking-widest">
-                Evento Especial: 24-28 Julio
+                {settings.heroSubtitle}
               </p>
               <h1 className="mt-2 text-4xl sm:text-5xl lg:text-7xl font-extrabold font-sans text-gray-900 dark:text-white leading-tight">
-                Urban Dance Masterclass
+                {settings.heroTitle}
               </h1>
               <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-lg">
-                Eleva tu nivel con nuestros instructores de clase mundial en un evento intensivo de 5 días. Plazas limitadas.
+                {settings.heroDescription}
               </p>
               <div className="mt-8">
                 <Button size="lg" asChild>
-                  <Link href="/schedule">Inscríbete Ahora</Link>
+                  <Link href={settings.heroButtonLink || '/'}>{settings.heroButtonText}</Link>
                 </Button>
               </div>
             </div>
@@ -40,7 +42,7 @@ export default function HomePage() {
             <div className="relative h-full w-full hidden md:flex items-end justify-center">
               <div className="absolute bottom-0 right-0 w-[85%] h-[95%]">
                 <Image
-                    src="https://placehold.co/800x1200.png"
+                    src={settings.heroImageUrl || "https://placehold.co/800x1200.png"}
                     alt="Bailarina de danza urbana"
                     layout="fill"
                     objectFit="contain"

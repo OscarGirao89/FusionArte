@@ -4,32 +4,45 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, UserRole } from '@/context/auth-context';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogIn, User } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { LogoIcon } from '@/components/icons/logo-icon';
-import Link from 'next/link';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+
+const loginFormSchema = z.object({
+  email: z.string().email("Por favor, introduce un email válido."),
+  password: z.string().min(1, "La contraseña es obligatoria."),
+  role: z.enum(['student', 'teacher', 'admin', 'administrativo', 'socio']),
+});
+
+type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export default function LoginPage() {
-  const [selectedRole, setSelectedRole] = useState<UserRole>('student');
   const router = useRouter();
   const { login } = useAuth();
 
-  const handleLogin = () => {
-    login(selectedRole);
-    if (selectedRole === 'student') {
-      router.push('/profile');
-    } else if (selectedRole === 'teacher') {
-      router.push('/my-classes');
-    } else {
-      router.push('/admin/users'); // A sensible default for admin roles
-    }
-  };
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      role: 'student',
+    },
+  });
 
-  const handleGuestAccess = () => {
-    router.push('/');
+  const handleLogin = (data: LoginFormValues) => {
+    // In this prototype, we're not actually checking the email/password.
+    // The role selector is the "key" to the simulation.
+    console.log(`Simulating login for email: ${data.email} with role: ${data.role}`);
+    login(data.role);
   };
 
   return (
@@ -40,47 +53,66 @@ export default function LoginPage() {
             <LogoIcon className="h-10 w-10 text-primary" />
             <span className="font-bold text-3xl font-headline">FusionArte</span>
           </div>
-          <CardTitle className="text-2xl">Bienvenido/a</CardTitle>
-          <CardDescription>Selecciona un rol para simular el inicio de sesión o explora el sitio como invitado.</CardDescription>
+          <CardTitle className="text-2xl">Bienvenido/a de Nuevo</CardTitle>
+          <CardDescription>Introduce tus datos para acceder a tu cuenta.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="role">Rol de Usuario</Label>
-              <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole)}>
-                <SelectTrigger id="role">
-                  <SelectValue placeholder="Selecciona un rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Estudiante</SelectItem>
-                  <SelectItem value="teacher">Profesor</SelectItem>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="administrativo">Administrativo</SelectItem>
-                  <SelectItem value="socio">Socio</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={handleLogin} className="w-full">
-              <LogIn className="mr-2 h-4 w-4" />
-              Iniciar Sesión
-            </Button>
-            
-            <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">
-                    O
-                    </span>
-                </div>
-            </div>
-
-            <Button onClick={handleGuestAccess} variant="outline" className="w-full">
-                <User className="mr-2 h-4 w-4" />
-                Continuar como Invitado
-            </Button>
-          </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="tu@email.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contraseña</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rol (para simulación)</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                       <FormControl>
+                         <SelectTrigger><SelectValue /></SelectTrigger>
+                       </FormControl>
+                       <SelectContent>
+                         <SelectItem value="student">Estudiante</SelectItem>
+                         <SelectItem value="teacher">Profesor</SelectItem>
+                         <SelectItem value="admin">Administrador</SelectItem>
+                         <SelectItem value="administrativo">Administrativo</SelectItem>
+                         <SelectItem value="socio">Socio</SelectItem>
+                       </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full">
+                <LogIn className="mr-2 h-4 w-4" />
+                Iniciar Sesión
+              </Button>
+            </form>
+          </Form>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <div className="text-center text-sm">
