@@ -17,9 +17,10 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { LoginRequiredDialog } from '@/components/shared/login-required-dialog';
 
 const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const timeSlots = Array.from({ length: (22 - 9) * 2 }, (_, i) => {
@@ -28,58 +29,12 @@ const timeSlots = Array.from({ length: (22 - 9) * 2 }, (_, i) => {
     return `${hour.toString().padStart(2, '0')}:${minute}`;
 });
 
-function ClassListCard({ danceClass }: { danceClass: DanceClass }) {
+function ClassListCard({ danceClass, onEnrollRequest }: { danceClass: DanceClass, onEnrollRequest: (danceClass: DanceClass) => void }) {
     const style = allStyles.find(s => s.id === danceClass.styleId);
     const level = allLevels.find(l => l.id === danceClass.levelId);
     const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
     const isEvent = ['one-time', 'workshop', 'rental'].includes(danceClass.type);
-
-    const { userRole, addStudentPayment, userId, updateStudentMembership } = useAuth();
-    const { toast } = useToast();
-    const router = useRouter();
-
-    const handleMonthlyEnroll = () => {
-        if (userRole !== 'student' || !userId) {
-            toast({ title: "Acción no permitida", description: "Inicia sesión como estudiante para inscribirte.", variant: "destructive" });
-            return;
-        }
-
-        const monthlyPlan = membershipPlans.find(p => p.id === 'unlimited-1');
-        if (!monthlyPlan) {
-             toast({ title: "Error", description: "No se encontró el plan mensual.", variant: "destructive" });
-            return;
-        }
-
-        const newPayment: StudentPayment = {
-            id: `inv-${Date.now()}`,
-            studentId: userId,
-            planId: monthlyPlan.id,
-            invoiceDate: new Date().toISOString(),
-            totalAmount: monthlyPlan.price,
-            status: 'pending',
-            amountPaid: 0,
-            amountDue: monthlyPlan.price,
-            lastUpdatedBy: 'Sistema',
-            lastUpdatedDate: new Date().toISOString(),
-        };
-        addStudentPayment(newPayment);
-
-        const membershipEndDate = new Date();
-        membershipEndDate.setMonth(membershipEndDate.getMonth() + monthlyPlan.durationValue);
-        
-        updateStudentMembership(userId, {
-            planId: monthlyPlan.id,
-            startDate: new Date().toISOString(),
-            endDate: membershipEndDate.toISOString(),
-        });
-        
-        toast({
-            title: "Inscripción Mensual Iniciada",
-            description: "Se ha generado una factura para tu plan mensual. Revisa tu perfil.",
-        });
-        router.push('/profile');
-    };
-
+   
     return (
         <Card className={cn(
             "transition-shadow hover:shadow-lg w-full flex flex-col",
@@ -105,25 +60,11 @@ function ClassListCard({ danceClass }: { danceClass: DanceClass }) {
                     <User className="h-4 w-4" /> {getTeacherNames(danceClass.teacherIds) || danceClass.rentalContact || 'N/A'}
                 </div>
             </CardContent>
-            {danceClass.type === 'recurring' && userRole === 'student' && (
+            {danceClass.type === 'recurring' && (
                 <CardFooter className="p-4 pt-0">
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="w-full">Inscribirse (Mensual)</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmar Inscripción Mensual</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Estás a punto de suscribirte al plan mensual "Ilimitado" para tener acceso a esta y otras clases. Se generará una factura por €{membershipPlans.find(p=>p.id === 'unlimited-1')?.price}. ¿Continuar?
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleMonthlyEnroll}>Confirmar e Inscribirme</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                   <Button variant="outline" size="sm" className="w-full" onClick={() => onEnrollRequest(danceClass)}>
+                       Inscribirse (Mensual)
+                   </Button>
                 </CardFooter>
             )}
         </Card>
@@ -316,9 +257,64 @@ function CalendarEvents({ classes }: { classes: DanceClass[] }) {
 export default function SchedulePage() {
   const [styleFilter, setStyleFilter] = useState('Todos');
   const [levelFilter, setLevelFilter] = useState('Todos');
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+  const [classToEnroll, setClassToEnroll] = useState<DanceClass | null>(null);
 
-  const styles = ['Todos', ...Array.from(new Set(allStyles.map(s => s.name)))];
-  const levels = ['Todos', ...Array.from(new Set(allLevels.map(l => l.name)))];
+  const { userRole, isAuthenticated, addStudentPayment, userId, updateStudentMembership } = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
+  
+  const handleEnrollRequest = (danceClass: DanceClass) => {
+      if (!isAuthenticated) {
+          setIsLoginDialogOpen(true);
+          return;
+      }
+      if (userRole === 'student') {
+        setClassToEnroll(danceClass);
+      } else {
+        toast({ title: "Acción no permitida", description: "Solo los estudiantes pueden inscribirse a clases.", variant: "destructive" });
+      }
+  };
+
+  const confirmMonthlyEnroll = () => {
+    if (!classToEnroll || !userId) return;
+
+    const monthlyPlan = membershipPlans.find(p => p.id === 'unlimited-1');
+    if (!monthlyPlan) {
+        toast({ title: "Error", description: "No se encontró el plan mensual.", variant: "destructive" });
+        return;
+    }
+
+    const newPayment: StudentPayment = {
+        id: `inv-${Date.now()}`,
+        studentId: userId,
+        planId: monthlyPlan.id,
+        invoiceDate: new Date().toISOString(),
+        totalAmount: monthlyPlan.price,
+        status: 'pending',
+        amountPaid: 0,
+        amountDue: monthlyPlan.price,
+        lastUpdatedBy: 'Sistema',
+        lastUpdatedDate: new Date().toISOString(),
+    };
+    addStudentPayment(newPayment);
+
+    const membershipEndDate = new Date();
+    membershipEndDate.setMonth(membershipEndDate.getMonth() + monthlyPlan.durationValue);
+    
+    updateStudentMembership(userId, {
+        planId: monthlyPlan.id,
+        startDate: new Date().toISOString(),
+        endDate: membershipEndDate.toISOString(),
+    });
+    
+    toast({
+        title: "Inscripción Mensual Iniciada",
+        description: "Se ha generado una factura para tu plan mensual. Revisa tu perfil.",
+    });
+    setClassToEnroll(null);
+    router.push('/profile');
+  };
 
   const filteredClasses = useMemo(() => {
     return danceClasses.filter(c => {
@@ -377,6 +373,23 @@ export default function SchedulePage() {
         <p className="text-lg text-muted-foreground">Encuentra tu ritmo. Explora nuestras clases regulares, talleres y eventos especiales.</p>
       </div>
 
+      <LoginRequiredDialog isOpen={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen} />
+      
+      <AlertDialog open={!!classToEnroll} onOpenChange={(open) => !open && setClassToEnroll(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar Inscripción Mensual</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Estás a punto de suscribirte al plan mensual "Ilimitado" para tener acceso a esta y otras clases. Se generará una factura por €{membershipPlans.find(p=>p.id === 'unlimited-1')?.price}. ¿Continuar?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmMonthlyEnroll}>Confirmar e Inscribirme</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
         <Tabs defaultValue="clases" className="w-full">
             <TabsList className="grid w-full grid-cols-3 md:w-fit mb-8">
                 <TabsTrigger value="clases">Clases</TabsTrigger>
@@ -393,7 +406,7 @@ export default function SchedulePage() {
                     <CardContent className="space-y-4">
                        {filters('list')}
                        {filteredClasses.length > 0 ? (
-                            filteredClasses.map(c => <ClassListCard key={c.id} danceClass={c} />)
+                            filteredClasses.map(c => <ClassListCard key={c.id} danceClass={c} onEnrollRequest={handleEnrollRequest} />)
                         ) : (
                              <div className="text-center py-16">
                                 <Users className="mx-auto h-12 w-12 text-muted-foreground" />

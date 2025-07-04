@@ -13,14 +13,17 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 
 const publicNav = [
+    { href: '/', label: 'Principal' },
+    { href: '/about', label: 'Acerca de Nosotros' },
     { href: '/schedule', label: 'Clases / Horarios' },
     { href: '/memberships', label: 'Membresías' },
     { href: '/teachers', label: 'Profesores' },
+    { href: '/contact', label: 'Contacto' },
 ];
 
 const studentNav = [
     { href: '/profile', label: 'Mi Perfil' },
-    ...publicNav,
+    ...publicNav.filter(item => !['/', '/about', '/contact'].includes(item.href)),
 ];
 
 const teacherNav = [
@@ -184,7 +187,7 @@ export function MainNav() {
             break;
         case 'admin':
         case 'socio':
-            mainNavItems = publicNav;
+            mainNavItems = publicNav.filter(item => !['/about', '/contact'].includes(item.href)); // Admins see a more focused nav
             managementNavItems = adminManagementNav;
             hasManagementDropdown = true;
             break;

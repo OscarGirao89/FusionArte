@@ -14,6 +14,7 @@ import { useAuth } from '@/context/auth-context';
 import { userProfiles } from '@/components/layout/main-nav';
 import { ClassSelectorModal } from '@/components/shared/ClassSelectorModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { LoginRequiredDialog } from '@/components/shared/login-required-dialog';
 
 const getPlanPriceDisplay = (plan: MembershipPlan) => {
   if (plan.accessType === 'unlimited') {
@@ -71,13 +72,17 @@ function PlanCard({ plan, onPurchaseRequest }: { plan: MembershipPlan, onPurchas
 export default function MembershipsPage() {
   const publicPlans = membershipPlans.filter(p => p.visibility === 'public');
   const { toast } = useToast();
-  const { userRole, userId, addStudentPayment, updateStudentMembership } = useAuth();
-
+  const { userRole, userId, isAuthenticated, addStudentPayment, updateStudentMembership } = useAuth();
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
   const [planToConfirm, setPlanToConfirm] = useState<MembershipPlan | null>(null);
 
   const handlePurchaseRequest = (plan: MembershipPlan) => {
+    if (!isAuthenticated) {
+        setIsLoginDialogOpen(true);
+        return;
+    }
     if (userRole !== 'student') {
         toast({
             title: "Acción no permitida",
@@ -196,6 +201,8 @@ export default function MembershipsPage() {
           ))}
         </div>
       </div>
+      
+      <LoginRequiredDialog isOpen={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen} />
 
       <AlertDialog open={!!planToConfirm} onOpenChange={(isOpen) => !isOpen && setPlanToConfirm(null)}>
         <AlertDialogContent>

@@ -9,9 +9,12 @@ import { Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navLinks = [
-  { href: '/schedule', label: 'Clases' },
+  { href: '/', label: 'Principal' },
+  { href: '/about', label: 'Acerca de Nosotros' },
+  { href: '/schedule', label: 'Clases / Horarios' },
   { href: '/memberships', label: 'Membresías' },
   { href: '/teachers', label: 'Profesores' },
+  { href: '/contact', label: 'Contacto' },
 ];
 
 export function PublicHeader() {
