@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, User, Award, Users, CalendarDays, MapPin, Building } from 'lucide-react';
+import { Clock, User, Award, Users, CalendarDays, MapPin, Building, Calendar as CalendarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -21,6 +21,41 @@ const timeSlots = Array.from({ length: (22 - 9) * 2 }, (_, i) => {
     const minute = i % 2 === 0 ? '00' : '30';
     return `${hour.toString().padStart(2, '0')}:${minute}`;
 });
+
+function ClassListCard({ danceClass }: { danceClass: DanceClass }) {
+    const style = allStyles.find(s => s.id === danceClass.styleId);
+    const level = allLevels.find(l => l.id === danceClass.levelId);
+    const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
+    const isEvent = ['one-time', 'workshop', 'rental'].includes(danceClass.type);
+
+    return (
+        <Card className={cn(
+            "transition-shadow hover:shadow-lg w-full",
+            danceClass.status.startsWith('cancelled') && "opacity-60"
+        )}>
+            <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-5 items-center gap-4 text-sm">
+                <div className="sm:col-span-2">
+                    <p className={cn("font-bold text-base", danceClass.status.startsWith('cancelled') && "line-through")}>{danceClass.name}</p>
+                    <p className="text-muted-foreground">{style?.name}</p>
+                </div>
+                <div className="text-muted-foreground flex items-center gap-2">
+                    <Award className="h-4 w-4" /> {level?.name}
+                </div>
+                <div className="text-muted-foreground">
+                    {isEvent ? (
+                        <div className="flex items-center gap-2"><CalendarDays className="h-4 w-4" /> {danceClass.date ? format(parseISO(danceClass.date), 'PPP', { locale: es }) : 'N/A'}</div>
+                    ) : (
+                        <div className="flex items-center gap-2"><CalendarIcon className="h-4 w-4" /> {danceClass.day}</div>
+                    )}
+                    <div className="flex items-center gap-2"><Clock className="h-4 w-4" /> {danceClass.time}</div>
+                </div>
+                <div className="text-muted-foreground flex items-center gap-2">
+                    <User className="h-4 w-4" /> {getTeacherNames(danceClass.teacherIds) || danceClass.rentalContact || 'N/A'}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
 
 function TimeGridClassCard({ danceClass }: { danceClass: DanceClass }) {
     const style = allStyles.find(s => s.id === danceClass.styleId);
@@ -117,39 +152,7 @@ function WeeklySchedule({ classes }: { classes: DanceClass[] }) {
     );
 }
 
-function CalendarClassCard({ danceClass }: { danceClass: DanceClass }) {
-  const level = allLevels.find(l => l.id === danceClass.levelId);
-  const style = allStyles.find(s => s.id === danceClass.styleId);
-  const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
-
-  return (
-    <Card className={cn(
-        "overflow-hidden transition-shadow hover:shadow-lg bg-card/80 backdrop-blur-sm w-full",
-        danceClass.status.startsWith('cancelled') && "opacity-60"
-    )}>
-      <CardHeader className="p-4 flex flex-row items-start justify-between gap-4">
-            <div>
-              <CardTitle className={cn("text-base font-bold", danceClass.status.startsWith('cancelled') && "line-through")}>{danceClass.name}</CardTitle>
-              {danceClass.type !== 'rental' && <CardDescription className="text-xs">{style?.name}</CardDescription>}
-            </div>
-            {danceClass.type === 'rental' 
-             ? <Badge variant="outline" className="flex items-center gap-1"><Building className="h-3 w-3" />Alquiler</Badge> 
-             : <Badge variant="secondary">{level?.name}</Badge>}
-      </CardHeader>
-      <CardContent className="p-4 pt-0 text-sm space-y-2">
-         <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /> {danceClass.time} ({danceClass.duration})</div>
-         <div className="flex items-center gap-2 text-muted-foreground">
-            <User className="h-4 w-4" />
-            {getTeacherNames(danceClass.teacherIds) || danceClass.name}
-        </div>
-         <div className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-4 w-4" /> {danceClass.room}</div>
-      </CardContent>
-    </Card>
-  );
-}
-
-
-function MonthlyCalendar({ classes }: { classes: DanceClass[] }) {
+function CalendarEvents({ classes }: { classes: DanceClass[] }) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const singleEvents = classes.filter(c => 
         ['one-time', 'workshop', 'rental'].includes(c.type) &&
@@ -168,6 +171,8 @@ function MonthlyCalendar({ classes }: { classes: DanceClass[] }) {
     }, [singleEvents]);
 
     const selectedDayEvents = date ? eventsByDate[format(date, 'yyyy-MM-dd')] || [] : [];
+
+    const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -195,7 +200,34 @@ function MonthlyCalendar({ classes }: { classes: DanceClass[] }) {
                 </h3>
                 {selectedDayEvents.length > 0 ? (
                     <div className="space-y-4">
-                        {selectedDayEvents.map(c => <CalendarClassCard key={c.id} danceClass={c} />)}
+                        {selectedDayEvents.map(c => {
+                            const level = allLevels.find(l => l.id === c.levelId);
+                            const style = allStyles.find(s => s.id === c.styleId);
+                            return (
+                                <Card key={c.id} className={cn(
+                                    "overflow-hidden transition-shadow hover:shadow-lg bg-card/80 backdrop-blur-sm w-full",
+                                    c.status.startsWith('cancelled') && "opacity-60"
+                                )}>
+                                  <CardHeader className="p-4 flex flex-row items-start justify-between gap-4">
+                                        <div>
+                                          <CardTitle className={cn("text-base font-bold", c.status.startsWith('cancelled') && "line-through")}>{c.name}</CardTitle>
+                                          {c.type !== 'rental' && <CardDescription className="text-xs">{style?.name}</CardDescription>}
+                                        </div>
+                                        {c.type === 'rental' 
+                                         ? <Badge variant="outline" className="flex items-center gap-1"><Building className="h-3 w-3" />Alquiler</Badge> 
+                                         : <Badge variant="secondary">{level?.name}</Badge>}
+                                  </CardHeader>
+                                  <CardContent className="p-4 pt-0 text-sm space-y-2">
+                                     <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /> {c.time} ({c.duration})</div>
+                                     <div className="flex items-center gap-2 text-muted-foreground">
+                                        <User className="h-4 w-4" />
+                                        {getTeacherNames(c.teacherIds) || c.rentalContact}
+                                    </div>
+                                     <div className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-4 w-4" /> {c.room}</div>
+                                  </CardContent>
+                                </Card>
+                            )
+                        })}
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center text-center p-8 border rounded-lg h-full bg-muted/30">
@@ -208,29 +240,31 @@ function MonthlyCalendar({ classes }: { classes: DanceClass[] }) {
     );
 }
 
-
 export default function SchedulePage() {
   const [styleFilter, setStyleFilter] = useState('Todos');
   const [levelFilter, setLevelFilter] = useState('Todos');
-  const [roomFilter, setRoomFilter] = useState('Todos');
 
   const styles = ['Todos', ...Array.from(new Set(allStyles.map(s => s.name)))];
   const levels = ['Todos', ...Array.from(new Set(allLevels.map(l => l.name)))];
-  const rooms = ['Todos', ...Array.from(new Set(danceClasses.map(c => c.room)))];
 
-  const filteredClassesForMonthly = danceClasses
-    .filter(c => {
+  const filteredClasses = useMemo(() => {
+    return danceClasses.filter(c => {
       const styleName = allStyles.find(s => s.id === c.styleId)?.name;
       const levelName = allLevels.find(l => l.id === c.levelId)?.name;
+      
       const styleMatch = styleFilter === 'Todos' || styleName === styleFilter;
       const levelMatch = levelFilter === 'Todos' || levelName === levelFilter;
-      return styleMatch && levelMatch;
+      
+      const isVisibleRental = c.type === 'rental' && c.isVisibleToStudents;
+      const isNotHiddenCancelled = !c.isCancelledAndHidden;
+      
+      return styleMatch && levelMatch && isNotHiddenCancelled && (c.type !== 'rental' || isVisibleRental);
     });
+  }, [styleFilter, levelFilter]);
 
-  const filteredClassesForWeekly = filteredClassesForMonthly.filter(c => {
-      const roomMatch = roomFilter === 'Todos' || c.room === roomFilter;
-      return roomMatch;
-  });
+
+  const weeklyFilteredClasses = filteredClasses.filter(c => c.type === 'recurring');
+  const eventFilteredClasses = filteredClasses.filter(c => ['one-time', 'workshop', 'rental'].includes(c.type));
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -239,15 +273,20 @@ export default function SchedulePage() {
         <p className="text-lg text-muted-foreground">Encuentra tu ritmo. Explora nuestras clases regulares, talleres y eventos especiales.</p>
       </div>
 
-       <div className="flex flex-col md:flex-row gap-4 mb-8 p-4 bg-muted/50 rounded-lg">
-        <Tabs value={styleFilter} onValueChange={setStyleFilter} className="w-full md:w-auto">
-          <TabsList className="grid grid-cols-2 sm:grid-cols-4 md:inline-flex h-auto flex-wrap">
-            {styles.map(style => (
-              <TabsTrigger key={style} value={style}>{style}</TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-        <div className="w-full md:w-48">
+       <div className="flex flex-col md:flex-row gap-4 mb-8 p-4 bg-muted/50 rounded-lg border">
+        <div className="flex-1 min-w-48">
+          <Select value={styleFilter} onValueChange={setStyleFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filtrar por ritmo" />
+            </SelectTrigger>
+            <SelectContent>
+              {styles.map(style => (
+                <SelectItem key={style} value={style}>{style}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex-1 min-w-48">
           <Select value={levelFilter} onValueChange={setLevelFilter}>
             <SelectTrigger>
               <SelectValue placeholder="Filtrar por nivel" />
@@ -259,25 +298,37 @@ export default function SchedulePage() {
             </SelectContent>
           </Select>
         </div>
-        <div className="w-full md:w-48">
-          <Select value={roomFilter} onValueChange={setRoomFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filtrar por sala" />
-            </SelectTrigger>
-            <SelectContent>
-              {rooms.map(room => (
-                <SelectItem key={room} value={room}>{room}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
-        <Tabs defaultValue="semanal" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:w-fit mb-8">
-                <TabsTrigger value="semanal">Clases Regulares</TabsTrigger>
-                <TabsTrigger value="mensual">Talleres y Eventos</TabsTrigger>
+        <Tabs defaultValue="clases" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 md:w-fit mb-8">
+                <TabsTrigger value="clases">Clases</TabsTrigger>
+                <TabsTrigger value="semanal">Calendario Semanal</TabsTrigger>
+                <TabsTrigger value="eventos">Calendario de Eventos</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="clases">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Listado de Clases y Eventos</CardTitle>
+                        <CardDescription>Todas las actividades disponibles basadas en los filtros seleccionados.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                       {filteredClasses.length > 0 ? (
+                            filteredClasses.map(c => <ClassListCard key={c.id} danceClass={c} />)
+                        ) : (
+                             <div className="text-center py-16">
+                                <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <h3 className="mt-4 text-lg font-medium font-headline">No se encontraron clases</h3>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Intenta ajustar tus filtros para encontrar otras actividades.
+                                </p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+
             <TabsContent value="semanal">
                 <Card>
                     <CardHeader>
@@ -285,14 +336,14 @@ export default function SchedulePage() {
                         <CardDescription>Clases que se repiten cada semana. Pasa el cursor sobre una clase para ver los detalles.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {filteredClassesForWeekly.filter(c => c.type === 'recurring').length > 0 ? (
+                        {weeklyFilteredClasses.length > 0 ? (
                             <div className="relative h-[70vh] overflow-auto border rounded-lg">
-                                <WeeklySchedule classes={filteredClassesForWeekly} />
+                                <WeeklySchedule classes={weeklyFilteredClasses} />
                             </div>
                         ) : (
                             <div className="text-center py-16">
                                 <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-                                <h3 className="mt-4 text-lg font-medium font-headline">No se encontraron clases</h3>
+                                <h3 className="mt-4 text-lg font-medium font-headline">No se encontraron clases recurrentes</h3>
                                 <p className="mt-1 text-sm text-muted-foreground">
                                     Intenta ajustar tus filtros para encontrar otras clases.
                                 </p>
@@ -301,14 +352,15 @@ export default function SchedulePage() {
                     </CardContent>
                 </Card>
             </TabsContent>
-            <TabsContent value="mensual">
+
+            <TabsContent value="eventos">
                 <Card>
                     <CardHeader>
                         <CardTitle>Calendario de Eventos</CardTitle>
                         <CardDescription>Talleres, clases únicas y alquileres de sala. Haz clic en un día para ver los eventos programados.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <MonthlyCalendar classes={filteredClassesForMonthly} />
+                        <CalendarEvents classes={eventFilteredClasses} />
                     </CardContent>
                 </Card>
             </TabsContent>
