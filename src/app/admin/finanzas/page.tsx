@@ -112,9 +112,6 @@ export default function AdminFinancesPage() {
             <TabsTrigger value="studio">Finanzas del Estudio</TabsTrigger>
             <TabsTrigger value="personal">Mis Finanzas</TabsTrigger>
         </TabsList>
-        <TabsContent value="personal" className="mt-6 space-y-8">
-            <TeacherPayroll mode="partner_income" partnerId={userId} />
-        </TabsContent>
         <TabsContent value="studio" className="mt-6 space-y-8">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
@@ -149,6 +146,9 @@ export default function AdminFinancesPage() {
                 </Card>
                 <TeacherPayroll mode="studio_expenses" />
             </div>
+        </TabsContent>
+        <TabsContent value="personal" className="mt-6 space-y-8">
+            <TeacherPayroll mode="partner_income" partnerId={userId} />
         </TabsContent>
     </Tabs>
   );
