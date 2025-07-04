@@ -6,8 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 
 function TeacherCard({ teacher }: { teacher: User }) {
-    if (teacher.role !== 'Profesor') return null;
-
     return (
         <Card className="overflow-hidden transition-shadow hover:shadow-xl">
             <CardHeader className="p-0">
@@ -34,7 +32,7 @@ function TeacherCard({ teacher }: { teacher: User }) {
 }
 
 export default function TeachersPage() {
-  const teachers = users.filter(user => user.role === 'Profesor' && user.isVisibleToStudents);
+  const teachers = users.filter(user => (user.role === 'Profesor' || user.role === 'Socio') && user.isVisibleToStudents);
     
   return (
     <div className="container mx-auto p-4 md:p-8">
