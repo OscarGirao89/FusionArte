@@ -4,26 +4,12 @@ import './globals.css';
 import { MainNav } from '@/components/layout/main-nav';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from '@/context/auth-context';
-import { usePathname } from 'next/navigation';
 import { PublicHeader } from '@/components/layout/public-header';
 import { PublicFooter } from '@/components/layout/public-footer';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const { isAuthenticated } = useAuth();
   
-  const isLoginPage = pathname === '/login';
-  
-  // If it's the login page, just render children (and Toaster)
-  if (isLoginPage) {
-    return (
-      <div className="flex flex-col min-h-screen bg-background">
-        <main className="flex-1">{children}</main>
-        <Toaster />
-      </div>
-    );
-  }
-
   // If authenticated, render the app layout with the main horizontal nav
   if (isAuthenticated) {
     return (
@@ -35,11 +21,11 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // Otherwise, render the public layout
+  // Otherwise, render the public layout for ALL unauthenticated pages, including login.
   return (
      <div className="flex flex-col min-h-screen bg-background">
         <PublicHeader />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 flex flex-col">{children}</main>
         <PublicFooter />
         <Toaster />
       </div>

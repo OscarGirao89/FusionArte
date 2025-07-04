@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogIn } from 'lucide-react';
+import { LogIn, User } from 'lucide-react';
 import { LogoIcon } from '@/components/icons/logo-icon';
 
 export default function LoginPage() {
@@ -27,8 +27,12 @@ export default function LoginPage() {
     }
   };
 
+  const handleGuestAccess = () => {
+    router.push('/');
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+    <div className="flex flex-1 items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -36,7 +40,7 @@ export default function LoginPage() {
             <span className="font-bold text-3xl font-headline">FusionArte</span>
           </div>
           <CardTitle className="text-2xl">Bienvenido/a</CardTitle>
-          <CardDescription>Selecciona un rol para iniciar sesión y probar la aplicación.</CardDescription>
+          <CardDescription>Selecciona un rol para simular el inicio de sesión o explora el sitio como invitado.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -58,6 +62,22 @@ export default function LoginPage() {
             <Button onClick={handleLogin} className="w-full">
               <LogIn className="mr-2 h-4 w-4" />
               Iniciar Sesión
+            </Button>
+            
+            <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">
+                    O
+                    </span>
+                </div>
+            </div>
+
+            <Button onClick={handleGuestAccess} variant="outline" className="w-full">
+                <User className="mr-2 h-4 w-4" />
+                Continuar como Invitado
             </Button>
           </div>
         </CardContent>
