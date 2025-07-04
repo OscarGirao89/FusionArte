@@ -31,13 +31,11 @@ const adminManagementNav = [
     { href: '/admin/students', label: 'Alumnos', icon: GraduationCap },
     { href: '/admin/classes', label: 'Clases', icon: ClipboardList },
     { href: '/admin/memberships', label: 'Membresías', icon: CreditCard },
-    { href: '/admin/payments', label: 'Pagos Alumnos', icon: Wallet },
     { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];
 
 const administrativoManagementNav = [
-    { href: '/admin/payments', label: 'Pagos', icon: Wallet },
     { href: '/admin/students', label: 'Alumnos', icon: GraduationCap },
     { href: '/admin/classes', label: 'Clases', icon: ClipboardList },
 ];
