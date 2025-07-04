@@ -28,6 +28,8 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const publicPaths = ['/login', '/', '/about', '/schedule', '/memberships', '/teachers', '/contact'];
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
@@ -49,15 +51,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserId(userProfile?.id || null);
         setCurrentUser(fullUser || null);
       } else {
-        // Allow unauthenticated access to login and the main page
-        const publicPaths = ['/login', '/'];
+        // Allow unauthenticated access to public pages
         if (!publicPaths.includes(pathname)) {
             router.push('/login');
         }
       }
     } catch (error) {
       console.error("Could not access localStorage", error);
-      const publicPaths = ['/login', '/'];
       if (!publicPaths.includes(pathname)) {
          router.push('/login');
       }
@@ -153,15 +153,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   if (isLoading) {
     return <div className="flex h-screen w-full items-center justify-center"><Skeleton className="h-20 w-20 rounded-full" /></div>
   }
-
-  // This logic is now handled more granularly by the effect hook and layout component
-  // if (!userRole && pathname !== '/login' && pathname !== '/') {
-  //   return null;
-  // }
-  
-  // if (userRole && pathname === '/login') {
-  //   return null;
-  // }
 
   return (
     <AuthContext.Provider value={value}>
