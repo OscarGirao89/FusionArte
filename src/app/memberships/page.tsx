@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -16,6 +15,7 @@ import { ClassSelectorModal } from '@/components/shared/ClassSelectorModal';
 import { CustomPackModal } from '@/components/shared/CustomPackModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { LoginRequiredDialog } from '@/components/shared/login-required-dialog';
+import Link from 'next/link';
 
 const getPlanPriceDisplay = (plan: MembershipPlan) => {
   if (plan.accessType === 'unlimited' || plan.accessType === 'course_pass') {
@@ -86,6 +86,7 @@ export default function MembershipsPage() {
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
   const [planToConfirm, setPlanToConfirm] = useState<MembershipPlan | null>(null);
   const [customPackConfig, setCustomPackConfig] = useState<{classCount: number; totalPrice: number;} | null>(null);
+  const router = useRouter();
 
 
   const handlePurchaseRequest = (plan: MembershipPlan) => {
@@ -154,6 +155,7 @@ export default function MembershipsPage() {
     });
 
     setPlanToConfirm(null);
+    router.push('/profile');
   };
 
   const handleCustomPackCountSelected = (classCount: number) => {
@@ -230,6 +232,7 @@ export default function MembershipsPage() {
         title: "¡Bono adquirido con éxito!",
         description: "Te has inscrito en las clases seleccionadas y se ha generado tu factura.",
     });
+    router.push('/profile');
   };
 
   return (
@@ -246,6 +249,35 @@ export default function MembershipsPage() {
           {publicPlans.map(plan => (
             <PlanCard key={plan.id} plan={plan} onPurchaseRequest={handlePurchaseRequest}/>
           ))}
+          <Card className="flex flex-col border-dashed border-primary">
+            <CardHeader className="text-center">
+                <CardTitle className="font-headline text-2xl">Pase Mensual por Curso</CardTitle>
+                <CardDescription>
+                    <span className="text-muted-foreground">Suscríbete a tu clase favorita mensualmente.</span>
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow">
+                <ul className="space-y-3">
+                    <li className="flex items-start">
+                        <Check className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" />
+                        <span className="text-sm text-muted-foreground">Elige una clase recurrente del horario.</span>
+                    </li>
+                    <li className="flex items-start">
+                        <Check className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" />
+                        <span className="text-sm text-muted-foreground">Acceso al plan mensual general "Ilimitado".</span>
+                    </li>
+                    <li className="flex items-start">
+                        <Check className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" />
+                        <span className="text-sm text-muted-foreground">Cancela cuando quieras (simulado).</span>
+                    </li>
+                </ul>
+            </CardContent>
+            <CardFooter>
+                <Button className="w-full" asChild>
+                    <Link href="/schedule">Elegir Clase y Suscribir</Link>
+                </Button>
+            </CardFooter>
+          </Card>
         </div>
       </div>
       
