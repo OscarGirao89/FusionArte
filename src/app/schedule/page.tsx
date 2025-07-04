@@ -2,18 +2,24 @@
 'use client';
 import * as React from 'react';
 import { useState, useMemo } from 'react';
-import { danceClasses, danceLevels as allLevels, danceStyles as allStyles, users } from '@/lib/data';
-import type { DanceClass } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRouter } from 'next/navigation';
+import { danceClasses, danceLevels as allLevels, danceStyles as allStyles, users, membershipPlans } from '@/lib/data';
+import type { DanceClass, StudentPayment } from '@/lib/types';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Clock, User, Award, Users, CalendarDays, MapPin, Building, Calendar as CalendarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
 
 const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const timeSlots = Array.from({ length: (22 - 9) * 2 }, (_, i) => {
@@ -28,12 +34,58 @@ function ClassListCard({ danceClass }: { danceClass: DanceClass }) {
     const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
     const isEvent = ['one-time', 'workshop', 'rental'].includes(danceClass.type);
 
+    const { userRole, addStudentPayment, userId, updateStudentMembership } = useAuth();
+    const { toast } = useToast();
+    const router = useRouter();
+
+    const handleMonthlyEnroll = () => {
+        if (userRole !== 'student' || !userId) {
+            toast({ title: "Acción no permitida", description: "Inicia sesión como estudiante para inscribirte.", variant: "destructive" });
+            return;
+        }
+
+        const monthlyPlan = membershipPlans.find(p => p.id === 'unlimited-1');
+        if (!monthlyPlan) {
+             toast({ title: "Error", description: "No se encontró el plan mensual.", variant: "destructive" });
+            return;
+        }
+
+        const newPayment: StudentPayment = {
+            id: `inv-${Date.now()}`,
+            studentId: userId,
+            planId: monthlyPlan.id,
+            invoiceDate: new Date().toISOString(),
+            totalAmount: monthlyPlan.price,
+            status: 'pending',
+            amountPaid: 0,
+            amountDue: monthlyPlan.price,
+            lastUpdatedBy: 'Sistema',
+            lastUpdatedDate: new Date().toISOString(),
+        };
+        addStudentPayment(newPayment);
+
+        const membershipEndDate = new Date();
+        membershipEndDate.setMonth(membershipEndDate.getMonth() + monthlyPlan.durationValue);
+        
+        updateStudentMembership(userId, {
+            planId: monthlyPlan.id,
+            startDate: new Date().toISOString(),
+            endDate: membershipEndDate.toISOString(),
+        });
+        
+        toast({
+            title: "Inscripción Mensual Iniciada",
+            description: "Se ha generado una factura para tu plan mensual. Revisa tu perfil.",
+        });
+        router.push('/profile');
+    };
+
     return (
         <Card className={cn(
-            "transition-shadow hover:shadow-lg w-full",
+            "transition-shadow hover:shadow-lg w-full flex flex-col",
             danceClass.status.startsWith('cancelled') && "opacity-60"
         )}>
-            <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-5 items-center gap-4 text-sm">
+            <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-5 items-center gap-4 text-sm flex-grow">
                 <div className="sm:col-span-2">
                     <p className={cn("font-bold text-base", danceClass.status.startsWith('cancelled') && "line-through")}>{danceClass.name}</p>
                     <p className="text-muted-foreground">{style?.name}</p>
@@ -53,6 +105,27 @@ function ClassListCard({ danceClass }: { danceClass: DanceClass }) {
                     <User className="h-4 w-4" /> {getTeacherNames(danceClass.teacherIds) || danceClass.rentalContact || 'N/A'}
                 </div>
             </CardContent>
+            {danceClass.type === 'recurring' && userRole === 'student' && (
+                <CardFooter className="p-4 pt-0">
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="w-full">Inscribirse (Mensual)</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar Inscripción Mensual</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Estás a punto de suscribirte al plan mensual "Ilimitado" para tener acceso a esta y otras clases. Se generará una factura por €{membershipPlans.find(p=>p.id === 'unlimited-1')?.price}. ¿Continuar?
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleMonthlyEnroll}>Confirmar e Inscribirme</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </CardFooter>
+            )}
         </Card>
     );
 }
@@ -266,38 +339,42 @@ export default function SchedulePage() {
   const weeklyFilteredClasses = filteredClasses.filter(c => c.type === 'recurring');
   const eventFilteredClasses = filteredClasses.filter(c => ['one-time', 'workshop', 'rental'].includes(c.type));
 
+  const filters = (idPrefix: string) => (
+    <div className="flex flex-col md:flex-row gap-4 mb-4 p-4 bg-muted/50 rounded-lg border">
+        <div className="flex-1 min-w-48 space-y-1">
+            <Label htmlFor={`${idPrefix}-style-filter`}>Filtrar por Estilo</Label>
+            <Select value={styleFilter} onValueChange={setStyleFilter}>
+                <SelectTrigger id={`${idPrefix}-style-filter`}>
+                <SelectValue placeholder="Filtrar por ritmo" />
+                </SelectTrigger>
+                <SelectContent>
+                {styles.map(style => (
+                    <SelectItem key={style} value={style}>{style}</SelectItem>
+                ))}
+                </SelectContent>
+            </Select>
+        </div>
+        <div className="flex-1 min-w-48 space-y-1">
+            <Label htmlFor={`${idPrefix}-level-filter`}>Filtrar por Nivel</Label>
+            <Select value={levelFilter} onValueChange={setLevelFilter}>
+                <SelectTrigger id={`${idPrefix}-level-filter`}>
+                <SelectValue placeholder="Filtrar por nivel" />
+                </SelectTrigger>
+                <SelectContent>
+                {levels.map(level => (
+                    <SelectItem key={level} value={level}>{level}</SelectItem>
+                ))}
+                </SelectContent>
+            </Select>
+        </div>
+    </div>
+  );
+
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="space-y-2 mb-8">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-headline">Clases y Horarios</h1>
         <p className="text-lg text-muted-foreground">Encuentra tu ritmo. Explora nuestras clases regulares, talleres y eventos especiales.</p>
-      </div>
-
-       <div className="flex flex-col md:flex-row gap-4 mb-8 p-4 bg-muted/50 rounded-lg border">
-        <div className="flex-1 min-w-48">
-          <Select value={styleFilter} onValueChange={setStyleFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filtrar por ritmo" />
-            </SelectTrigger>
-            <SelectContent>
-              {styles.map(style => (
-                <SelectItem key={style} value={style}>{style}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex-1 min-w-48">
-          <Select value={levelFilter} onValueChange={setLevelFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filtrar por nivel" />
-            </SelectTrigger>
-            <SelectContent>
-              {levels.map(level => (
-                <SelectItem key={level} value={level}>{level}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
         <Tabs defaultValue="clases" className="w-full">
@@ -314,6 +391,7 @@ export default function SchedulePage() {
                         <CardDescription>Todas las actividades disponibles basadas en los filtros seleccionados.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                       {filters('list')}
                        {filteredClasses.length > 0 ? (
                             filteredClasses.map(c => <ClassListCard key={c.id} danceClass={c} />)
                         ) : (
@@ -336,6 +414,7 @@ export default function SchedulePage() {
                         <CardDescription>Clases que se repiten cada semana. Pasa el cursor sobre una clase para ver los detalles.</CardDescription>
                     </CardHeader>
                     <CardContent>
+                        {filters('grid')}
                         {weeklyFilteredClasses.length > 0 ? (
                             <div className="relative h-[70vh] overflow-auto border rounded-lg">
                                 <WeeklySchedule classes={weeklyFilteredClasses} />

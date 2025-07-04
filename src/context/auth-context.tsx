@@ -4,8 +4,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { StudentMembership, StudentPayment } from '@/lib/types';
-import { studentMemberships as initialMemberships } from '@/lib/data';
+import type { StudentMembership, StudentPayment, User } from '@/lib/types';
+import { studentMemberships as initialMemberships, users as allUsers } from '@/lib/data';
 import { studentPayments as initialPayments } from '@/lib/finances-data';
 import { userProfiles } from '@/components/layout/main-nav';
 
@@ -22,6 +22,8 @@ export interface AuthContextType {
   studentPayments: StudentPayment[];
   updateStudentMembership: (userId: number, membership: Omit<StudentMembership, 'userId'>) => void;
   addStudentPayment: (payment: StudentPayment, isUpdate?: boolean) => void;
+  currentUser: User | null;
+  updateCurrentUser: (data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,6 +31,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [studentMemberships, setStudentMemberships] = useState<StudentMembership[]>(initialMemberships);
   const [studentPayments, setStudentPayments] = useState<StudentPayment[]>(initialPayments);
@@ -40,8 +43,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const storedRole = localStorage.getItem('userRole') as UserRole | null;
       if (storedRole) {
+        const userProfile = userProfiles[storedRole];
+        const fullUser = allUsers.find(u => u.id === userProfile.id);
         setUserRole(storedRole);
-        setUserId(userProfiles[storedRole]?.id || null);
+        setUserId(userProfile?.id || null);
+        setCurrentUser(fullUser || null);
       } else if (pathname !== '/login') {
          router.push('/login');
       }
@@ -64,8 +70,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = (role: UserRole) => {
     try {
       localStorage.setItem('userRole', role);
+      const userProfile = userProfiles[role];
+      const fullUser = allUsers.find(u => u.id === userProfile.id);
       setUserRole(role);
-      setUserId(userProfiles[role]?.id || null);
+      setUserId(userProfile?.id || null);
+      setCurrentUser(fullUser || null);
       router.push('/');
     } catch (error) {
        console.error("Could not access localStorage", error);
@@ -77,6 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('userRole');
       setUserRole(null);
       setUserId(null);
+      setCurrentUser(null);
       router.push('/login');
     } catch (error) {
       console.error("Could not access localStorage", error);
@@ -100,13 +110,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (isUpdate) {
               return prev.map(p => p.id === payment.id ? payment : p);
           }
-          // Avoid adding duplicates
           if (prev.some(p => p.id === payment.id)) {
               return prev;
           }
           return [payment, ...prev];
       })
   }, []);
+
+  const updateCurrentUser = useCallback((data: Partial<User>) => {
+    setCurrentUser(prev => prev ? { ...prev, ...data } : null);
+    // In a real app, you'd also persist this to the main user list/database
+    const userIndex = allUsers.findIndex(u => u.id === currentUser?.id);
+    if (userIndex > -1) {
+        allUsers[userIndex] = { ...allUsers[userIndex], ...data };
+    }
+  }, [currentUser?.id]);
 
   const value = {
     userRole,
@@ -119,6 +137,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     studentPayments,
     updateStudentMembership,
     addStudentPayment,
+    currentUser,
+    updateCurrentUser,
   };
   
   if (isLoading) {

@@ -1,6 +1,11 @@
 
 'use client';
 
+import { useState } from 'react';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
 import { useAuth } from "@/context/auth-context";
 import { userProfiles } from "@/components/layout/main-nav";
 import { users as allUsers, membershipPlans } from '@/lib/data';
@@ -10,9 +15,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, parseISO, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
-import { Printer, TicketPercent, User, Calendar, BadgeCheck, XCircle, Clock } from "lucide-react";
+import { Printer, TicketPercent, User, Calendar, BadgeCheck, XCircle, Clock, Pencil, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 
 const paymentStatusLabels: Record<StudentPayment['status'], string> = {
     paid: 'Pagado',
@@ -20,9 +27,26 @@ const paymentStatusLabels: Record<StudentPayment['status'], string> = {
     deposit: 'Adelanto',
 };
 
+const profileFormSchema = z.object({
+  name: z.string().min(3, "El nombre es obligatorio."),
+  email: z.string().email("Email inválido."),
+  mobile: z.string().optional(),
+});
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
 export default function ProfilePage() {
-    const { userRole, studentMemberships, studentPayments } = useAuth();
+    const { userRole, currentUser, updateCurrentUser, studentMemberships, studentPayments } = useAuth();
     const { toast } = useToast();
+    const [isEditing, setIsEditing] = useState(false);
+
+    const form = useForm<ProfileFormValues>({
+        resolver: zodResolver(profileFormSchema),
+        values: {
+            name: currentUser?.name || '',
+            email: currentUser?.email || '',
+            mobile: currentUser?.mobile || '',
+        }
+    });
 
     if (userRole !== 'student') {
         return (
@@ -37,14 +61,18 @@ export default function ProfilePage() {
         )
     }
 
-    const currentUserProfile = userProfiles[userRole];
-    const student = allUsers.find(u => u.id === currentUserProfile.id);
-    const membership = studentMemberships.find(m => m.userId === student?.id);
+    const membership = currentUser ? studentMemberships.find(m => m.userId === currentUser.id) : null;
     const plan = membership ? membershipPlans.find(p => p.id === membership.planId) : null;
-    const payment = membership ? studentPayments.find(p => p.studentId === student?.id && p.planId === membership.planId) : null;
+    const payment = currentUser ? studentPayments.find(p => p.studentId === currentUser.id && p.planId === membership?.planId) : null;
+
+    const onSubmit = (data: ProfileFormValues) => {
+        updateCurrentUser(data);
+        setIsEditing(false);
+        toast({ title: "Perfil actualizado", description: "Tus datos han sido guardados." });
+    }
 
     const handlePrintReceipt = () => {
-        if (!student || !plan || !membership || !payment) {
+        if (!currentUser || !plan || !membership || !payment) {
             toast({
                 title: "Error al imprimir",
                 description: "No se pudo generar el comprobante. Asegúrate de que tienes una membresía activa.",
@@ -62,7 +90,7 @@ export default function ProfilePage() {
             printWindow.document.write('<h1>Comprobante de Membresía - FusionArte</h1>');
             printWindow.document.write('<hr>');
             printWindow.document.write('<table>');
-            printWindow.document.write(`<tr><td><strong>Alumno:</strong></td><td>${student.name}</td></tr>`);
+            printWindow.document.write(`<tr><td><strong>Alumno:</strong></td><td>${currentUser.name}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Plan:</strong></td><td>${plan.title}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Precio Total:</strong></td><td>€${payment.totalAmount.toFixed(2)}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Monto Pagado:</strong></td><td>€${payment.amountPaid.toFixed(2)}</td></tr>`);
@@ -82,25 +110,51 @@ export default function ProfilePage() {
         }
     };
     
-    if (!student) return <div>Cargando...</div>;
+    if (!currentUser) return <div>Cargando...</div>;
 
     return (
         <div className="p-4 md:p-8 space-y-8">
-             <h1 className="text-3xl font-bold tracking-tight font-headline">Mi Perfil</h1>
+             <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold tracking-tight font-headline">Mi Perfil</h1>
+                <Button variant="outline" size="icon" onClick={() => setIsEditing(!isEditing)}>
+                    {isEditing ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                    <span className="sr-only">{isEditing ? 'Guardar' : 'Editar'}</span>
+                </Button>
+             </div>
              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-1">
                     <Card>
                         <CardHeader className="items-center text-center">
                             <Avatar className="h-24 w-24 mb-4">
-                                <AvatarImage src={student.avatar} alt={student.name}/>
-                                <AvatarFallback>{student.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                <AvatarImage src={currentUser.avatar} alt={currentUser.name}/>
+                                <AvatarFallback>{currentUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                             </Avatar>
-                            <CardTitle className="font-headline">{student.name}</CardTitle>
-                            <CardDescription>{student.email}</CardDescription>
+                            <CardTitle className="font-headline">{currentUser.name}</CardTitle>
+                            <CardDescription>{currentUser.email}</CardDescription>
                         </CardHeader>
                         <CardContent className="text-sm text-muted-foreground space-y-2">
-                             <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Miembro desde {format(parseISO(student.joined), 'MMMM yyyy', {locale: es})}</div>
-                             {student.dob && <div className="flex items-center gap-2"><User className="h-4 w-4" /> {format(parseISO(student.dob), 'd MMMM, yyyy', {locale: es})}</div>}
+                             <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Miembro desde {format(parseISO(currentUser.joined), 'MMMM yyyy', {locale: es})}</div>
+                             {isEditing ? (
+                                 <Form {...form}>
+                                     <form id="profile-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                                         <FormField control={form.control} name="name" render={({ field }) => (
+                                             <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                         )} />
+                                         <FormField control={form.control} name="email" render={({ field }) => (
+                                             <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
+                                         )} />
+                                         <FormField control={form.control} name="mobile" render={({ field }) => (
+                                             <FormItem><FormLabel>Móvil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                         )} />
+                                         <Button type="submit" className="w-full">Guardar Cambios</Button>
+                                     </form>
+                                 </Form>
+                             ) : (
+                                <>
+                                 {currentUser.mobile && <div className="flex items-center gap-2"><User className="h-4 w-4" /> {currentUser.mobile}</div>}
+                                 {currentUser.dob && <div className="flex items-center gap-2"><User className="h-4 w-4" /> {format(parseISO(currentUser.dob), 'd MMMM, yyyy', {locale: es})}</div>}
+                                </>
+                             )}
                         </CardContent>
                     </Card>
                 </div>
@@ -159,7 +213,7 @@ export default function ProfilePage() {
                             ) : (
                                 <div className="text-center py-8">
                                     <p className="text-muted-foreground">No tienes una membresía activa en este momento.</p>
-                                    <Button className="mt-4" onClick={() => window.location.href='/memberships'}>Ver Planes</Button>
+                                    <Button className="mt-4" onClick={() => router.push('/memberships')}>Ver Planes</Button>
                                 </div>
                             )}
                         </CardContent>
