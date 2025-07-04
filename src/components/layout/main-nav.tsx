@@ -1,81 +1,47 @@
 
 'use client';
-import { usePathname } from 'next/navigation';
-import {
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarTrigger,
-  SidebarGroup,
-  SidebarSeparator,
-  SidebarGroupLabel,
-} from '@/components/ui/sidebar';
-import {
-  LayoutDashboard,
-  Calendar,
-  CreditCard,
-  Users,
-  LogOut,
-  Settings,
-  BookMarked,
-  User,
-  ClipboardList,
-  ClipboardCheck,
-  DollarSign,
-  Banknote,
-  GraduationCap,
-  ShieldCheck,
-  Wallet,
-  TicketPercent,
-} from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useSidebar } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
 import { useAuth, UserRole } from '@/context/auth-context';
-import { users } from '@/lib/data';
 import { LogoIcon } from '@/components/icons/logo-icon';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from '@/components/ui/dropdown-menu';
+import { Settings, BookMarked, User, LogOut, ChevronDown, CreditCard, Calendar, Users, ClipboardList, Banknote, GraduationCap, Wallet } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
 
+const publicNav = [
+    { href: '/schedule', label: 'Clases / Horarios' },
+    { href: '/memberships', label: 'Membresías' },
+    { href: '/teachers', label: 'Profesores' },
+];
 
-const navItems = {
-  student: [
-    { href: '/', label: 'Principal', icon: LayoutDashboard },
-    { href: '/profile', label: 'Mi Perfil', icon: User },
-    { href: '/schedule', label: 'Clases / Horarios', icon: Calendar },
-    { href: '/memberships', label: 'Membresías', icon: CreditCard },
-    { href: '/teachers', label: 'Profesores', icon: Users },
-  ],
-  teacher: [
-    { href: '/', label: 'Principal', icon: LayoutDashboard },
-    { href: '/schedule', label: 'Clases / Horarios', icon: Calendar },
-    { href: '/my-classes', label: 'Mis Clases', icon: BookMarked },
-  ],
-  admin: [
-    { href: '/', label: 'Principal', icon: LayoutDashboard },
-    { href: '/schedule', label: 'Clases / Horarios', icon: Calendar },
-    { href: '/memberships', label: 'Membresías', icon: CreditCard },
-    { href: '/teachers', label: 'Profesores', icon: Users },
-  ],
-  administrativo: [
-    { href: '/', label: 'Principal', icon: LayoutDashboard },
-    { href: '/admin/payments', label: 'Pagos de Alumnos', icon: Wallet },
-  ],
-  socio: [
-    { href: '/', label: 'Principal', icon: LayoutDashboard },
-    { href: '/schedule', label: 'Clases / Horarios', icon: Calendar },
-    { href: '/memberships', label: 'Membresías', icon: CreditCard },
-    { href: '/teachers', label: 'Profesores', icon: Users },
-  ],
-};
+const studentNav = [
+    { href: '/profile', label: 'Mi Perfil' },
+    ...publicNav,
+];
 
-const adminNavItems = [
-    { href: '/admin/users', label: 'Gestión de Usuarios', icon: User },
-    { href: '/admin/students', label: 'Gestión de Alumnos', icon: GraduationCap },
-    { href: '/admin/classes', label: 'Gestión de Clases', icon: ClipboardList },
-    { href: '/admin/memberships', label: 'Gestión de Membresías', icon: CreditCard },
+const teacherNav = [
+    { href: '/my-classes', label: 'Mis Clases' },
+    { href: '/schedule', label: 'Horario General' },
+];
+
+const adminManagementNav = [
+    { href: '/admin/users', label: 'Usuarios', icon: User },
+    { href: '/admin/students', label: 'Alumnos', icon: GraduationCap },
+    { href: '/admin/classes', label: 'Clases', icon: ClipboardList },
+    { href: '/admin/memberships', label: 'Membresías', icon: CreditCard },
+    { href: '/admin/payments', label: 'Pagos Alumnos', icon: Wallet },
     { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
+];
+
+const administrativoManagementNav = [
+    { href: '/admin/payments', label: 'Pagos', icon: Wallet },
+    { href: '/admin/students', label: 'Alumnos', icon: GraduationCap },
+    { href: '/admin/classes', label: 'Clases', icon: ClipboardList },
 ];
 
 export const userProfiles: Record<UserRole, { id: number; name: string; role: string; avatar: string }> = {
@@ -86,99 +52,163 @@ export const userProfiles: Record<UserRole, { id: number; name: string; role: st
     socio: { id: 2, name: 'Oscar Girao', role: 'Socio', avatar: 'https://placehold.co/100x100.png?text=OG' },
 };
 
+function NavLinks({ items, className }: { items: { href: string, label: string }[], className?: string }) {
+    const pathname = usePathname();
+    return (
+        <nav className={cn("hidden md:flex items-center gap-6", className)}>
+            {items.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn('text-sm font-medium transition-colors hover:text-primary',
+                    pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href)) ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                >
+                  {link.label}
+                </Link>
+            ))}
+        </nav>
+    );
+}
+
+function ManagementDropdown({ items }: { items: { href: string, label: string, icon: React.ElementType }[]}) {
+    const pathname = usePathname();
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="hidden md:inline-flex text-sm font-medium text-muted-foreground hover:text-primary data-[state=open]:text-primary">
+                    Gestión
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+                {items.map((item) => (
+                     <DropdownMenuItem key={item.href} asChild>
+                        <Link href={item.href} className={cn("flex items-center gap-2", pathname.startsWith(item.href) && "text-primary")}>
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.label}</span>
+                        </Link>
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+}
+
+function UserMenu() {
+    const { userRole, logout, currentUser } = useAuth();
+    const router = useRouter();
+
+    if (!currentUser) return null;
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10">
+                        <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+                        <AvatarFallback>{currentUser.name.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuLabel>
+                    <p className="font-bold">{currentUser.name}</p>
+                    <p className="text-xs text-muted-foreground font-normal">{currentUser.role}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                    {userRole === 'student' && <DropdownMenuItem onClick={() => router.push('/profile')}><User className="mr-2 h-4 w-4"/> Mi Perfil</DropdownMenuItem>}
+                    {(userRole === 'teacher' || userRole === 'socio') && <DropdownMenuItem onClick={() => router.push('/my-classes')}><BookMarked className="mr-2 h-4 w-4"/> Mis Clases</DropdownMenuItem>}
+                    {userRole === 'admin' && <DropdownMenuItem onClick={() => router.push('/admin/settings')}><Settings className="mr-2 h-4 w-4"/> Configuración</DropdownMenuItem>}
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Cerrar Sesión
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+    </DropdownMenu>
+    )
+}
+
+function MobileNav({ mainNav, managementNav }: { mainNav: { href: string, label: string }[], managementNav?: { href: string, label: string, icon: React.ElementType }[] }) {
+    const navToShow = mainNav.length > 0 ? mainNav : (managementNav || []).map(item => ({ ...item, href: item.href, label: item.label, icon: item.icon }));
+    const managementToShow = mainNav.length > 0 ? managementNav : undefined;
+
+    return (
+        <Sheet>
+            <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                    <Menu />
+                </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+                <nav className="flex flex-col gap-4 mt-8">
+                    {navToShow.map((link) => (
+                        <Link key={link.href} href={link.href} className="text-lg font-medium hover:text-primary flex items-center gap-2">
+                           {link.icon && <link.icon className="h-5 w-5" />} {link.label}
+                        </Link>
+                    ))}
+                    {managementToShow && (
+                        <>
+                            <DropdownMenuSeparator className="my-2" />
+                            <p className="text-lg font-medium px-2">Gestión</p>
+                            {managementToShow.map((item) => (
+                                <Link key={item.href} href={item.href} className="flex items-center gap-2 text-muted-foreground hover:text-primary pl-2">
+                                    <item.icon className="h-5 w-5" />
+                                    <span className="text-base">{item.label}</span>
+                                </Link>
+                            ))}
+                        </>
+                    )}
+                </nav>
+            </SheetContent>
+        </Sheet>
+    );
+}
 
 export function MainNav() {
-  const pathname = usePathname();
-  const { open, isMobile } = useSidebar();
-  const { userRole, logout, isAuthenticated } = useAuth();
-
-  const currentNavItems = userRole ? navItems[userRole] : [];
-  const currentUser = userRole ? userProfiles[userRole] : null;
+    const { userRole } = useAuth();
+    
+    let mainNavItems: { href: string; label: string; }[] = [];
+    let managementNavItems: { href: string, label: string, icon: React.ElementType }[] | undefined = undefined;
+    let hasManagementDropdown = false;
   
-  const logo = (
-    <div className="flex items-center gap-2" aria-hidden="true">
-        <LogoIcon className="h-8 w-8 text-primary" />
-        <span className="font-bold text-lg font-headline">FusionArte</span>
-    </div>
-  )
+    switch (userRole) {
+        case 'student':
+            mainNavItems = studentNav;
+            break;
+        case 'teacher':
+            mainNavItems = teacherNav;
+            break;
+        case 'admin':
+        case 'socio':
+            mainNavItems = publicNav;
+            managementNavItems = adminManagementNav;
+            hasManagementDropdown = true;
+            break;
+        case 'administrativo':
+            mainNavItems = administrativoManagementNav.map(i => ({ href: i.href, label: i.label }));
+            break;
+    }
   
-  if (!isAuthenticated) {
-      return null; // Don't show nav for unauthenticated users, layout will handle it.
-  }
-
-  return (
-    <>
-      <SidebarHeader className="h-14 justify-between no-print">
-        {open || isMobile ? logo : <Link href="/">{logo}</Link>}
-        <SidebarTrigger className="md:hidden" />
-      </SidebarHeader>
-
-      <SidebarMenu className="flex-1 p-2 no-print">
-        {currentNavItems.map((item) => (
-          <SidebarMenuItem key={item.href}>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === item.href}
-              tooltip={{ children: item.label }}
-            >
-              <Link href={item.href}>
-                <item.icon />
-                <span>{item.label}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ))}
-
-        {(userRole === 'admin' || userRole === 'socio') && (
-            <>
-                <SidebarSeparator className="my-2"/>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Administración</SidebarGroupLabel>
-                    {adminNavItems.map((item) => (
-                      <SidebarMenuItem key={item.href}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={pathname.startsWith(item.href)}
-                          tooltip={{ children: item.label }}
-                        >
-                          <Link href={item.href}>
-                            <item.icon />
-                            <span>{item.label}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                </SidebarGroup>
-            </>
-        )}
-      </SidebarMenu>
-
-      <SidebarFooter className="no-print">
-        <SidebarGroup>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={logout} tooltip={{ children: 'Cerrar Sesión' }}>
-                <LogOut />
-                <span>Cerrar Sesión</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-          {currentUser && (
-            <div className="flex items-center gap-3 p-2">
-                <Avatar>
-                <AvatarImage src={currentUser.avatar} alt={currentUser.name} data-ai-hint="person face" />
-                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col text-sm group-data-[collapsible=icon]:hidden">
-                <span className="font-semibold text-sidebar-foreground">
-                    {currentUser.name}
-                </span>
-                <span className="text-sidebar-foreground/70">{currentUser.role}</span>
-                </div>
-            </div>
-          )}
-        </SidebarGroup>
-      </SidebarFooter>
-    </>
-  );
+    return (
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-20 items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 mr-6">
+            <LogoIcon className="h-8 w-8 text-primary" />
+            <span className="hidden sm:inline-block font-bold text-lg font-headline">FusionArte</span>
+          </Link>
+          <div className="flex-1 hidden md:flex items-center gap-4">
+              <NavLinks items={mainNavItems} />
+              {hasManagementDropdown && <ManagementDropdown items={adminManagementNav} />}
+          </div>
+          <div className="flex items-center gap-2">
+              <UserMenu />
+              <MobileNav mainNav={mainNavItems} managementNav={managementNavItems} />
+          </div>
+        </div>
+      </header>
+    );
 }

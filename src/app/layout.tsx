@@ -1,7 +1,6 @@
 
 'use client';
 import './globals.css';
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { MainNav } from '@/components/layout/main-nav';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from '@/context/auth-context';
@@ -12,50 +11,39 @@ import { PublicFooter } from '@/components/layout/public-footer';
 function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
-  const publicPaths = ['/', '/schedule', '/memberships', '/teachers'];
-  const isPublicPath = publicPaths.includes(pathname);
-
-  if (pathname === '/login') {
+  
+  const isLoginPage = pathname === '/login';
+  
+  // If it's the login page, just render children (and Toaster)
+  if (isLoginPage) {
     return (
-      <>
-        {children}
+      <div className="flex flex-col min-h-screen bg-background">
+        <main className="flex-1">{children}</main>
         <Toaster />
-      </>
+      </div>
     );
   }
 
+  // If authenticated, render the app layout with the main horizontal nav
   if (isAuthenticated) {
     return (
-      <SidebarProvider>
-        <Sidebar>
+       <div className="flex flex-col min-h-screen bg-background">
           <MainNav />
-        </Sidebar>
-        <SidebarInset>
-          {children}
-        </SidebarInset>
-        <Toaster />
-      </SidebarProvider>
+          <main className="flex-1">{children}</main>
+          <Toaster />
+        </div>
     );
   }
   
-  if (isPublicPath) {
-    return (
-       <div className="flex flex-col min-h-screen bg-background">
-          <PublicHeader />
-          <main className="flex-1">{children}</main>
-          <PublicFooter />
-          <Toaster />
-        </div>
-    )
-  }
-
-  // Fallback for any other non-public, unauthenticated route, though AuthProvider should redirect.
+  // Otherwise, render the public layout
   return (
-      <>
-        {children}
+     <div className="flex flex-col min-h-screen bg-background">
+        <PublicHeader />
+        <main className="flex-1">{children}</main>
+        <PublicFooter />
         <Toaster />
-      </>
-    );
+      </div>
+  )
 }
 
 export default function RootLayout({
