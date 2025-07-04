@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { TeacherPayroll } from '@/components/admin/teacher-payroll';
 import { IncomeExpenseLedger } from '@/components/admin/income-expense-ledger';
-import { DollarSign, TrendingUp, TrendingDown, Scale, Wallet, Bank, Users, Handshake, Briefcase } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Scale, Wallet, Landmark, Users, Handshake, Briefcase } from 'lucide-react';
 import { studentPayments, extraTransactions } from '@/lib/finances-data';
 import { danceClasses, users } from '@/lib/data';
 import { useAuth } from '@/context/auth-context';
@@ -38,7 +38,7 @@ export default function AdminFinancesPage() {
     <div className='space-y-8'>
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline"><Bank className="h-6 w-6"/> Finanzas del Estudio</CardTitle>
+                <CardTitle className="flex items-center gap-2 font-headline"><Landmark className="h-6 w-6"/> Finanzas del Estudio</CardTitle>
                 <CardDescription>Visión general de los ingresos y egresos de la academia, excluyendo los pagos a socios.</CardDescription>
             </CardHeader>
              <CardContent className="space-y-8">
