@@ -317,10 +317,20 @@ export default function AdminClassesPage() {
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8 flex-wrap gap-2 no-print">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Clases y Eventos</h1>
-        <Button onClick={() => handleOpenDialog()}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Añadir Evento
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => router.push('/admin/styles')}>
+                <Palette className="mr-2 h-4 w-4" />
+                Gestionar Estilos
+            </Button>
+            <Button variant="outline" onClick={() => router.push('/admin/levels')}>
+                <Signal className="mr-2 h-4 w-4" />
+                Gestionar Niveles
+            </Button>
+            <Button onClick={() => handleOpenDialog()}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Añadir Evento
+            </Button>
+        </div>
       </div>
       <Card>
         <CardHeader>
@@ -335,14 +345,6 @@ export default function AdminClassesPage() {
                 </Button>
                 <Button variant="outline" size="sm" onClick={handlePrint}>
                   <Printer className="mr-2 h-4 w-4" /> Imprimir
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => router.push('/admin/styles')}>
-                  <Palette className="mr-2 h-4 w-4" />
-                  Gestionar Estilos
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => router.push('/admin/levels')}>
-                  <Signal className="mr-2 h-4 w-4" />
-                  Gestionar Niveles
                 </Button>
             </div>
           </div>
@@ -407,7 +409,7 @@ export default function AdminClassesPage() {
                                 <Trash2 className="mr-2 h-4 w-4" /> Eliminar
                               </DropdownMenuItem>
                             </AlertDialogTrigger>
-                            <AlertDialogContent>
+                            <AlertDialogContent className="no-print">
                               <AlertDialogHeader>
                                 <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                                 <AlertDialogDescription>
@@ -432,7 +434,7 @@ export default function AdminClassesPage() {
       </Card>
       
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl no-print">
           <DialogHeader>
             <DialogTitle>{editingClass ? 'Editar Evento' : 'Añadir Nuevo Evento'}</DialogTitle>
             <DialogDescription>
@@ -634,7 +636,7 @@ export default function AdminClassesPage() {
       </Dialog>
       
       <AlertDialog open={!!classToCancel} onOpenChange={(isOpen) => !isOpen && setClassToCancel(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="no-print">
           <AlertDialogHeader>
             <AlertDialogTitle>Cancelar Clase</AlertDialogTitle>
             <AlertDialogDescription>
