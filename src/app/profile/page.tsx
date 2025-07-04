@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -52,14 +52,15 @@ export default function ProfilePage() {
         }
     });
 
-    if (userRole !== 'student') {
-        if (userRole === 'teacher' || userRole === 'socio') {
-            router.push('/my-classes');
-        } else {
-            router.push('/admin/users');
+    useEffect(() => {
+        if (userRole && userRole !== 'student') {
+            if (userRole === 'teacher' || userRole === 'socio') {
+                router.push('/my-classes');
+            } else {
+                router.push('/admin/users');
+            }
         }
-        return null;
-    }
+    }, [userRole, router]);
 
     const membership = currentUser ? studentMemberships.find(m => m.userId === currentUser.id) : null;
     const plan = membership ? membershipPlans.find(p => p.id === membership.planId) : null;
@@ -126,7 +127,9 @@ export default function ProfilePage() {
         }
     };
     
-    if (!currentUser) return <div>Cargando...</div>;
+    if (!currentUser || userRole !== 'student') {
+        return <div>Cargando...</div>;
+    }
 
     return (
         <div className="p-4 md:p-8 space-y-8">
