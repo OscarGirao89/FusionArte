@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { userProfiles } from '@/components/layout/main-nav';
 import { ClassSelectorModal } from '@/components/shared/ClassSelectorModal';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const getPlanPriceDisplay = (plan: MembershipPlan) => {
   if (plan.accessType === 'unlimited') {
@@ -71,10 +72,10 @@ export default function MembershipsPage() {
   const publicPlans = membershipPlans.filter(p => p.visibility === 'public');
   const { toast } = useToast();
   const { userRole, userId, addStudentPayment, updateStudentMembership } = useAuth();
-  const router = useRouter();
 
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
+  const [planToConfirm, setPlanToConfirm] = useState<MembershipPlan | null>(null);
 
   const handlePurchaseRequest = (plan: MembershipPlan) => {
     if (userRole !== 'student') {
@@ -87,41 +88,54 @@ export default function MembershipsPage() {
     }
 
     if (plan.accessType === 'unlimited') {
-        const student = userProfiles[userRole];
-        if (!student) return;
-
-        const newPayment: StudentPayment = {
-            id: `inv-${Date.now()}`,
-            studentId: student.id,
-            planId: plan.id,
-            invoiceDate: new Date().toISOString(),
-            totalAmount: plan.price,
-            status: 'pending',
-            amountPaid: 0,
-            amountDue: plan.price,
-            lastUpdatedBy: 'Sistema',
-            lastUpdatedDate: new Date().toISOString(),
-        };
-        addStudentPayment(newPayment);
-
-        const membershipEndDate = new Date();
-        membershipEndDate.setMonth(membershipEndDate.getMonth() + plan.durationValue);
-        
-        updateStudentMembership(student.id, {
-            planId: plan.id,
-            startDate: new Date().toISOString(),
-            endDate: membershipEndDate.toISOString(),
-        });
-        
-        toast({
-            title: "Plan Mensual Adquirido",
-            description: "Tu factura ha sido creada. Ahora, elige tus clases en el horario.",
-        });
-        router.push('/schedule');
+        setPlanToConfirm(plan);
     } else {
         setSelectedPlan(plan);
         setIsSelectorOpen(true);
     }
+  };
+
+  const handleConfirmUnlimitedPurchase = () => {
+    if (!planToConfirm || userRole !== 'student' || !userId) return;
+
+    const student = userProfiles[userRole];
+    if (!student) return;
+
+    const newPayment: StudentPayment = {
+        id: `inv-${Date.now()}`,
+        studentId: student.id,
+        planId: planToConfirm.id,
+        invoiceDate: new Date().toISOString(),
+        totalAmount: planToConfirm.price,
+        status: 'pending',
+        amountPaid: 0,
+        amountDue: planToConfirm.price,
+        lastUpdatedBy: 'Sistema',
+        lastUpdatedDate: new Date().toISOString(),
+    };
+    addStudentPayment(newPayment);
+
+    const membershipEndDate = new Date();
+    if (planToConfirm.durationUnit === 'months') {
+        membershipEndDate.setMonth(membershipEndDate.getMonth() + planToConfirm.durationValue);
+    } else if (planToConfirm.durationUnit === 'weeks') {
+        membershipEndDate.setDate(membershipEndDate.getDate() + planToConfirm.durationValue * 7);
+    } else { // days
+        membershipEndDate.setDate(membershipEndDate.getDate() + planToConfirm.durationValue);
+    }
+    
+    updateStudentMembership(student.id, {
+        planId: planToConfirm.id,
+        startDate: new Date().toISOString(),
+        endDate: membershipEndDate.toISOString(),
+    });
+    
+    toast({
+        title: "Plan Adquirido",
+        description: "Tu factura ha sido creada. Revisa la sección 'Mi Perfil' para ver los detalles.",
+    });
+
+    setPlanToConfirm(null);
   };
 
   const handleConfirmSelection = (classIds: string[]) => {
@@ -132,7 +146,6 @@ export default function MembershipsPage() {
 
      const student = userProfiles[userRole!];
 
-     // 1. Create invoice
      const newPayment: StudentPayment = {
         id: `inv-${Date.now()}`,
         studentId: student.id,
@@ -147,7 +160,6 @@ export default function MembershipsPage() {
     };
     addStudentPayment(newPayment);
 
-    // 2. Create membership
     const membershipEndDate = new Date();
     membershipEndDate.setMonth(membershipEndDate.getMonth() + selectedPlan.durationValue);
     
@@ -158,10 +170,8 @@ export default function MembershipsPage() {
         classesRemaining: selectedPlan.accessType === 'class_pack' ? selectedPlan.classCount : undefined,
     });
     
-    // In a real app, this would be an API call to enroll in classes.
     console.log(`Enrolling student ${userId} in classes:`, classIds);
 
-    // 4. Close modal and show toast
     setIsSelectorOpen(false);
     setSelectedPlan(null);
     toast({
@@ -186,6 +196,22 @@ export default function MembershipsPage() {
           ))}
         </div>
       </div>
+
+      <AlertDialog open={!!planToConfirm} onOpenChange={(isOpen) => !isOpen && setPlanToConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Compra</AlertDialogTitle>
+            <AlertDialogDescription>
+              Estás a punto de adquirir el plan "{planToConfirm?.title}" por €{planToConfirm?.price}. Se generará una factura pendiente en tu perfil. ¿Deseas continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPlanToConfirm(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmUnlimitedPurchase}>Confirmar y Adquirir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {selectedPlan && (
         <ClassSelectorModal
           plan={selectedPlan}
