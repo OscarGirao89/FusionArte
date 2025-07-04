@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import type { MembershipPlan, DanceClass } from '@/lib/types';
@@ -25,13 +26,14 @@ type ClassSelectorModalProps = {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: (classIds: string[]) => void;
+    overrideClassCount?: number;
 };
 
 const daysOfWeekMap = [
     "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
 ];
 
-export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm }: ClassSelectorModalProps) {
+export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideClassCount }: ClassSelectorModalProps) {
     const [selectedClasses, setSelectedClasses] = useState<SelectedClass[]>([]);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -59,9 +61,15 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm }: ClassSe
     const classOccurrencesByDate = useMemo(() => {
         if (plan.accessType === 'unlimited') return {};
 
-        const eligibleClasses = (plan.allowedClasses && plan.allowedClasses.length > 0)
-            ? allClasses.filter(c => plan.allowedClasses.includes(c.id))
-            : allClasses;
+        let eligibleClasses: DanceClass[] = [];
+
+        if (plan.accessType === 'custom_pack') {
+             eligibleClasses = allClasses.filter(c => plan.allowedStyles.includes(c.styleId));
+        } else if (plan.allowedClasses && plan.allowedClasses.length > 0) {
+            eligibleClasses = allClasses.filter(c => plan.allowedClasses.includes(c.id));
+        } else {
+            eligibleClasses = allClasses;
+        }
 
         const visibleClasses = eligibleClasses.filter(c => c.type !== 'rental' && !c.isCancelledAndHidden);
 
@@ -72,10 +80,8 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm }: ClassSe
             const dayOfWeekName = daysOfWeekMap[getDay(day)];
             const dateStr = format(day, 'yyyy-MM-dd');
             
-            // Skip past days
             if (isBefore(day, new Date()) && !isSameDay(day, new Date())) return;
 
-            // Add recurring classes
             visibleClasses.filter(c => c.type === 'recurring').forEach(c => {
                 if (c.day === dayOfWeekName) {
                     if (!occurrences[dateStr]) occurrences[dateStr] = [];
@@ -83,7 +89,6 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm }: ClassSe
                 }
             });
 
-            // Add single events
             visibleClasses.filter(c => c.type === 'one-time' || c.type === 'workshop').forEach(c => {
                  if (c.date && isSameDay(parseISO(c.date), day)) {
                     if (!occurrences[dateStr]) occurrences[dateStr] = [];
@@ -97,9 +102,15 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm }: ClassSe
     
     const selectedDayClasses = selectedDate ? classOccurrencesByDate[format(selectedDate, 'yyyy-MM-dd')] || [] : [];
 
-    const handleSelectClass = (classId: string, date: Date) => {
-        if (plan.accessType === 'unlimited') return;
+    const classCount = useMemo(() => {
+        if (overrideClassCount) return overrideClassCount;
+        if (plan.accessType === 'class_pack' || plan.accessType === 'trial_class') {
+            return plan.classCount;
+        }
+        return 0;
+    }, [plan, overrideClassCount]);
 
+    const handleSelectClass = (classId: string, date: Date) => {
         const dateStr = format(date, 'yyyy-MM-dd');
         const classIdentifier = { classId, date: dateStr };
         
@@ -108,14 +119,13 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm }: ClassSe
             if (isSelected) {
                 return prev.filter(sc => !(sc.classId === classId && sc.date === dateStr));
             }
-            if (prev.length < plan.classCount) {
+            if (prev.length < classCount) {
                 return [...prev, classIdentifier];
             }
             return prev;
         });
     };
 
-    const classCount = plan.accessType !== 'unlimited' ? plan.classCount : 0;
     const classesLeftToSelect = classCount - selectedClasses.length;
 
     const DayContent = ({ date, displayMonth }: { date: Date, displayMonth?: Date }) => {
@@ -150,7 +160,7 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm }: ClassSe
         );
     }
 
-    if (plan.accessType === 'unlimited') return null;
+    if (plan.accessType === 'unlimited' || plan.accessType === 'course_pass') return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -158,7 +168,7 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm }: ClassSe
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2"><CalendarIcon className="h-6 w-6" /> Selecciona tus Clases para "{plan.title}"</DialogTitle>
                     <DialogDescription>
-                        Puedes elegir {plan.classCount} {plan.classCount > 1 ? 'clases' : 'clase'} antes del {format(membershipEndDate, 'PPP', {locale: es})}. 
+                        Puedes elegir {classCount} {classCount > 1 ? 'clases' : 'clase'} antes del {format(membershipEndDate, 'PPP', {locale: es})}. 
                         <Badge variant="secondary" className="ml-2">
                            {classesLeftToSelect > 0 ? `${classesLeftToSelect} restante(s)` : '¡Listo!'}
                         </Badge>

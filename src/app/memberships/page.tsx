@@ -85,6 +85,8 @@ export default function MembershipsPage() {
   const [isCustomPackOpen, setIsCustomPackOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
   const [planToConfirm, setPlanToConfirm] = useState<MembershipPlan | null>(null);
+  const [customPackConfig, setCustomPackConfig] = useState<{classCount: number; totalPrice: number;} | null>(null);
+
 
   const handlePurchaseRequest = (plan: MembershipPlan) => {
     if (!isAuthenticated) {
@@ -154,6 +156,18 @@ export default function MembershipsPage() {
     setPlanToConfirm(null);
   };
 
+  const handleCustomPackCountSelected = (classCount: number) => {
+    if (!selectedPlan || selectedPlan.accessType !== 'custom_pack') return;
+
+    setCustomPackConfig({
+        classCount,
+        totalPrice: classCount * selectedPlan.pricePerClass,
+    });
+
+    setIsCustomPackOpen(false);
+    setIsSelectorOpen(true); // Open the class selector modal next
+  };
+  
   const handleConfirmSelection = (classIds: string[]) => {
      if (!selectedPlan || !userId) {
         toast({ title: "Error", description: "No se pudo procesar la compra.", variant: "destructive" });
@@ -161,84 +175,62 @@ export default function MembershipsPage() {
      }
 
      const student = userProfiles[userRole!];
+     let planToPurchase = selectedPlan;
+     let finalPrice = selectedPlan.price;
+     let finalClassCount: number | undefined;
+
+     if (planToPurchase.accessType === 'class_pack' || planToPurchase.accessType === 'trial_class') {
+        finalClassCount = planToPurchase.classCount;
+     } else if (planToPurchase.accessType === 'custom_pack' && customPackConfig) {
+        finalPrice = customPackConfig.totalPrice;
+        finalClassCount = customPackConfig.classCount;
+     }
+
+     if (finalClassCount && classIds.length !== finalClassCount) {
+         toast({ title: "Selección Incompleta", description: `Debes seleccionar exactamente ${finalClassCount} clases.`, variant: "destructive" });
+         return;
+     }
 
      const newPayment: StudentPayment = {
         id: `inv-${Date.now()}`,
         studentId: student.id,
-        planId: selectedPlan.id,
+        planId: planToPurchase.id,
         invoiceDate: new Date().toISOString(),
-        totalAmount: selectedPlan.price,
+        totalAmount: finalPrice,
         status: 'pending',
         amountPaid: 0,
-        amountDue: selectedPlan.price,
+        amountDue: finalPrice,
         lastUpdatedBy: 'Sistema',
         lastUpdatedDate: new Date().toISOString(),
     };
     addStudentPayment(newPayment);
 
     const membershipEndDate = new Date();
-    membershipEndDate.setMonth(membershipEndDate.getMonth() + selectedPlan.durationValue);
-    
-    if (selectedPlan.accessType === 'class_pack' || selectedPlan.accessType === 'trial_class') {
-      updateStudentMembership(student.id, {
-          planId: selectedPlan.id,
-          startDate: new Date().toISOString(),
-          endDate: membershipEndDate.toISOString(),
-          classesRemaining: selectedPlan.classCount,
-      });
+    if (planToPurchase.durationUnit === 'months') {
+      membershipEndDate.setMonth(membershipEndDate.getMonth() + planToPurchase.durationValue);
+    } else if (planToPurchase.durationUnit === 'weeks') {
+      membershipEndDate.setDate(membershipEndDate.getDate() + planToPurchase.durationValue * 7);
+    } else { // days
+      membershipEndDate.setDate(membershipEndDate.getDate() + planToPurchase.durationValue);
     }
+    
+    updateStudentMembership(student.id, {
+        planId: planToPurchase.id,
+        startDate: new Date().toISOString(),
+        endDate: membershipEndDate.toISOString(),
+        classesRemaining: finalClassCount,
+    });
     
     console.log(`Enrolling student ${userId} in classes:`, classIds);
 
     setIsSelectorOpen(false);
     setSelectedPlan(null);
+    setCustomPackConfig(null);
     toast({
         title: "¡Bono adquirido con éxito!",
         description: "Te has inscrito en las clases seleccionadas y se ha generado tu factura.",
     });
   };
-
-  const handleConfirmCustomPack = (plan: MembershipPlan, classCount: number, totalPrice: number) => {
-    if (userRole !== 'student' || !userId) return;
-    
-    const newPayment: StudentPayment = {
-        id: `inv-${Date.now()}`,
-        studentId: userId,
-        planId: plan.id,
-        invoiceDate: new Date().toISOString(),
-        totalAmount: totalPrice,
-        status: 'pending',
-        amountPaid: 0,
-        amountDue: totalPrice,
-        lastUpdatedBy: 'Sistema',
-        lastUpdatedDate: new Date().toISOString(),
-    };
-    addStudentPayment(newPayment);
-
-    const membershipEndDate = new Date();
-    if (plan.durationUnit === 'months') {
-        membershipEndDate.setMonth(membershipEndDate.getMonth() + plan.durationValue);
-    } else if (plan.durationUnit === 'weeks') {
-        membershipEndDate.setDate(membershipEndDate.getDate() + plan.durationValue * 7);
-    } else { // days
-        membershipEndDate.setDate(membershipEndDate.getDate() + plan.durationValue);
-    }
-    
-    updateStudentMembership(userId, {
-        planId: plan.id,
-        startDate: new Date().toISOString(),
-        endDate: membershipEndDate.toISOString(),
-        classesRemaining: classCount,
-    });
-    
-    toast({
-        title: "Bono personalizado creado con éxito",
-        description: "Tu factura ha sido creada. ¡Revisa tu perfil y a bailar!",
-    });
-
-    setIsCustomPackOpen(false);
-    setSelectedPlan(null);
-  }
 
   return (
     <>
@@ -274,12 +266,13 @@ export default function MembershipsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {selectedPlan && (selectedPlan.accessType === 'class_pack' || selectedPlan.accessType === 'trial_class') && (
+      {selectedPlan && (selectedPlan.accessType === 'class_pack' || selectedPlan.accessType === 'trial_class' || selectedPlan.accessType === 'custom_pack') && (
         <ClassSelectorModal
           plan={selectedPlan}
           isOpen={isSelectorOpen}
           onClose={() => setIsSelectorOpen(false)}
           onConfirm={handleConfirmSelection}
+          overrideClassCount={selectedPlan.accessType === 'custom_pack' ? customPackConfig?.classCount : undefined}
         />
       )}
 
@@ -288,7 +281,7 @@ export default function MembershipsPage() {
           plan={selectedPlan}
           isOpen={isCustomPackOpen}
           onClose={() => setIsCustomPackOpen(false)}
-          onConfirm={handleConfirmCustomPack}
+          onConfirm={handleCustomPackCountSelected}
         />
       )}
     </>

@@ -14,7 +14,7 @@ type CustomPackModalProps = {
     plan: MembershipPlan;
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (plan: MembershipPlan, classCount: number, totalPrice: number) => void;
+    onConfirm: (classCount: number) => void;
 };
 
 export function CustomPackModal({ plan, isOpen, onClose, onConfirm }: CustomPackModalProps) {
@@ -28,7 +28,7 @@ export function CustomPackModal({ plan, isOpen, onClose, onConfirm }: CustomPack
     const allowedStyleNames = plan.allowedStyles.map(styleId => danceStyles.find(s => s.id === styleId)?.name || styleId).join(', ');
 
     const handleConfirm = () => {
-        onConfirm(plan, classCount, totalPrice);
+        onConfirm(classCount);
     };
 
     return (
@@ -71,11 +71,10 @@ export function CustomPackModal({ plan, isOpen, onClose, onConfirm }: CustomPack
                 <DialogFooter>
                     <Button variant="ghost" onClick={onClose}>Cancelar</Button>
                     <Button onClick={handleConfirm}>
-                        Confirmar y Pagar
+                        Elegir Clases
                     </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 }
-
