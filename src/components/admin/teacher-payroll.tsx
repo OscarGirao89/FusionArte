@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -249,39 +250,44 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
         if (!calculation || !('partner' in calculation) || !calculation.partner) return null;
         const { partner, individualClasses, sharedClasses, groupedSharedClasses, individualIncome, sharedIncome, totalIncome } = calculation;
 
-        const renderTableContent = (classes: any[]) => (
-            <>
-                {classes.length > 0 ? (
-                    <Table>
-                        <TableHeader><TableRow><TableHead>Clase/Taller</TableHead><TableHead>Estado</TableHead><TableHead className="text-right">Ingreso</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                            {classes.map((c: any) => {
-                                const statusInfo = getStatusInfo(c.status);
-                                return (
-                                    <TableRow key={c.id}>
-                                        <TableCell>
-                                            <p className="font-medium">{c.name}</p>
-                                            <p className="text-xs text-muted-foreground capitalize">{c.type} - {c.date ? format(parseISO(c.date), 'dd/MM/yy', { locale: es }) : c.day}</p>
-                                        </TableCell>
-                                        <TableCell><div className={`flex items-center gap-2 text-sm ${statusInfo.color}`}>{statusInfo.icon} {statusInfo.text}</div></TableCell>
-                                        <TableCell className="text-right">
-                                            <p className="font-mono font-semibold">
-                                            {c.workshopPaymentType === 'percentage' 
-                                                ? <span className="flex items-center justify-end gap-1"><Percent className="h-3 w-3" />{c.workshopPaymentValue}%</span>
-                                                : `€${c.classPay.toFixed(2)}`
-                                            }
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">{c.payDescription}</p>
-                                        </TableCell>
-                                    </TableRow>
-                                )
-                            })}
-                        </TableBody>
-                    </Table>
-                ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">No hay clases en esta categoría este mes.</p>
-                )}
-            </>
+        const renderIncomeTable = (classes: any[], title: string) => (
+             <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">{title}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                    {classes.length > 0 ? (
+                        <Table>
+                            <TableHeader><TableRow><TableHead>Clase/Taller</TableHead><TableHead>Estado</TableHead><TableHead className="text-right">Ingreso</TableHead></TableRow></TableHeader>
+                            <TableBody>
+                                {classes.map((c: any) => {
+                                    const statusInfo = getStatusInfo(c.status);
+                                    return (
+                                        <TableRow key={c.id}>
+                                            <TableCell>
+                                                <p className="font-medium">{c.name}</p>
+                                                <p className="text-xs text-muted-foreground capitalize">{c.type} - {c.date ? format(parseISO(c.date), 'dd/MM/yy', { locale: es }) : c.day}</p>
+                                            </TableCell>
+                                            <TableCell><div className={`flex items-center gap-2 text-sm ${statusInfo.color}`}>{statusInfo.icon} {statusInfo.text}</div></TableCell>
+                                            <TableCell className="text-right">
+                                                <p className="font-mono font-semibold">
+                                                {c.workshopPaymentType === 'percentage' 
+                                                    ? <span className="flex items-center justify-end gap-1"><Percent className="h-3 w-3" />{c.workshopPaymentValue}%</span>
+                                                    : `€${c.classPay.toFixed(2)}`
+                                                }
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">{c.payDescription}</p>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center py-8">No hay clases en esta categoría este mes.</p>
+                    )}
+                </CardContent>
+            </Card>
         );
 
         return (
@@ -307,36 +313,33 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
                 </TabsContent>
                 
                 <TabsContent value="individual" className="mt-6 space-y-6">
-                    <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><UserCheck /> Detalle de Clases Individuales</CardTitle></CardHeader>
-                        <CardContent className="p-0">
-                            {renderTableContent(individualClasses)}
-                        </CardContent>
-                    </Card>
+                    {renderIncomeTable(individualClasses, "Detalle de Clases Individuales")}
                     <PartnerStudentPaymentsTable classes={individualClasses} />
                 </TabsContent>
 
                 <TabsContent value="shared" className="mt-6 space-y-6">
-                    <Card>
-                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Users /> Detalle de Clases Compartidas</CardTitle></CardHeader>
-                         <CardContent>
-                            {Object.keys(groupedSharedClasses).length > 0 ? (
-                                <Accordion type="single" collapsible className="w-full">
-                                    {Object.entries(groupedSharedClasses).map(([partnerNames, classes]) => (
-                                        <AccordionItem value={partnerNames} key={partnerNames}>
-                                            <AccordionTrigger className="text-base font-medium">Clases con {partnerNames}</AccordionTrigger>
-                                            <AccordionContent className="pt-2">
-                                                {renderTableContent(classes)}
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    ))}
-                                </Accordion>
-                            ) : (
+                    {Object.keys(groupedSharedClasses).length > 0 ? (
+                        <Accordion type="single" collapsible className="w-full space-y-6">
+                            {Object.entries(groupedSharedClasses).map(([partnerNames, classes]) => (
+                                <AccordionItem value={partnerNames} key={partnerNames} className="border-b-0">
+                                    <AccordionTrigger className="text-base font-medium bg-muted/50 px-4 py-3 rounded-lg hover:no-underline">
+                                        Clases con {partnerNames}
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pt-4 space-y-6">
+                                        {renderIncomeTable(classes, `Detalle con ${partnerNames}`)}
+                                        <PartnerStudentPaymentsTable classes={classes} />
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    ) : (
+                         <Card>
+                            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Users /> Detalle de Clases Compartidas</CardTitle></CardHeader>
+                            <CardContent>
                                 <p className="text-sm text-muted-foreground text-center py-8">No hay clases compartidas este mes.</p>
-                            )}
-                         </CardContent>
-                    </Card>
-                    <PartnerStudentPaymentsTable classes={sharedClasses} />
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
             </Tabs>
         )
