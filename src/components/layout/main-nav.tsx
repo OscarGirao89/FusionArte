@@ -12,21 +12,12 @@ import { Settings, BookMarked, User, LogOut, ChevronDown, CreditCard, Calendar, 
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 
-const publicNav = [
+const studentNav = [
     { href: '/', label: 'Principal' },
     { href: '/about', label: 'Acerca de Nosotros' },
     { href: '/schedule', label: 'Clases / Horarios' },
     { href: '/memberships', label: 'Membresías' },
     { href: '/teachers', label: 'Profesores' },
-    { href: '/contact', label: 'Contacto' },
-];
-
-const studentNav = [
-    { href: '/profile', label: 'Mi Perfil' },
-    { href: '/schedule', label: 'Clases / Horarios' },
-    { href: '/memberships', label: 'Membresías' },
-    { href: '/teachers', label: 'Profesores' },
-    { href: '/about', label: 'Acerca de Nosotros' },
     { href: '/contact', label: 'Contacto' },
 ];
 
@@ -139,7 +130,7 @@ function UserMenu() {
     )
 }
 
-function MobileNav({ mainNav, managementNav }: { mainNav: { href: string, label: string }[], managementNav?: { href: string, label: string, icon: React.ElementType }[] }) {
+function MobileNav({ mainNav, managementNav }: { mainNav: { href: string, label: string, icon?: React.ElementType }[], managementNav?: { href: string, label: string, icon: React.ElementType }[] }) {
     const navToShow = mainNav.length > 0 ? mainNav : (managementNav || []).map(item => ({ ...item, href: item.href, label: item.label, icon: item.icon }));
     const managementToShow = mainNav.length > 0 ? managementNav : undefined;
 
@@ -178,7 +169,7 @@ function MobileNav({ mainNav, managementNav }: { mainNav: { href: string, label:
 export function MainNav() {
     const { userRole } = useAuth();
     
-    let mainNavItems: { href: string; label: string; }[] = [];
+    let mainNavItems: { href: string; label: string; icon?: React.ElementType }[] = [];
     let managementNavItems: { href: string, label: string, icon: React.ElementType }[] | undefined = undefined;
     let hasManagementDropdown = false;
   
@@ -196,7 +187,7 @@ export function MainNav() {
             hasManagementDropdown = true;
             break;
         case 'administrativo':
-            mainNavItems = administrativoManagementNav.map(i => ({ href: i.href, label: i.label }));
+            mainNavItems = administrativoManagementNav.map(i => ({ href: i.href, label: i.label, icon: i.icon }));
             break;
     }
   

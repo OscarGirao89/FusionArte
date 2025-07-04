@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -23,6 +24,7 @@ import { Overview } from '@/components/dashboard/overview';
 import { UpcomingClasses } from '@/components/dashboard/upcoming-classes';
 import { SmartSuggestion } from '@/components/dashboard/smart-suggestion';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 const paymentStatusLabels: Record<StudentPayment['status'], string> = {
     paid: 'Pagado',
@@ -34,6 +36,7 @@ const profileFormSchema = z.object({
   name: z.string().min(3, "El nombre es obligatorio."),
   email: z.string().email("Email inválido."),
   mobile: z.string().optional(),
+  avatar: z.string().optional(),
 });
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
@@ -42,6 +45,7 @@ export default function ProfilePage() {
     const { toast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
     const router = useRouter();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileFormSchema),
@@ -49,6 +53,7 @@ export default function ProfilePage() {
             name: currentUser?.name || '',
             email: currentUser?.email || '',
             mobile: currentUser?.mobile || '',
+            avatar: currentUser?.avatar || '',
         }
     });
 
@@ -88,6 +93,24 @@ export default function ProfilePage() {
         toast({ title: "Perfil actualizado", description: "Tus datos han sido guardados." });
     }
 
+    const handleAvatarClick = () => {
+        if (isEditing) {
+            fileInputRef.current?.click();
+        }
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const newAvatar = reader.result as string;
+                form.setValue('avatar', newAvatar, { shouldDirty: true });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handlePrintReceipt = () => {
          if (!currentUser || !plan || !membership || !payment) {
             toast({
@@ -106,7 +129,6 @@ export default function ProfilePage() {
             printWindow.document.write('<div class="receipt">');
             printWindow.document.write('<h1>Comprobante de Membresía - FusionArte</h1>');
             printWindow.document.write('<hr>');
-            printWindow.document.write('<table>');
             printWindow.document.write(`<tr><td><strong>Alumno:</strong></td><td>${currentUser.name}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Plan:</strong></td><td>${plan.title}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Precio Total:</strong></td><td>€${payment.totalAmount.toFixed(2)}</td></tr>`);
@@ -130,6 +152,8 @@ export default function ProfilePage() {
     if (!currentUser || userRole !== 'student') {
         return <div>Cargando...</div>;
     }
+    
+    const watchedAvatar = form.watch('avatar');
 
     return (
         <div className="p-4 md:p-8 space-y-8">
@@ -138,9 +162,9 @@ export default function ProfilePage() {
                     <h1 className="text-3xl font-bold tracking-tight font-headline">Panel de Estudiante</h1>
                     <p className="text-lg text-muted-foreground">Bienvenido/a de nuevo, {currentUser.name.split(' ')[0]}.</p>
                 </div>
-                <Button variant="outline" size="icon" onClick={() => setIsEditing(!isEditing)}>
-                    {isEditing ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
-                    <span className="sr-only">{isEditing ? 'Guardar' : 'Editar'}</span>
+                <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
+                    {isEditing ? <Save className="mr-2 h-4 w-4" /> : <Pencil className="mr-2 h-4 w-4" />}
+                    {isEditing ? 'Guardar' : 'Editar'}
                 </Button>
             </div>
             
@@ -212,22 +236,29 @@ export default function ProfilePage() {
                 </TabsContent>
 
                 <TabsContent value="details" className="mt-6">
-                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-1">
-                            <Card>
-                                <CardHeader className="items-center text-center">
-                                    <Avatar className="h-24 w-24 mb-4">
-                                        <AvatarImage src={currentUser.avatar} alt={currentUser.name}/>
-                                        <AvatarFallback>{currentUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                                    </Avatar>
-                                    <CardTitle className="font-headline">{currentUser.name}</CardTitle>
-                                    <CardDescription>{currentUser.email}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="text-sm text-muted-foreground space-y-2">
-                                    <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Miembro desde {format(parseISO(currentUser.joined), 'MMMM yyyy', {locale: es})}</div>
-                                    {isEditing ? (
-                                        <Form {...form}>
-                                            <form id="profile-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                     <Form {...form}>
+                        <form id="profile-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-1">
+                                <Card>
+                                    <CardHeader className="items-center text-center">
+                                        <Avatar className={cn("h-24 w-24 mb-4", isEditing && "cursor-pointer hover:opacity-80 transition-opacity")} onClick={handleAvatarClick}>
+                                            <AvatarImage src={watchedAvatar} alt={currentUser.name}/>
+                                            <AvatarFallback>{currentUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                        </Avatar>
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleFileChange}
+                                            className="hidden"
+                                            accept="image/png, image/jpeg, image/gif"
+                                        />
+                                        <CardTitle className="font-headline">{form.getValues('name')}</CardTitle>
+                                        <CardDescription>{form.getValues('email')}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="text-sm text-muted-foreground space-y-2">
+                                        <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Miembro desde {format(parseISO(currentUser.joined), 'MMMM yyyy', {locale: es})}</div>
+                                        {isEditing ? (
+                                            <div className="space-y-4 pt-4">
                                                 <FormField control={form.control} name="name" render={({ field }) => (
                                                     <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                                 )} />
@@ -237,80 +268,84 @@ export default function ProfilePage() {
                                                 <FormField control={form.control} name="mobile" render={({ field }) => (
                                                     <FormItem><FormLabel>Móvil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                                 )} />
-                                                <Button type="submit" className="w-full">Guardar Cambios</Button>
-                                            </form>
-                                        </Form>
-                                    ) : (
-                                        <>
-                                        {currentUser.mobile && <div className="flex items-center gap-2"><User className="h-4 w-4" /> {currentUser.mobile}</div>}
-                                        {currentUser.dob && <div className="flex items-center gap-2"><User className="h-4 w-4" /> {format(parseISO(currentUser.dob), 'd MMMM, yyyy', {locale: es})}</div>}
-                                        </>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                        <div className="lg:col-span-2">
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between">
-                                    <div>
-                                        <CardTitle className="flex items-center gap-2 font-headline"><TicketPercent className="h-6 w-6 text-primary"/> Detalles de Membresía</CardTitle>
-                                        <CardDescription>El estado actual de tu plan y pagos.</CardDescription>
-                                    </div>
-                                    <Button variant="outline" size="sm" onClick={handlePrintReceipt} disabled={!membership}>
-                                        <Printer className="mr-2 h-4 w-4" />
-                                        Imprimir Comprobante
-                                    </Button>
-                                </CardHeader>
-                                <CardContent>
-                                    {membership && plan && payment ? (
-                                        <div className="space-y-4">
-                                            <h3 className="text-xl font-semibold">{plan.title}</h3>
-                                            <div className="flex items-center gap-2">
-                                                {isMembershipActive 
-                                                ? <Badge><BadgeCheck className="mr-1 h-4 w-4"/>Activa</Badge>
-                                                : <Badge variant="destructive"><XCircle className="mr-1 h-4 w-4"/>Expirada</Badge>
-                                                }
-                                                <Badge variant={payment.status === 'paid' ? 'default' : payment.status === 'pending' ? 'destructive' : 'secondary'}>
-                                                    {paymentStatusLabels[payment.status]}
-                                                </Badge>
                                             </div>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm border-t pt-4">
-                                                <div>
-                                                    <p className="font-medium">Periodo de Validez</p>
-                                                    <p className="text-muted-foreground">{format(parseISO(membership.startDate), 'dd/MM/yy', {locale: es})} - {format(parseISO(membership.endDate), 'dd/MM/yy', {locale: es})}</p>
-                                                </div>
-                                                {plan.accessType === 'class_pack' && (
-                                                    <div>
-                                                        <p className="font-medium">Clases Restantes</p>
-                                                        <p className="text-muted-foreground">{membership.classesRemaining ?? 0} / {plan.classCount}</p>
-                                                    </div>
-                                                )}
-                                                <div>
-                                                    <p className="font-medium">Total Facturado</p>
-                                                    <p className="text-muted-foreground">€{payment.totalAmount.toFixed(2)}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium">Total Pagado</p>
-                                                    <p className="text-muted-foreground">€{payment.amountPaid.toFixed(2)}</p>
-                                                </div>
-                                                {payment.amountDue > 0 && (
-                                                    <div>
-                                                        <p className="font-medium text-destructive">Saldo Pendiente</p>
-                                                        <p className="text-destructive font-bold">€{payment.amountDue.toFixed(2)}</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-8">
-                                            <p className="text-muted-foreground">No tienes una membresía activa en este momento.</p>
-                                            <Button className="mt-4" onClick={() => router.push('/memberships')}>Ver Planes</Button>
-                                        </div>
+                                        ) : (
+                                            <>
+                                            {currentUser.mobile && <div className="flex items-center gap-2"><User className="h-4 w-4" /> {currentUser.mobile}</div>}
+                                            {currentUser.dob && <div className="flex items-center gap-2"><User className="h-4 w-4" /> {format(parseISO(currentUser.dob), 'd MMMM, yyyy', {locale: es})}</div>}
+                                            </>
+                                        )}
+                                    </CardContent>
+                                    {isEditing && (
+                                        <CardContent>
+                                            <Button type="submit" form="profile-edit-form" className="w-full">Guardar Cambios</Button>
+                                        </CardContent>
                                     )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
+                                </Card>
+                            </div>
+                            <div className="lg:col-span-2">
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                        <div>
+                                            <CardTitle className="flex items-center gap-2 font-headline"><TicketPercent className="h-6 w-6 text-primary"/> Detalles de Membresía</CardTitle>
+                                            <CardDescription>El estado actual de tu plan y pagos.</CardDescription>
+                                        </div>
+                                        <Button variant="outline" size="sm" onClick={handlePrintReceipt} disabled={!membership}>
+                                            <Printer className="mr-2 h-4 w-4" />
+                                            Imprimir Comprobante
+                                        </Button>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {membership && plan && payment ? (
+                                            <div className="space-y-4">
+                                                <h3 className="text-xl font-semibold">{plan.title}</h3>
+                                                <div className="flex items-center gap-2">
+                                                    {isMembershipActive 
+                                                    ? <Badge><BadgeCheck className="mr-1 h-4 w-4"/>Activa</Badge>
+                                                    : <Badge variant="destructive"><XCircle className="mr-1 h-4 w-4"/>Expirada</Badge>
+                                                    }
+                                                    <Badge variant={payment.status === 'paid' ? 'default' : payment.status === 'pending' ? 'destructive' : 'secondary'}>
+                                                        {paymentStatusLabels[payment.status]}
+                                                    </Badge>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm border-t pt-4">
+                                                    <div>
+                                                        <p className="font-medium">Periodo de Validez</p>
+                                                        <p className="text-muted-foreground">{format(parseISO(membership.startDate), 'dd/MM/yy', {locale: es})} - {format(parseISO(membership.endDate), 'dd/MM/yy', {locale: es})}</p>
+                                                    </div>
+                                                    {plan.accessType === 'class_pack' && (
+                                                        <div>
+                                                            <p className="font-medium">Clases Restantes</p>
+                                                            <p className="text-muted-foreground">{membership.classesRemaining ?? 0} / {plan.classCount}</p>
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <p className="font-medium">Total Facturado</p>
+                                                        <p className="text-muted-foreground">€{payment.totalAmount.toFixed(2)}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium">Total Pagado</p>
+                                                        <p className="text-muted-foreground">€{payment.amountPaid.toFixed(2)}</p>
+                                                    </div>
+                                                    {payment.amountDue > 0 && (
+                                                        <div>
+                                                            <p className="font-medium text-destructive">Saldo Pendiente</p>
+                                                            <p className="text-destructive font-bold">€{payment.amountDue.toFixed(2)}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-8">
+                                                <p className="text-muted-foreground">No tienes una membresía activa en este momento.</p>
+                                                <Button className="mt-4" onClick={() => router.push('/memberships')}>Ver Planes</Button>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </form>
+                    </Form>
                 </TabsContent>
             </Tabs>
         </div>
