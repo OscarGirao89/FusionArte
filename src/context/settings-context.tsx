@@ -24,12 +24,26 @@ const initialSettings: AcademySettings = {
   facebookUrl: "https://www.facebook.com",
   tiktokUrl: "https://www.tiktok.com",
   openingHours: "Lunes a Viernes: 10:00 - 22:00\nSábados: 10:00 - 14:00",
-  heroTitle: "Urban Dance Masterclass",
-  heroSubtitle: "Evento Especial: 24-28 Julio",
-  heroDescription: "Eleva tu nivel con nuestros instructores de clase mundial en un evento intensivo de 5 días. Plazas limitadas.",
-  heroButtonText: "Inscríbete Ahora",
-  heroButtonLink: "/schedule",
-  heroImageUrl: "https://placehold.co/800x1200.png",
+  heroSlides: [
+    {
+      id: "slide1",
+      heroTitle: "Urban Dance Masterclass",
+      heroSubtitle: "Evento Especial: 24-28 Julio",
+      heroDescription: "Eleva tu nivel con nuestros instructores de clase mundial en un evento intensivo de 5 días. Plazas limitadas.",
+      heroButtonText: "Inscríbete Ahora",
+      heroButtonLink: "/schedule",
+      heroImageUrl: "https://placehold.co/800x1200.png",
+    },
+     {
+      id: "slide2",
+      heroTitle: "Nuevas Clases de Tango",
+      heroSubtitle: "A partir de Septiembre",
+      heroDescription: "Descubre la pasión y el abrazo del tango argentino. Clases para todos los niveles, ¡no se necesita pareja!",
+      heroButtonText: "Ver Horarios",
+      heroButtonLink: "/schedule",
+      heroImageUrl: "https://placehold.co/800x1200.png",
+    }
+  ],
 };
 
 

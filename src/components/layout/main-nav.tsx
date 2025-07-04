@@ -15,7 +15,6 @@ import { useSettings } from '@/context/settings-context';
 import Image from 'next/image';
 
 const publicNav = [
-    { href: '/', label: 'Principal' },
     { href: '/about', label: 'Acerca de Nosotros' },
     { href: '/schedule', label: 'Clases / Horarios' },
     { href: '/memberships', label: 'Membresías' },

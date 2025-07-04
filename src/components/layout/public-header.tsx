@@ -11,7 +11,6 @@ import { useSettings } from '@/context/settings-context';
 import Image from 'next/image';
 
 const navLinks = [
-  { href: '/', label: 'Principal' },
   { href: '/about', label: 'Acerca de Nosotros' },
   { href: '/schedule', label: 'Clases / Horarios' },
   { href: '/memberships', label: 'Membresías' },
@@ -48,10 +47,10 @@ export function PublicHeader() {
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-2">
-          <Button asChild variant="ghost">
+          <Button asChild variant="outline" size="sm">
             <Link href="/login">Acceder</Link>
           </Button>
-          <Button asChild>
+          <Button asChild size="sm">
             <Link href="/register">Registrar</Link>
           </Button>
         </div>

@@ -1,4 +1,5 @@
 
+
 export type DanceStyle = {
   id: string;
   name: string;
@@ -169,6 +170,15 @@ export type Role = {
   permissions: Permission[];
 };
 
+export type HeroSlide = {
+  id?: string;
+  heroTitle: string;
+  heroSubtitle?: string;
+  heroDescription?: string;
+  heroButtonText: string;
+  heroButtonLink: string;
+  heroImageUrl?: string;
+};
 
 export type AcademySettings = {
   academyName: string;
@@ -183,12 +193,7 @@ export type AcademySettings = {
   facebookUrl?: string;
   tiktokUrl?: string;
   openingHours?: string;
-  heroTitle?: string;
-  heroSubtitle?: string;
-  heroDescription?: string;
-  heroButtonText?: string;
-  heroButtonLink?: string;
-  heroImageUrl?: string;
+  heroSlides: HeroSlide[];
 };
 
     
