@@ -264,6 +264,9 @@ export default function SchedulePage() {
   const { toast } = useToast();
   const router = useRouter();
   
+  const styles = ['Todos', ...allStyles.map(s => s.name)];
+  const levels = ['Todos', ...allLevels.map(l => l.name)];
+  
   const handleEnrollRequest = (danceClass: DanceClass) => {
       if (!isAuthenticated) {
           setIsLoginDialogOpen(true);
