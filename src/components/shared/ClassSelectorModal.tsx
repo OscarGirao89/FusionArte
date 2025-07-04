@@ -1,15 +1,24 @@
 'use client';
-import { useState, useMemo } from 'react';
-import type { MembershipPlan } from '@/lib/types';
+import { useState, useMemo, useEffect } from 'react';
+import type { MembershipPlan, DanceClass } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { danceClasses as allClasses, danceLevels, danceStyles } from '@/lib/data';
+import { danceClasses as allClasses, users } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, getDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isBefore, isAfter, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Clock, Users, Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+type SelectedClass = {
+    classId: string;
+    date: string; // YYYY-MM-DD format
+};
 
 type ClassSelectorModalProps = {
     plan: MembershipPlan;
@@ -18,100 +27,223 @@ type ClassSelectorModalProps = {
     onConfirm: (classIds: string[]) => void;
 };
 
-const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const daysOfWeekMap = [
+    "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
+];
 
 export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm }: ClassSelectorModalProps) {
-    const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
+    const [selectedClasses, setSelectedClasses] = useState<SelectedClass[]>([]);
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
-    const availableClasses = useMemo(() => {
-        // This plan type check is for type safety, as unlimited plans shouldn't open this modal.
-        if (plan.accessType === 'unlimited') return [];
+    useEffect(() => {
+        if (isOpen) {
+            setSelectedClasses([]);
+            setCurrentMonth(new Date());
+            setSelectedDate(new Date());
+        }
+    }, [isOpen]);
+
+    const membershipEndDate = useMemo(() => {
+        const endDate = new Date();
+        if (plan.durationUnit === 'months') {
+            endDate.setMonth(endDate.getMonth() + plan.durationValue);
+        } else if (plan.durationUnit === 'weeks') {
+            endDate.setDate(endDate.getDate() + plan.durationValue * 7);
+        } else {
+            endDate.setDate(endDate.getDate() + plan.durationValue);
+        }
+        return endOfMonth(endDate);
+    }, [plan.durationUnit, plan.durationValue]);
+
+    const classOccurrencesByDate = useMemo(() => {
+        if (plan.accessType === 'unlimited') return {};
 
         const eligibleClasses = (plan.allowedClasses && plan.allowedClasses.length > 0)
             ? allClasses.filter(c => plan.allowedClasses.includes(c.id))
             : allClasses;
 
-        return eligibleClasses.filter(c => c.type !== 'rental' && !c.isCancelledAndHidden);
-    }, [plan]);
+        const visibleClasses = eligibleClasses.filter(c => c.type !== 'rental' && !c.isCancelledAndHidden);
 
-    const handleSelectClass = (classId: string) => {
-        // This should not happen based on current logic, but as a safeguard.
+        const occurrences: Record<string, DanceClass[]> = {};
+        const interval = { start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) };
+
+        eachDayOfInterval(interval).forEach(day => {
+            const dayOfWeekName = daysOfWeekMap[getDay(day)];
+            const dateStr = format(day, 'yyyy-MM-dd');
+            
+            // Skip past days
+            if (isBefore(day, new Date()) && !isSameDay(day, new Date())) return;
+
+            // Add recurring classes
+            visibleClasses.filter(c => c.type === 'recurring').forEach(c => {
+                if (c.day === dayOfWeekName) {
+                    if (!occurrences[dateStr]) occurrences[dateStr] = [];
+                    occurrences[dateStr].push(c);
+                }
+            });
+
+            // Add single events
+            visibleClasses.filter(c => c.type === 'one-time' || c.type === 'workshop').forEach(c => {
+                 if (c.date && isSameDay(parseISO(c.date), day)) {
+                    if (!occurrences[dateStr]) occurrences[dateStr] = [];
+                    occurrences[dateStr].push(c);
+                }
+            });
+        });
+
+        return occurrences;
+    }, [plan, currentMonth]);
+    
+    const selectedDayClasses = selectedDate ? classOccurrencesByDate[format(selectedDate, 'yyyy-MM-dd')] || [] : [];
+
+    const handleSelectClass = (classId: string, date: Date) => {
         if (plan.accessType === 'unlimited') return;
 
+        const dateStr = format(date, 'yyyy-MM-dd');
+        const classIdentifier = { classId, date: dateStr };
+        
         setSelectedClasses(prev => {
-            if (prev.includes(classId)) {
-                return prev.filter(id => id !== classId);
+            const isSelected = prev.some(sc => sc.classId === classId && sc.date === dateStr);
+            if (isSelected) {
+                return prev.filter(sc => !(sc.classId === classId && sc.date === dateStr));
             }
             if (prev.length < plan.classCount) {
-                return [...prev, classId];
+                return [...prev, classIdentifier];
             }
             return prev;
         });
     };
 
-    // classCount does not exist on unlimited plans, so we need to check the accessType.
     const classCount = plan.accessType !== 'unlimited' ? plan.classCount : 0;
     const classesLeftToSelect = classCount - selectedClasses.length;
-    
-    // The modal is only for plans with a specific class count.
+
+    const DayContent = ({ date, displayMonth }: { date: Date, displayMonth?: Date }) => {
+        const dateStr = format(date, 'yyyy-MM-dd');
+        const classesOnDay = classOccurrencesByDate[dateStr] || [];
+        const isSelected = selectedDate && isSameDay(date, selectedDate);
+        const isCurrentDisplayMonth = displayMonth && displayMonth.getMonth() === date.getMonth();
+
+        if (!isCurrentDisplayMonth) {
+            return <div className="p-2 h-24 flex items-start"><time dateTime={dateStr} className="text-muted-foreground/50">{format(date, 'd')}</time></div>;
+        }
+
+        return (
+            <button 
+                className={cn(
+                    "p-2 h-24 w-full flex flex-col items-start cursor-pointer transition-colors relative text-left", 
+                    isSelected && 'bg-primary/10',
+                    'hover:bg-muted/50'
+                )}
+                onClick={() => setSelectedDate(date)}
+                disabled={classesOnDay.length === 0}
+            >
+                <time dateTime={dateStr} className={cn("font-semibold", isSelected && "text-primary")}>{format(date, 'd')}</time>
+                {classesOnDay.length > 0 && (
+                    <div className="mt-auto">
+                        <Badge variant={isSelected ? "default" : "secondary"}>
+                            {classesOnDay.length} {classesOnDay.length > 1 ? 'Clases' : 'Clase'}
+                        </Badge>
+                    </div>
+                )}
+            </button>
+        );
+    }
+
     if (plan.accessType === 'unlimited') return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-3xl">
+            <DialogContent className="max-w-6xl">
                 <DialogHeader>
-                    <DialogTitle>Selecciona tus Clases para el "{plan.title}"</DialogTitle>
+                    <DialogTitle className="flex items-center gap-2"><CalendarIcon className="h-6 w-6" /> Selecciona tus Clases para "{plan.title}"</DialogTitle>
                     <DialogDescription>
-                        Puedes elegir {plan.classCount} {plan.classCount > 1 ? 'clases' : 'clase'}. 
+                        Puedes elegir {plan.classCount} {plan.classCount > 1 ? 'clases' : 'clase'} antes del {format(membershipEndDate, 'PPP', {locale: es})}. 
                         <Badge variant="secondary" className="ml-2">
                            {classesLeftToSelect > 0 ? `${classesLeftToSelect} restante(s)` : '¡Listo!'}
                         </Badge>
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
-                    <ScrollArea className="h-96">
-                        {daysOfWeek.map(day => {
-                            const classesForDay = availableClasses.filter(c => c.day === day);
-                            if (classesForDay.length === 0) return null;
 
-                            return (
-                                <div key={day} className="mb-6">
-                                    <h3 className="font-semibold mb-3 text-lg border-b pb-2">{day}</h3>
-                                    <div className="space-y-4 pl-2">
-                                        {classesForDay.map(c => (
-                                            <div key={c.id} className="flex items-center space-x-3">
-                                                <Checkbox 
-                                                    id={`modal-${c.id}`} // Prefix to avoid duplicate IDs if main page has them
-                                                    checked={selectedClasses.includes(c.id)}
-                                                    onCheckedChange={() => handleSelectClass(c.id)}
-                                                    disabled={!selectedClasses.includes(c.id) && selectedClasses.length >= plan.classCount}
-                                                />
-                                                <Label htmlFor={`modal-${c.id}`} className="flex flex-col cursor-pointer">
-                                                    <span>{c.name} ({c.time})</span>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {danceStyles.find(s=>s.id === c.styleId)?.name} - {danceLevels.find(l=>l.id === c.levelId)?.name}
-                                                        {c.type !== 'recurring' && c.date && ` - ${format(parseISO(c.date), 'dd/MM/yy', {locale: es})}`}
-                                                    </span>
-                                                </Label>
-                                            </div>
-                                        ))}
-                                    </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
+                    <div className="lg:col-span-2">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft /></Button>
+                                <CardTitle className="text-xl capitalize font-headline">{format(currentMonth, 'MMMM yyyy', {locale: es})}</CardTitle>
+                                <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight /></Button>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <Calendar
+                                    month={currentMonth}
+                                    onMonthChange={setCurrentMonth}
+                                    selected={selectedDate}
+                                    onSelect={setSelectedDate}
+                                    locale={es}
+                                    disabled={(date) => isBefore(date, subMonths(new Date(), 1)) || isAfter(date, membershipEndDate)}
+                                    components={{ Day: DayContent }}
+                                    classNames={{
+                                        table: "w-full border-collapse",
+                                        head_row: "flex border-b",
+                                        head_cell: "text-muted-foreground w-full text-center p-2 font-normal text-sm",
+                                        row: "flex w-full mt-0 border-b",
+                                        cell: "w-full text-center text-sm p-0 relative border-r last:border-r-0",
+                                        day: "w-full h-full",
+                                        day_disabled: "text-muted-foreground opacity-50 bg-muted/20 cursor-not-allowed",
+                                        day_hidden: "invisible",
+                                    }}
+                                />
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="lg:col-span-1">
+                        <h3 className="font-semibold mb-3 text-lg font-headline">Clases del {selectedDate ? format(selectedDate, 'PPP', {locale: es}) : '...'}</h3>
+                         <ScrollArea className="h-96 pr-4">
+                            {selectedDayClasses.length > 0 ? (
+                                <div className="space-y-4">
+                                {selectedDayClasses.map(c => {
+                                    const dateStr = format(selectedDate!, 'yyyy-MM-dd');
+                                    const isSelected = selectedClasses.some(sc => sc.classId === c.id && sc.date === dateStr);
+                                    const isDisabled = !isSelected && selectedClasses.length >= classCount;
+                                    const teacherNames = users.filter(u => c.teacherIds.includes(u.id)).map(t => t.name).join(', ');
+
+                                    return (
+                                        <div key={`${c.id}-${dateStr}`} className={cn("flex items-start space-x-3 rounded-md border p-3", isDisabled && "opacity-50 cursor-not-allowed", isSelected && "bg-primary/10 border-primary/50")}>
+                                            <Checkbox 
+                                                id={`${c.id}-${dateStr}`}
+                                                checked={isSelected}
+                                                onCheckedChange={() => handleSelectClass(c.id, selectedDate!)}
+                                                disabled={isDisabled}
+                                                className="mt-1"
+                                            />
+                                            <Label htmlFor={`${c.id}-${dateStr}`} className={cn("flex flex-col w-full", !isDisabled && "cursor-pointer")}>
+                                                <span className="font-semibold">{c.name}</span>
+                                                <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> {c.time} - {teacherNames}</span>
+                                                <span className="text-xs text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" /> {c.capacity - c.enrolledStudentIds.length} libres</span>
+                                            </Label>
+                                            {isSelected && <CheckCircle className="h-5 w-5 text-primary ml-auto flex-shrink-0" />}
+                                        </div>
+                                    )
+                                })}
                                 </div>
-                            );
-                        })}
-                         {availableClasses.length === 0 && (
-                            <p className="text-sm text-muted-foreground text-center pt-8">No hay clases disponibles para este plan.</p>
-                         )}
-                    </ScrollArea>
+                            ) : (
+                                <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                                    <p>No hay clases programadas para este día, o selecciona un día para verlas.</p>
+                                </div>
+                            )}
+                         </ScrollArea>
+                    </div>
                 </div>
 
                 <DialogFooter>
                     <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-                    <Button onClick={() => onConfirm(selectedClasses)} disabled={classesLeftToSelect > 0}>
-                        Confirmar Selección y Pagar
+                    <Button onClick={() => onConfirm(selectedClasses.map(sc => sc.classId))} disabled={classesLeftToSelect > 0}>
+                        Confirmar {classCount - classesLeftToSelect} Clase(s) y Pagar
                     </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 }
+    
