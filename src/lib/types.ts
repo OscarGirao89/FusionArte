@@ -182,4 +182,7 @@ export type AcademySettings = {
   instagramUrl?: string;
   facebookUrl?: string;
   tiktokUrl?: string;
+  openingHours?: string;
 };
+
+    

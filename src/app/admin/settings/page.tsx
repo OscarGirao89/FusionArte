@@ -27,6 +27,7 @@ const settingsFormSchema = z.object({
   instagramUrl: z.string().url("URL de Instagram inválida.").or(z.literal('')).optional(),
   facebookUrl: z.string().url("URL de Facebook inválida.").or(z.literal('')).optional(),
   tiktokUrl: z.string().url("URL de TikTok inválida.").or(z.literal('')).optional(),
+  openingHours: z.string().optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
@@ -122,7 +123,7 @@ export default function AdminSettingsPage() {
             
             <Card>
                 <CardHeader>
-                    <CardTitle>Datos de Contacto y Redes Sociales</CardTitle>
+                    <CardTitle>Datos de Contacto y Horarios</CardTitle>
                     <CardDescription>Esta información se mostrará en las páginas públicas.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -136,6 +137,9 @@ export default function AdminSettingsPage() {
                     </div>
                      <FormField control={form.control} name="address" render={({ field }) => (
                         <FormItem><FormLabel>Dirección</FormLabel><FormControl><Input placeholder="Calle, Ciudad, Código Postal" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="openingHours" render={({ field }) => (
+                        <FormItem><FormLabel>Horario de Atención</FormLabel><FormControl><Textarea placeholder="Lunes a Viernes: 10:00 - 22:00..." {...field} /></FormControl><FormDescription>Usa saltos de línea para separar los días. Se mostrará en la página de contacto.</FormDescription><FormMessage /></FormItem>
                     )} />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <FormField control={form.control} name="instagramUrl" render={({ field }) => (
@@ -172,11 +176,13 @@ export default function AdminSettingsPage() {
                 </CardContent>
             </Card>
             
-            <CardFooter className="border-t px-0 py-4">
+            <div className="flex justify-start">
                 <Button type="submit">Guardar Cambios</Button>
-            </CardFooter>
+            </div>
         </form>
       </Form>
     </div>
   );
 }
+
+    

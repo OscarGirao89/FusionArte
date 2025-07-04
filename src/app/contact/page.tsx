@@ -85,8 +85,9 @@ export default function ContactPage() {
                             <CardTitle>Horario de Atención</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-muted-foreground">Lunes a Viernes: 10:00 - 22:00</p>
-                            <p className="text-muted-foreground">Sábados: 10:00 - 14:00</p>
+                             {settings.openingHours?.split('\n').map((line, index) => (
+                                <p key={index} className="text-muted-foreground">{line}</p>
+                             ))}
                         </CardContent>
                     </Card>
                 </div>
@@ -118,3 +119,5 @@ export default function ContactPage() {
         </div>
     );
 }
+
+    

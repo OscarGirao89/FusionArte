@@ -23,6 +23,7 @@ const initialSettings: AcademySettings = {
   instagramUrl: "https://www.instagram.com",
   facebookUrl: "https://www.facebook.com",
   tiktokUrl: "https://www.tiktok.com",
+  openingHours: "Lunes a Viernes: 10:00 - 22:00\nSábados: 10:00 - 14:00",
 };
 
 
@@ -68,3 +69,5 @@ export const useSettings = (): SettingsContextType => {
   }
   return context;
 };
+
+    
