@@ -154,7 +154,7 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm }: ClassSe
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-6xl">
+            <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2"><CalendarIcon className="h-6 w-6" /> Selecciona tus Clases para "{plan.title}"</DialogTitle>
                     <DialogDescription>
@@ -165,74 +165,76 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm }: ClassSe
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
-                    <div className="lg:col-span-2">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft /></Button>
-                                <CardTitle className="text-xl capitalize font-headline">{format(currentMonth, 'MMMM yyyy', {locale: es})}</CardTitle>
-                                <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight /></Button>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                <Calendar
-                                    month={currentMonth}
-                                    onMonthChange={setCurrentMonth}
-                                    selected={selectedDate}
-                                    onSelect={setSelectedDate}
-                                    locale={es}
-                                    disabled={(date) => isBefore(date, subMonths(new Date(), 1)) || isAfter(date, membershipEndDate)}
-                                    components={{ Day: DayContent }}
-                                    classNames={{
-                                        table: "w-full border-collapse",
-                                        head_row: "flex border-b",
-                                        head_cell: "text-muted-foreground w-full text-center p-2 font-normal text-sm",
-                                        row: "flex w-full mt-0 border-b",
-                                        cell: "w-full text-center text-sm p-0 relative border-r last:border-r-0",
-                                        day: "w-full h-full",
-                                        day_disabled: "text-muted-foreground opacity-50 bg-muted/20 cursor-not-allowed",
-                                        day_hidden: "invisible",
-                                    }}
-                                />
-                            </CardContent>
-                        </Card>
-                    </div>
+                <div className="flex-grow overflow-y-auto -mx-6 px-6 py-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between">
+                                    <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft /></Button>
+                                    <CardTitle className="text-xl capitalize font-headline">{format(currentMonth, 'MMMM yyyy', {locale: es})}</CardTitle>
+                                    <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight /></Button>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <Calendar
+                                        month={currentMonth}
+                                        onMonthChange={setCurrentMonth}
+                                        selected={selectedDate}
+                                        onSelect={setSelectedDate}
+                                        locale={es}
+                                        disabled={(date) => isBefore(date, subMonths(new Date(), 1)) || isAfter(date, membershipEndDate)}
+                                        components={{ Day: DayContent }}
+                                        classNames={{
+                                            table: "w-full border-collapse",
+                                            head_row: "flex border-b",
+                                            head_cell: "text-muted-foreground w-full text-center p-2 font-normal text-sm",
+                                            row: "flex w-full mt-0 border-b",
+                                            cell: "w-full text-center text-sm p-0 relative border-r last:border-r-0",
+                                            day: "w-full h-full",
+                                            day_disabled: "text-muted-foreground opacity-50 bg-muted/20 cursor-not-allowed",
+                                            day_hidden: "invisible",
+                                        }}
+                                    />
+                                </CardContent>
+                            </Card>
+                        </div>
 
-                    <div className="lg:col-span-1">
-                        <h3 className="font-semibold mb-3 text-lg font-headline">Clases del {selectedDate ? format(selectedDate, 'PPP', {locale: es}) : '...'}</h3>
-                         <ScrollArea className="h-96 pr-4">
-                            {selectedDayClasses.length > 0 ? (
-                                <div className="space-y-4">
-                                {selectedDayClasses.map(c => {
-                                    const dateStr = format(selectedDate!, 'yyyy-MM-dd');
-                                    const isSelected = selectedClasses.some(sc => sc.classId === c.id && sc.date === dateStr);
-                                    const isDisabled = !isSelected && selectedClasses.length >= classCount;
-                                    const teacherNames = users.filter(u => c.teacherIds.includes(u.id)).map(t => t.name).join(', ');
+                        <div className="lg:col-span-1">
+                            <h3 className="font-semibold mb-3 text-lg font-headline">Clases del {selectedDate ? format(selectedDate, 'PPP', {locale: es}) : '...'}</h3>
+                             <div className="pr-4">
+                                {selectedDayClasses.length > 0 ? (
+                                    <div className="space-y-4">
+                                    {selectedDayClasses.map(c => {
+                                        const dateStr = format(selectedDate!, 'yyyy-MM-dd');
+                                        const isSelected = selectedClasses.some(sc => sc.classId === c.id && sc.date === dateStr);
+                                        const isDisabled = !isSelected && selectedClasses.length >= classCount;
+                                        const teacherNames = users.filter(u => c.teacherIds.includes(u.id)).map(t => t.name).join(', ');
 
-                                    return (
-                                        <div key={`${c.id}-${dateStr}`} className={cn("flex items-start space-x-3 rounded-md border p-3", isDisabled && "opacity-50 cursor-not-allowed", isSelected && "bg-primary/10 border-primary/50")}>
-                                            <Checkbox 
-                                                id={`${c.id}-${dateStr}`}
-                                                checked={isSelected}
-                                                onCheckedChange={() => handleSelectClass(c.id, selectedDate!)}
-                                                disabled={isDisabled}
-                                                className="mt-1"
-                                            />
-                                            <Label htmlFor={`${c.id}-${dateStr}`} className={cn("flex flex-col w-full", !isDisabled && "cursor-pointer")}>
-                                                <span className="font-semibold">{c.name}</span>
-                                                <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> {c.time} - {teacherNames}</span>
-                                                <span className="text-xs text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" /> {c.capacity - c.enrolledStudentIds.length} libres</span>
-                                            </Label>
-                                            {isSelected && <CheckCircle className="h-5 w-5 text-primary ml-auto flex-shrink-0" />}
-                                        </div>
-                                    )
-                                })}
-                                </div>
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-                                    <p>No hay clases programadas para este día, o selecciona un día para verlas.</p>
-                                </div>
-                            )}
-                         </ScrollArea>
+                                        return (
+                                            <div key={`${c.id}-${dateStr}`} className={cn("flex items-start space-x-3 rounded-md border p-3", isDisabled && "opacity-50 cursor-not-allowed", isSelected && "bg-primary/10 border-primary/50")}>
+                                                <Checkbox 
+                                                    id={`${c.id}-${dateStr}`}
+                                                    checked={isSelected}
+                                                    onCheckedChange={() => handleSelectClass(c.id, selectedDate!)}
+                                                    disabled={isDisabled}
+                                                    className="mt-1"
+                                                />
+                                                <Label htmlFor={`${c.id}-${dateStr}`} className={cn("flex flex-col w-full", !isDisabled && "cursor-pointer")}>
+                                                    <span className="font-semibold">{c.name}</span>
+                                                    <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> {c.time} - {teacherNames}</span>
+                                                    <span className="text-xs text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" /> {c.capacity - c.enrolledStudentIds.length} libres</span>
+                                                </Label>
+                                                {isSelected && <CheckCircle className="h-5 w-5 text-primary ml-auto flex-shrink-0" />}
+                                            </div>
+                                        )
+                                    })}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center min-h-96 text-center text-muted-foreground">
+                                        <p>No hay clases programadas para este día, o selecciona un día para verlas.</p>
+                                    </div>
+                                )}
+                             </div>
+                        </div>
                     </div>
                 </div>
 
@@ -246,4 +248,3 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm }: ClassSe
         </Dialog>
     );
 }
-    
