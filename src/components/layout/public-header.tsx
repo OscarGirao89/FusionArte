@@ -47,7 +47,7 @@ export function PublicHeader() {
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-2">
-          <Button asChild variant="outline" size="sm">
+          <Button asChild size="sm">
             <Link href="/login">Acceder</Link>
           </Button>
           <Button asChild size="sm">

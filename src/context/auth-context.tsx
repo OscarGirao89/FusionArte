@@ -28,7 +28,59 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Define which paths are public
 const publicPaths = ['/login', '/', '/about', '/schedule', '/memberships', '/teachers', '/contact', '/register'];
+
+// Define protected routes and their required roles
+const protectedRoutes: { path: string; roles: UserRole[] }[] = [
+  { path: '/admin', roles: ['admin', 'socio', 'administrativo'] },
+  { path: '/my-classes', roles: ['teacher', 'socio'] },
+  { path: '/profile', roles: ['student', 'teacher', 'admin', 'administrativo', 'socio'] },
+  { path: '/admin/finances', roles: ['admin', 'socio']},
+  { path: '/admin/payments', roles: ['admin', 'socio', 'administrativo']},
+  { path: '/admin/settings', roles: ['admin', 'socio']},
+  { path: '/admin/roles', roles: ['admin']},
+  { path: '/admin/users', roles: ['admin', 'socio']},
+  { path: '/admin/students', roles: ['admin', 'socio', 'administrativo']},
+  { path: '/admin/classes', roles: ['admin', 'socio', 'administrativo']},
+  { path: '/admin/memberships', roles: ['admin', 'socio', 'administrativo']},
+  { path: '/admin/coupons', roles: ['admin', 'socio', 'administrativo']},
+  { path: '/admin/levels', roles: ['admin', 'socio', 'administrativo']},
+  { path: '/admin/styles', roles: ['admin', 'socio', 'administrativo']},
+];
+
+const checkAccess = (pathname: string, role: UserRole | null): { authorized: boolean; redirect?: string } => {
+    // Check if the path is public. Note: a startsWith check for '/' would match everything.
+    if (publicPaths.some(p => p === pathname || (p !== '/' && pathname.startsWith(p)))) {
+        return { authorized: true };
+    }
+
+    if (!role) {
+        // Not logged in, trying to access a non-public page
+        return { authorized: false, redirect: '/login' };
+    }
+    
+    // User is logged in, check protected routes. Find the most specific match first.
+    const sortedRoutes = [...protectedRoutes].sort((a, b) => b.path.length - a.path.length);
+    const routeConfig = sortedRoutes.find(route => pathname.startsWith(route.path));
+
+    if (routeConfig) {
+        if (routeConfig.roles.includes(role)) {
+            // Role is authorized for this path
+            return { authorized: true };
+        } else {
+            // Role is not authorized, redirect to their default page
+            let defaultPath = '/profile';
+            if (role === 'teacher' || role === 'socio') defaultPath = '/my-classes';
+            if (role === 'admin' || role === 'administrativo') defaultPath = '/admin/users';
+            return { authorized: false, redirect: defaultPath };
+        }
+    }
+
+    // If no specific protected route matched, but user is logged in, deny by default and send home.
+    return { authorized: false, redirect: '/' };
+};
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -42,27 +94,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
+    setIsLoading(true); // Start loading on every path change
+    let storedRole: UserRole | null = null;
     try {
-      const storedRole = localStorage.getItem('userRole') as UserRole | null;
-      if (storedRole) {
-        const userProfile = userProfiles[storedRole];
-        const fullUser = allUsers.find(u => u.id === userProfile.id);
-        setUserRole(storedRole);
-        setUserId(userProfile?.id || null);
-        setCurrentUser(fullUser || null);
-      } else {
-        const isPublic = publicPaths.some(path => pathname === path);
-        if (!isPublic) {
-            localStorage.setItem('redirectPath', pathname);
-            router.push('/login');
-        }
-      }
-    } catch (error) {
-      console.error("Could not access localStorage", error);
-    } finally {
-      setIsLoading(false);
+        storedRole = localStorage.getItem('userRole') as UserRole | null;
+    } catch (e) {
+        console.error("Could not access localStorage", e);
     }
-  }, [pathname, router]);
+
+    const { authorized, redirect } = checkAccess(pathname, storedRole);
+
+    if (authorized) {
+        if (storedRole && (!currentUser || storedRole !== userRole)) {
+            const userProfile = userProfiles[storedRole];
+            const fullUser = allUsers.find(u => u.id === userProfile.id);
+            setUserRole(storedRole);
+            setUserId(userProfile?.id || null);
+            setCurrentUser(fullUser || null);
+        }
+        setIsLoading(false);
+    } else {
+        if (redirect === '/login' && pathname !== '/login') {
+            localStorage.setItem('redirectPath', pathname);
+        }
+        router.replace(redirect || '/login');
+        // Keep loading=true until redirection happens and the new page is authorized.
+    }
+  }, [pathname, router, currentUser, userRole]);
 
 
   const login = (role: UserRole) => {
@@ -70,6 +128,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('userRole', role);
       const userProfile = userProfiles[role];
       const fullUser = allUsers.find(u => u.id === userProfile.id);
+      
+      setIsLoading(true); // Set loading while we re-evaluate access
       setUserRole(role);
       setUserId(userProfile?.id || null);
       setCurrentUser(fullUser || null);
@@ -77,6 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const redirectPath = localStorage.getItem('redirectPath');
       localStorage.removeItem('redirectPath');
 
+      // The useEffect will handle the redirection after the state is updated
       if (redirectPath) {
         router.push(redirectPath);
       } else {
@@ -96,6 +157,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     try {
       localStorage.removeItem('userRole');
+      setIsLoading(true); // Set loading while we re-evaluate access
       setUserRole(null);
       setUserId(null);
       setCurrentUser(null);
