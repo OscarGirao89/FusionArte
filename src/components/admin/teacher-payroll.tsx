@@ -6,10 +6,10 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { AlertCircle, CheckCircle2, DollarSign, Handshake, MinusCircle, Percent, Users, XCircle, Shield, FileText, UserCheck, Briefcase } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 
 const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; color: string } => {
     switch (status) {
@@ -111,8 +111,22 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
             if (paymentDetails?.type === 'monthly') {
                 totalIncome = paymentDetails.monthlySalary || 0;
             }
+            
+            const groupedSharedClasses = sharedClasses.reduce((acc, c) => {
+                const otherPartners = c.teacherIds
+                    .filter((id: number) => id !== partnerId)
+                    .map((id: number) => users.find(u => u.id === id)?.name || 'Desconocido')
+                    .join(' y ');
 
-            return { partner, individualClasses, sharedClasses, individualIncome, sharedIncome, totalIncome };
+                if (!acc[otherPartners]) {
+                    acc[otherPartners] = [];
+                }
+                acc[otherPartners].push(c);
+                return acc;
+            }, {} as Record<string, any[]>);
+
+
+            return { partner, individualClasses, groupedSharedClasses, individualIncome, sharedIncome, totalIncome };
         }
 
         return null;
@@ -165,14 +179,12 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
     };
 
     const PartnerIncomeView = () => {
-         if (!calculation || !('partner' in calculation) || !calculation.partner) return null;
-         const { partner, individualClasses, sharedClasses, individualIncome, sharedIncome, totalIncome } = calculation;
+        if (!calculation || !('partner' in calculation) || !calculation.partner) return null;
+        const { partner, individualClasses, groupedSharedClasses, individualIncome, sharedIncome, totalIncome } = calculation;
 
-         const renderTable = (title: string, classes: any[], icon: React.ReactNode) => (
-             <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2 text-lg">{icon} {title}</CardTitle></CardHeader>
-                <CardContent>
-                    {classes.length > 0 ? (
+        const renderTableContent = (classes: any[]) => (
+            <>
+                {classes.length > 0 ? (
                     <Table>
                         <TableHeader><TableRow><TableHead>Clase/Taller</TableHead><TableHead>Estado</TableHead><TableHead className="text-right">Ingreso</TableHead></TableRow></TableHeader>
                         <TableBody>
@@ -188,8 +200,8 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
                                         <TableCell className="text-right">
                                             <p className="font-mono font-semibold">
                                             {c.workshopPaymentType === 'percentage' 
-                                                    ? <span className="flex items-center justify-end gap-1"><Percent className="h-3 w-3" />{c.workshopPaymentValue}%</span>
-                                                    : `€${c.classPay.toFixed(2)}`
+                                                ? <span className="flex items-center justify-end gap-1"><Percent className="h-3 w-3" />{c.workshopPaymentValue}%</span>
+                                                : `€${c.classPay.toFixed(2)}`
                                             }
                                             </p>
                                             <p className="text-xs text-muted-foreground">{c.payDescription}</p>
@@ -199,12 +211,11 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
                             })}
                         </TableBody>
                     </Table>
-                    ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">No hay clases en esta categoría este mes.</p>
-                    )}
-                </CardContent>
-            </Card>
-         );
+                ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No hay clases en esta categoría este mes.</p>
+                )}
+            </>
+        );
 
         return (
             <div className="space-y-6">
@@ -219,8 +230,39 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
                         <Card className="bg-primary/10"><CardHeader><CardTitle className="text-base">Ingresos Totales</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-primary">€{totalIncome.toFixed(2)}</p></CardContent></Card>
                     </CardContent>
                 </Card>
-                {renderTable("Ingresos por Clases Individuales", individualClasses, <UserCheck />)}
-                {renderTable("Ingresos por Clases Compartidas", sharedClasses, <Handshake />)}
+
+                <Tabs defaultValue="individual" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="individual">Ingresos Individuales</TabsTrigger>
+                        <TabsTrigger value="shared">Ingresos Compartidos</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="individual" className="mt-4">
+                       <Card>
+                            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><UserCheck /> Detalle de Clases Individuales</CardTitle></CardHeader>
+                            <CardContent className="p-0">
+                                {renderTableContent(individualClasses)}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="shared" className="mt-4 space-y-4">
+                        {Object.keys(groupedSharedClasses).length > 0 ? (
+                             <Accordion type="single" collapsible className="w-full">
+                                {Object.entries(groupedSharedClasses).map(([partnerNames, classes]) => (
+                                    <AccordionItem value={partnerNames} key={partnerNames}>
+                                        <AccordionTrigger className="text-lg font-medium px-4">Clases con {partnerNames}</AccordionTrigger>
+                                        <AccordionContent>
+                                            <div className="pt-2">
+                                                {renderTableContent(classes)}
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                        ) : (
+                            <Card><CardContent><p className="text-sm text-muted-foreground text-center py-8">No hay clases compartidas este mes.</p></CardContent></Card>
+                        )}
+                    </TabsContent>
+                </Tabs>
             </div>
         )
     }

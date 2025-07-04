@@ -80,6 +80,8 @@ export const users: User[] = [
     isVisibleToStudents: true,
     isPartner: false,
   },
+  { id: 11, name: 'Carlos Ruiz', email: 'carlos.r@example.com', role: 'Estudiante', joined: '2024-05-10', avatar: 'https://placehold.co/100x100.png?text=CR', dob: '1994-11-05', attendanceHistory: [] },
+  { id: 12, name: 'Elena Vega', email: 'elena.v@example.com', role: 'Estudiante', joined: '2024-06-01', avatar: 'https://placehold.co/100x100.png?text=EV', dob: '2000-03-22', attendanceHistory: [] },
 ];
 
 export const membershipPlans: MembershipPlan[] = [
@@ -139,6 +141,8 @@ export const studentMemberships: StudentMembership[] = [
     { userId: 3, planId: 'pack-10', startDate: '2024-07-03', endDate: '2024-10-03', classesRemaining: 8 },
     { userId: 8, planId: 'beginner-pass', startDate: '2024-06-15', endDate: '2024-07-15' },
     { userId: 9, planId: 'pack-10', startDate: '2024-03-01', endDate: '2024-06-01' }, // Expired
+    { userId: 11, planId: 'unlimited-1', startDate: '2024-07-01', endDate: '2024-07-31' },
+    { userId: 12, planId: 'pack-10', startDate: '2024-07-01', endDate: '2024-10-01', classesRemaining: 10 },
 ];
 
 export const danceClasses: DanceClass[] = [
@@ -165,7 +169,11 @@ export const danceClasses: DanceClass[] = [
     // Viernes
     { id: 'rental-1', name: 'Alquiler: Ensayo Teatro', type: 'rental', styleId: 'practica', levelId: 'todos', teacherIds: [], time: '10:00', room: 'Estudio 3', duration: '180 min', capacity: 30, date: '2024-09-01', status: 'scheduled', enrolledStudentIds: [], isVisibleToStudents: false, rentalContact: 'Compañía de Teatro Local', rentalPrice: 150, day: 'Viernes' },
     { id: 'clase-13', name: 'Práctica Libre', type: 'recurring', styleId: 'practica', levelId: 'todos', teacherIds: [], day: 'Viernes', time: '20:30', room: 'Todos los Estudios', duration: '120 min', capacity: 50, recurrenceMonths: 12, status: 'completed', enrolledStudentIds: [1, 3, 8, 9] },
+    { id: 'clase-14', name: 'Bachata Sensual', type: 'recurring', styleId: 'bachata', levelId: 'avanzado', teacherIds: [2], day: 'Viernes', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 15, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [1, 11], cancellationPolicyHours: 24 },
+    { id: 'clase-15', name: 'Rueda de Casino', type: 'workshop', styleId: 'salsa', levelId: 'intermedio', teacherIds: [2, 5], time: '20:00', room: 'Estudio 1', duration: '90 min', capacity: 20, date: '2024-09-06', status: 'scheduled', enrolledStudentIds: [3, 11, 12], workshopPaymentType: 'fixed', workshopPaymentValue: 100, day: 'Viernes' },
 
+    // Sabado
+    { id: 'clase-16', name: 'Taller de Conexión', type: 'workshop', styleId: 'm-zouk', levelId: 'todos', teacherIds: [2, 6], time: '12:00', room: 'Estudio 3', duration: '120 min', capacity: 20, date: '2024-09-07', status: 'scheduled', enrolledStudentIds: [1, 9, 12], workshopPaymentType: 'percentage', workshopPaymentValue: 60, day: 'Sábado' },
 ];
 
 export const roles: Role[] = [

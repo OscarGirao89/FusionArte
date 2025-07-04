@@ -66,5 +66,27 @@ export const studentPayments: StudentPayment[] = [
         amountDue: 0,
         lastUpdatedBy: 'Admin FusionArte',
         lastUpdatedDate: '2024-06-01T15:00:00Z'
+    },
+    {
+        id: 'inv-005',
+        studentId: 11,
+        planId: 'unlimited-1',
+        invoiceDate: '2024-07-01',
+        totalAmount: 99,
+        status: 'paid',
+        amountPaid: 99,
+        amountDue: 0,
+        lastUpdatedBy: 'Sistema',
+        lastUpdatedDate: '2024-07-01T09:00:00Z'
+    },
+    {
+        id: 'inv-006',
+        studentId: 12,
+        planId: 'pack-10',
+        invoiceDate: '2024-07-01',
+        totalAmount: 120,
+        status: 'pending',
+        amountPaid: 0,
+        amountDue: 120,
     }
 ];

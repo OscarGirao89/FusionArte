@@ -24,6 +24,7 @@ const PartnerStudentPayments = ({ partnerId }: { partnerId: number }) => {
     const { studentPayments } = useAuth();
 
     const filteredPayments = useMemo(() => {
+        if (!partnerId) return [];
         const partnerClasses = danceClasses.filter(c => c.teacherIds.includes(partnerId));
         const partnerStudentIds = [...new Set(partnerClasses.flatMap(c => c.enrolledStudentIds))];
         return studentPayments.filter(p => partnerStudentIds.includes(p.studentId));
@@ -90,104 +91,66 @@ export default function AdminFinancesPage() {
   const netBalance = totalIncome - totalExpenses;
 
   const AdminView = () => (
-    <div className='space-y-8'>
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline"><Landmark className="h-6 w-6"/> Finanzas del Estudio</CardTitle>
-                <CardDescription>Visión general de los ingresos y egresos de la academia, excluyendo los pagos a socios.</CardDescription>
-            </CardHeader>
-             <CardContent className="space-y-8">
-                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Ingresos Totales (Estudio)</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold text-green-600">€{totalIncome.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">Membresías, alquileres y otros</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Egresos Operativos</CardTitle>
-                        <TrendingDown className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold text-red-600">€{totalExpenses.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">Gastos, suministros, etc.</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Balance Neto (Estudio)</CardTitle>
-                        <Scale className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className={`text-2xl font-bold ${netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          €{netBalance.toFixed(2)}
+     <Tabs defaultValue="studio" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="studio">Finanzas del Estudio</TabsTrigger>
+            <TabsTrigger value="partners">Finanzas de Socios</TabsTrigger>
+        </TabsList>
+        <TabsContent value="studio" className="mt-6 space-y-8">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ingresos Totales (Estudio)</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                    <CardContent><div className="text-2xl font-bold text-green-600">€{totalIncome.toFixed(2)}</div><p className="text-xs text-muted-foreground">Membresías, alquileres y otros</p></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Egresos Operativos</CardTitle><TrendingDown className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                    <CardContent><div className="text-2xl font-bold text-red-600">€{totalExpenses.toFixed(2)}</div><p className="text-xs text-muted-foreground">Gastos, suministros, etc.</p></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Balance Neto (Estudio)</CardTitle><Scale className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                    <CardContent><div className={`text-2xl font-bold ${netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>€{netBalance.toFixed(2)}</div><p className="text-xs text-muted-foreground">Ingresos - Egresos</p></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Nóminas (No Socios)</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader>
+                    <CardContent><div className="text-2xl font-bold">Ver Desglose</div><p className="text-xs text-muted-foreground">Pagos a profesores</p></CardContent>
+                </Card>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <Card>
+                    <CardHeader><CardTitle>Libro de Transacciones del Estudio</CardTitle><CardDescription>Registra y consulta todos los movimientos financieros generales.</CardDescription></CardHeader>
+                    <CardContent><IncomeExpenseLedger /></CardContent>
+                </Card>
+                <TeacherPayroll mode="studio_expenses" />
+            </div>
+        </TabsContent>
+        <TabsContent value="partners" className="mt-6 space-y-6">
+            <Card>
+                <CardHeader>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <CardTitle className="flex items-center gap-2 font-headline"><Handshake className="h-6 w-6"/> Finanzas de Socios</CardTitle>
+                            <CardDescription>Selecciona un socio para ver el desglose de sus ingresos generados.</CardDescription>
                         </div>
-                        <p className="text-xs text-muted-foreground">Ingresos - Egresos</p>
-                      </CardContent>
-                    </Card>
-                     <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Nóminas (No Socios)</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">Ver Desglose</div>
-                        <p className="text-xs text-muted-foreground">Pagos a profesores</p>
-                      </CardContent>
-                    </Card>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Libro de Transacciones del Estudio</CardTitle>
-                            <CardDescription>Registra y consulta todos los movimientos financieros generales.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <IncomeExpenseLedger />
-                        </CardContent>
-                    </Card>
-                    <TeacherPayroll mode="studio_expenses" />
-                </div>
-            </CardContent>
-        </Card>
-        
-        <Separator />
-        
-        <Card>
-            <CardHeader>
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <CardTitle className="flex items-center gap-2 font-headline"><Handshake className="h-6 w-6"/> Finanzas de Socios</CardTitle>
-                        <CardDescription>Selecciona un socio para ver el desglose de sus ingresos generados.</CardDescription>
+                        <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
+                            <SelectTrigger className="w-full md:w-[250px]"><SelectValue placeholder="Seleccionar socio..." /></SelectTrigger>
+                            <SelectContent>
+                                {partners.map(p => (<SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>))}
+                            </SelectContent>
+                        </Select>
                     </div>
-                    <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
-                        <SelectTrigger className="w-full md:w-[250px]">
-                            <SelectValue placeholder="Seleccionar socio..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {partners.map(p => (
-                                <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                {selectedPartnerId && (
-                    <>
-                        <TeacherPayroll mode="partner_income" partnerId={parseInt(selectedPartnerId, 10)} />
-                        <PartnerStudentPayments partnerId={parseInt(selectedPartnerId, 10)} />
-                    </>
-                )}
-            </CardContent>
-        </Card>
-    </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {selectedPartnerId && (
+                        <>
+                            <TeacherPayroll mode="partner_income" partnerId={parseInt(selectedPartnerId, 10)} />
+                            <Separator className="my-6" />
+                            <PartnerStudentPayments partnerId={parseInt(selectedPartnerId, 10)} />
+                        </>
+                    )}
+                </CardContent>
+            </Card>
+        </TabsContent>
+    </Tabs>
   );
 
   const PartnerView = () => {
@@ -208,44 +171,8 @@ export default function AdminFinancesPage() {
         </TabsList>
         <TabsContent value="personal" className="mt-6 space-y-8">
             <TeacherPayroll mode="partner_income" partnerId={userId} />
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-headline"><Wallet className="h-6 w-6"/> Pagos de Tus Alumnos</CardTitle>
-                    <CardDescription>Facturas generadas para los alumnos que asisten a tus clases.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                        {partnerStudentPayments.length > 0 ? (
-                        <div className="overflow-y-auto max-h-96">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Alumno</TableHead>
-                                        <TableHead>Plan</TableHead>
-                                        <TableHead>Estado</TableHead>
-                                        <TableHead className="text-right">Monto Total</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {partnerStudentPayments.map((p) => (
-                                        <TableRow key={p.id}>
-                                            <TableCell>{getStudentName(p.studentId)}</TableCell>
-                                            <TableCell>{getPlanName(p.planId)}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={p.status === 'paid' ? 'default' : p.status === 'pending' ? 'destructive' : 'secondary'}>
-                                                    {{ paid: 'Pagado', pending: 'Pendiente', deposit: 'Adelanto' }[p.status]}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono">€{p.totalAmount.toFixed(2)}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                        ) : (
-                            <p className="text-sm text-muted-foreground text-center py-4">No hay pagos de alumnos para mostrar.</p>
-                        )}
-                </CardContent>
-            </Card>
+            <Separator />
+            <PartnerStudentPayments partnerId={userId!} />
         </TabsContent>
         <TabsContent value="studio" className="mt-6 space-y-8">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
