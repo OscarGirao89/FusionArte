@@ -40,30 +40,30 @@ import { LogoIcon } from '@/components/icons/logo-icon';
 
 const navItems = {
   student: [
-    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/', label: 'Panel Principal', icon: LayoutDashboard },
     { href: '/profile', label: 'Mi Perfil', icon: User },
-    { href: '/schedule', label: 'Horario de Clases', icon: Calendar },
+    { href: '/schedule', label: 'Clases / Horarios', icon: Calendar },
     { href: '/memberships', label: 'Membresías', icon: CreditCard },
     { href: '/teachers', label: 'Profesores', icon: Users },
   ],
   teacher: [
-    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/schedule', label: 'Horario General', icon: Calendar },
+    { href: '/', label: 'Panel Principal', icon: LayoutDashboard },
+    { href: '/schedule', label: 'Clases / Horarios', icon: Calendar },
     { href: '/my-classes', label: 'Mis Clases', icon: BookMarked },
   ],
   admin: [
-    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/schedule', label: 'Horario de Clases', icon: Calendar },
+    { href: '/', label: 'Panel Principal', icon: LayoutDashboard },
+    { href: '/schedule', label: 'Clases / Horarios', icon: Calendar },
     { href: '/memberships', label: 'Membresías', icon: CreditCard },
     { href: '/teachers', label: 'Profesores', icon: Users },
   ],
   administrativo: [
-    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/', label: 'Panel Principal', icon: LayoutDashboard },
     { href: '/admin/payments', label: 'Pagos de Alumnos', icon: Wallet },
   ],
   socio: [
-    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/schedule', label: 'Horario de Clases', icon: Calendar },
+    { href: '/', label: 'Panel Principal', icon: LayoutDashboard },
+    { href: '/schedule', label: 'Clases / Horarios', icon: Calendar },
     { href: '/memberships', label: 'Membresías', icon: CreditCard },
     { href: '/teachers', label: 'Profesores', icon: Users },
   ],
@@ -80,7 +80,7 @@ const adminNavItems = [
 
 export const userProfiles: Record<UserRole, { id: number; name: string; role: string; avatar: string }> = {
     student: { id: 1, name: 'Ana López', role: 'Estudiante', avatar: 'https://placehold.co/100x100.png?text=AL' },
-    teacher: { id: 2, name: 'Oscar Girao', role: 'Profesor', avatar: 'https://placehold.co/100x100.png?text=OG' },
+    teacher: { id: 10, name: 'Alexandra', role: 'Profesor/a', avatar: 'https://placehold.co/100x100.png?text=A' },
     admin: { id: 4, name: 'Admin FusionArte', role: 'Administrador/a', avatar: 'https://placehold.co/100x100.png?text=AF' },
     administrativo: { id: 7, name: 'Laura Martinez', role: 'Recepción', avatar: 'https://placehold.co/100x100.png?text=LM' },
     socio: { id: 2, name: 'Oscar Girao', role: 'Socio', avatar: 'https://placehold.co/100x100.png?text=OG' },

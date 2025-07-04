@@ -24,7 +24,6 @@ const timeSlots = Array.from({ length: (22 - 9) * 2 }, (_, i) => {
 
 function TimeGridClassCard({ danceClass }: { danceClass: DanceClass }) {
     const style = allStyles.find(s => s.id === danceClass.styleId);
-    const level = allLevels.find(l => l.id === danceClass.levelId);
     const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
     
     const getCardColor = () => {
@@ -54,7 +53,7 @@ function TimeGridClassCard({ danceClass }: { danceClass: DanceClass }) {
                     <div className="p-1 space-y-1.5 text-sm">
                         <p className="font-bold">{danceClass.name}</p>
                         <div className="flex items-center gap-2 text-muted-foreground"><User className="h-4 w-4" /> {getTeacherNames(danceClass.teacherIds) || 'N/A'}</div>
-                        <div className="flex items-center gap-2 text-muted-foreground"><Award className="h-4 w-4" /> {level?.name || 'N/A'}</div>
+                        <div className="flex items-center gap-2 text-muted-foreground"><Award className="h-4 w-4" /> {allLevels.find(l => l.id === danceClass.levelId)?.name || 'N/A'}</div>
                         <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /> {danceClass.time} ({danceClass.duration})</div>
                     </div>
                 </TooltipContent>
@@ -83,39 +82,37 @@ function WeeklySchedule({ classes }: { classes: DanceClass[] }) {
     }
 
     return (
-        <div className="overflow-x-auto">
-            <div className="grid grid-cols-[auto_repeat(7,minmax(120px,1fr))] min-w-[900px] relative">
-                {/* Headers */}
-                <div className="sticky top-28 z-20 col-start-1 row-start-1" />
-                {daysOfWeek.map((day, i) => (
-                    <h2 key={day} className="font-headline text-center font-bold sticky top-28 py-2 z-20 bg-background/80 backdrop-blur-sm col-start-auto" style={{ gridColumn: i + 2 }}>
-                        {day}
-                    </h2>
-                ))}
-                
-                {/* Time Slots and Grid Lines */}
-                {timeSlots.map((time, index) => (
-                   <React.Fragment key={time}>
-                     <div className="row-start-auto col-start-1 h-12 flex items-start -mt-2.5 pr-2 sticky left-0 bg-background/80 backdrop-blur-sm z-10">
-                        <span className="text-xs text-muted-foreground">{time}</span>
-                    </div>
-                     <div className="row-start-auto col-start-2 col-span-7 border-b border-dashed" style={{ gridRow: index + 2 }}/>
-                   </React.Fragment>
-                ))}
+        <div className="grid grid-cols-[auto_repeat(7,minmax(120px,1fr))] min-w-[900px] relative">
+            {/* Headers */}
+            <div className="sticky top-0 z-20 col-start-1 row-start-1 bg-background" />
+            {daysOfWeek.map((day, i) => (
+                <h2 key={day} className="font-headline text-center font-bold sticky top-0 py-2 z-20 bg-background/90 backdrop-blur-sm" style={{ gridColumn: i + 2 }}>
+                    {day}
+                </h2>
+            ))}
+            
+            {/* Time Slots and Grid Lines */}
+            {timeSlots.map((time, index) => (
+               <React.Fragment key={time}>
+                 <div className="row-start-auto col-start-1 h-12 flex items-start -mt-2.5 pr-2 sticky left-0 bg-background/90 backdrop-blur-sm z-10">
+                    <span className="text-xs text-muted-foreground">{time}</span>
+                </div>
+                 <div className="row-start-auto col-start-2 col-span-7 border-b border-dashed" style={{ gridRow: index + 2 }}/>
+               </React.Fragment>
+            ))}
 
-                {/* Classes */}
-                {recurringClasses.map(c => {
-                    const gridRowStart = timeToRow(c.time);
-                    const gridRowEnd = `span ${durationToSpan(c.duration)}`;
-                    const gridColumn = dayToColumn(c.day);
-                    if (gridColumn < 2) return null;
-                    return (
-                        <div key={c.id} style={{ gridRow: `${gridRowStart} / ${gridRowEnd}`, gridColumn }} className="p-0 z-10">
-                             <TimeGridClassCard danceClass={c} />
-                        </div>
-                    );
-                })}
-            </div>
+            {/* Classes */}
+            {recurringClasses.map(c => {
+                const gridRowStart = timeToRow(c.time);
+                const gridRowEnd = `span ${durationToSpan(c.duration)}`;
+                const gridColumn = dayToColumn(c.day);
+                if (gridColumn < 2) return null;
+                return (
+                    <div key={c.id} style={{ gridRow: `${gridRowStart} / ${gridRowEnd}`, gridColumn }} className="p-0 z-10">
+                         <TimeGridClassCard danceClass={c} />
+                    </div>
+                );
+            })}
         </div>
     );
 }
@@ -238,11 +235,11 @@ export default function SchedulePage() {
   return (
     <div className="container mx-auto p-4 md:p-8">
       <div className="space-y-2 mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-headline">Horario de Clases y Eventos</h1>
-        <p className="text-lg text-muted-foreground">Encuentra tu ritmo. Reserva tu próxima clase o taller.</p>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-headline">Clases y Horarios</h1>
+        <p className="text-lg text-muted-foreground">Encuentra tu ritmo. Explora nuestras clases regulares, talleres y eventos especiales.</p>
       </div>
 
-       <div className="flex flex-col md:flex-row gap-4 mb-8 p-4 bg-muted/50 rounded-lg sticky top-0 z-30 backdrop-blur-sm">
+       <div className="flex flex-col md:flex-row gap-4 mb-8 p-4 bg-muted/50 rounded-lg">
         <Tabs value={styleFilter} onValueChange={setStyleFilter} className="w-full md:w-auto">
           <TabsList className="grid grid-cols-2 sm:grid-cols-4 md:inline-flex h-auto flex-wrap">
             {styles.map(style => (
@@ -278,24 +275,42 @@ export default function SchedulePage() {
 
         <Tabs defaultValue="semanal" className="w-full">
             <TabsList className="grid w-full grid-cols-2 md:w-fit mb-8">
-                <TabsTrigger value="semanal">Horario Semanal</TabsTrigger>
-                <TabsTrigger value="mensual">Calendario de Eventos</TabsTrigger>
+                <TabsTrigger value="semanal">Clases Regulares</TabsTrigger>
+                <TabsTrigger value="mensual">Talleres y Eventos</TabsTrigger>
             </TabsList>
             <TabsContent value="semanal">
-                {filteredClassesForWeekly.filter(c => c.type === 'recurring').length > 0 ? (
-                    <WeeklySchedule classes={filteredClassesForWeekly} />
-                ) : (
-                    <div className="text-center py-16">
-                        <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-medium font-headline">No se encontraron clases</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Intenta ajustar tus filtros para encontrar otras clases.
-                        </p>
-                    </div>
-                )}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Horario Semanal</CardTitle>
+                        <CardDescription>Clases que se repiten cada semana. Pasa el cursor sobre una clase para ver los detalles.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {filteredClassesForWeekly.filter(c => c.type === 'recurring').length > 0 ? (
+                            <div className="relative h-[70vh] overflow-auto border rounded-lg">
+                                <WeeklySchedule classes={filteredClassesForWeekly} />
+                            </div>
+                        ) : (
+                            <div className="text-center py-16">
+                                <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <h3 className="mt-4 text-lg font-medium font-headline">No se encontraron clases</h3>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Intenta ajustar tus filtros para encontrar otras clases.
+                                </p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </TabsContent>
             <TabsContent value="mensual">
-                <MonthlyCalendar classes={filteredClassesForMonthly} />
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Calendario de Eventos</CardTitle>
+                        <CardDescription>Talleres, clases únicas y alquileres de sala. Haz clic en un día para ver los eventos programados.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <MonthlyCalendar classes={filteredClassesForMonthly} />
+                    </CardContent>
+                </Card>
             </TabsContent>
         </Tabs>
     </div>
