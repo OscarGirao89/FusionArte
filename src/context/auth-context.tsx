@@ -48,12 +48,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserRole(storedRole);
         setUserId(userProfile?.id || null);
         setCurrentUser(fullUser || null);
-      } else if (pathname !== '/login') {
-         router.push('/login');
+      } else {
+        // Allow unauthenticated access to login and the main page
+        const publicPaths = ['/login', '/'];
+        if (!publicPaths.includes(pathname)) {
+            router.push('/login');
+        }
       }
     } catch (error) {
       console.error("Could not access localStorage", error);
-       if (pathname !== '/login') {
+      const publicPaths = ['/login', '/'];
+      if (!publicPaths.includes(pathname)) {
          router.push('/login');
       }
     } finally {
@@ -63,7 +68,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (userRole && pathname === '/login') {
-      router.push('/');
+      if (userRole === 'student') {
+        router.push('/profile');
+      } else {
+        router.push('/admin/users');
+      }
     }
   }, [userRole, pathname, router]);
 
@@ -75,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUserRole(role);
       setUserId(userProfile?.id || null);
       setCurrentUser(fullUser || null);
-      router.push('/');
+      // The redirect is now handled in the login page component
     } catch (error) {
        console.error("Could not access localStorage", error);
     }
@@ -145,13 +154,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return <div className="flex h-screen w-full items-center justify-center"><Skeleton className="h-20 w-20 rounded-full" /></div>
   }
 
-  if (!userRole && pathname !== '/login') {
-    return null;
-  }
+  // This logic is now handled more granularly by the effect hook and layout component
+  // if (!userRole && pathname !== '/login' && pathname !== '/') {
+  //   return null;
+  // }
   
-  if (userRole && pathname === '/login') {
-    return null;
-  }
+  // if (userRole && pathname === '/login') {
+  //   return null;
+  // }
 
   return (
     <AuthContext.Provider value={value}>

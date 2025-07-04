@@ -18,7 +18,13 @@ export default function LoginPage() {
 
   const handleLogin = () => {
     login(selectedRole);
-    router.push('/');
+    if (selectedRole === 'student') {
+      router.push('/profile');
+    } else if (selectedRole === 'teacher') {
+      router.push('/my-classes');
+    } else {
+      router.push('/admin/users'); // A sensible default for admin roles
+    }
   };
 
   return (

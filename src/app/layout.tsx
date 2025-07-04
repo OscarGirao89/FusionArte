@@ -11,10 +11,17 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
 
-  if (pathname === '/login') {
-    return <>{children}</>
+  // No sidebar for login page, or for the main page if user is not authenticated
+  if (pathname === '/login' || (pathname === '/' && !isAuthenticated)) {
+    return (
+      <>
+        {children}
+        <Toaster />
+      </>
+    );
   }
 
+  // For all other cases, show the sidebar layout
   return (
     <SidebarProvider>
       <Sidebar>

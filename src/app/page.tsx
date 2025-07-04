@@ -1,244 +1,148 @@
-
 'use client';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Overview } from '@/components/dashboard/overview';
-import { UpcomingClasses } from '@/components/dashboard/upcoming-classes';
-import { SmartSuggestion } from '@/components/dashboard/smart-suggestion';
-import { HandHelping, CalendarClock, Bot, Users, BarChart } from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
-import { danceClasses, danceStyles, users as allUsers } from '@/lib/data';
-import { userProfiles } from '@/components/layout/main-nav';
+import { users } from '@/lib/data';
+import { Award, Music, Users, Heart } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 
-function StudentDashboard() {
-  const popularStylesData = [
-    { name: 'Salsa', total: 420 },
-    { name: 'Bachata', total: 510 },
-    { name: 'M-Zouk', total: 280 },
-    { name: 'Aeroyoga', total: 150 },
-    { name: 'Elongación', total: 350 },
-  ];
-
-  const popularStylesConfig = {
-    total: {
-      label: 'Inscripciones',
-      color: 'hsl(var(--chart-2))',
-    },
-  };
+export default function HomePage() {
+  const featuredTeachers = users.filter(u => (u.role === 'Profesor' || u.role === 'Socio') && u.isVisibleToStudents).slice(0, 3);
 
   return (
-    <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Membresía</CardTitle>
-            <HandHelping className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Plan Oro</div>
-            <p className="text-xs text-muted-foreground">Expira el 24 de Dic, 2024</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clases Restantes</CardTitle>
-            <CalendarClock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground">de tu paquete de 10 clases</p>
-          </CardContent>
-        </Card>
-        <Card className="col-span-1 md:col-span-2 lg:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Asistente IA</CardTitle>
-            <Bot className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">¿Necesitas Ayuda?</div>
-            <p className="text-xs text-muted-foreground">Obtén sugerencias de clases</p>
-          </CardContent>
-        </Card>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-full lg:col-span-4">
-          <CardHeader>
-            <CardTitle className="font-headline">Popularidad de Estilos</CardTitle>
-            <CardDescription>
-              Inscripciones totales por estilo de baile este año.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <Overview data={popularStylesData} config={popularStylesConfig} categoryKey="name" dataKey="total"/>
-          </CardContent>
-        </Card>
-        <Card className="col-span-full lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="font-headline">Próximas Clases</CardTitle>
-            <CardDescription>Tienes 3 clases esta semana.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UpcomingClasses />
-          </CardContent>
-        </Card>
-        <Card className="col-span-full">
-            <CardHeader>
-                <CardTitle className="font-headline flex items-center gap-2">
-                    <Bot size={24} className="text-primary"/>
-                    Sugerencias Inteligentes de Clases
-                </CardTitle>
-                <CardDescription>
-                    ¿No puedes asistir a una clase? Encuentra la alternativa perfecta con nuestro asistente de IA.
-                    Solo dinos tus preferencias y el conflicto, y nosotros haremos el resto.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <SmartSuggestion />
-            </CardContent>
-        </Card>
-      </div>
-    </>
-  )
-}
+    <div className="flex-1 bg-background">
+      {/* Hero Section */}
+      <section className="relative h-[70vh] min-h-[450px] flex items-center justify-center text-center text-white bg-gray-800">
+        <Image
+          src="https://placehold.co/1200x800.png"
+          alt="Pareja bailando apasionadamente"
+          layout="fill"
+          objectFit="cover"
+          className="opacity-40"
+          priority
+          data-ai-hint="couple dancing"
+        />
+        <div className="relative z-10 p-4">
+          <h1 className="text-5xl md:text-7xl font-bold font-headline drop-shadow-lg">
+            Donde la Pasión se Convierte en Arte
+          </h1>
+          <p className="mt-4 text-xl md:text-2xl max-w-3xl mx-auto drop-shadow-md">
+            Descubre un mundo de ritmo, conexión y expresión en FusionArte. Tu viaje en el baile comienza aquí.
+          </p>
+          <div className="mt-8 flex justify-center gap-4">
+            <Button asChild size="lg">
+              <Link href="/schedule">Ver Clases</Link>
+            </Button>
+            <Button asChild size="lg" variant="secondary">
+              <Link href="/memberships">Únete Ahora</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
 
-function TeacherDashboard() {
-  const { userRole } = useAuth();
-  const currentUserId = userRole ? userProfiles[userRole]?.id : null;
-  const myClasses = danceClasses.filter(c => c.teacherIds.includes(currentUserId!));
+      {/* Features Section */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold font-headline">¿Por Qué Elegir FusionArte?</h2>
+            <p className="text-lg text-muted-foreground mt-2">Más que una escuela, somos una comunidad.</p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Card className="text-center">
+              <CardHeader>
+                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                  <Award className="h-10 w-10 text-primary" />
+                </div>
+                <CardTitle className="mt-4 font-headline">Profesores Expertos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Aprende de instructores apasionados y reconocidos en su campo.</p>
+              </CardContent>
+            </Card>
+            <Card className="text-center">
+              <CardHeader>
+                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                  <Music className="h-10 w-10 text-primary" />
+                </div>
+                <CardTitle className="mt-4 font-headline">Variedad de Estilos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Desde Salsa y Bachata hasta Hip Hop y Aeroyoga. ¡Encuentra tu ritmo!</p>
+              </CardContent>
+            </Card>
+            <Card className="text-center">
+              <CardHeader>
+                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                  <Users className="h-10 w-10 text-primary" />
+                </div>
+                <CardTitle className="mt-4 font-headline">Comunidad Vibrante</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Únete a una familia de bailarines que comparten tu pasión y energía.</p>
+              </CardContent>
+            </Card>
+             <Card className="text-center">
+              <CardHeader>
+                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                  <Heart className="h-10 w-10 text-primary" />
+                </div>
+                <CardTitle className="mt-4 font-headline">Ambiente Acogedor</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Un espacio seguro y divertido para aprender, crecer y expresarte.</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+      
+      {/* Featured Teachers Section */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold font-headline">Nuestros Instructores</h2>
+             <p className="text-lg text-muted-foreground mt-2">Conoce a algunos de los talentos que te guiarán.</p>
+          </div>
+           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {featuredTeachers.map(teacher => (
+               <Card key={teacher.id} className="overflow-hidden text-center group">
+                  <div className="relative h-64 w-full">
+                    <Image
+                      src={teacher.avatar}
+                      alt={`Foto de ${teacher.name}`}
+                      layout="fill"
+                      objectFit="cover"
+                      className="transition-transform duration-300 group-hover:scale-105"
+                      data-ai-hint="portrait professional"
+                    />
+                  </div>
+                  <CardContent className="p-6">
+                      <h3 className="font-headline text-xl font-bold">{teacher.name}</h3>
+                      <p className="text-sm text-primary font-semibold">{teacher.specialties?.join(', ')}</p>
+                  </CardContent>
+               </Card>
+            ))}
+          </div>
+          <div className="text-center mt-12">
+              <Button asChild size="lg" variant="outline">
+                  <Link href="/teachers">Conoce a Todo el Equipo</Link>
+              </Button>
+          </div>
+        </div>
+      </section>
 
-  const classesByDay = myClasses.reduce((acc, currentClass) => {
-      const day = currentClass.day;
-      if (!acc[day]) {
-          acc[day] = 0;
-      }
-      acc[day]++;
-      return acc;
-  }, {} as Record<string, number>);
-  
-  const daysOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-  
-  const teacherPerformanceData = daysOrder.map(day => ({
-      name: day.substring(0,3),
-      total: classesByDay[day] || 0
-  }));
-
-  const teacherChartConfig = {
-      total: { label: "Clases", color: "hsl(var(--chart-1))" },
-  };
-
-  return (
-     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-full lg:col-span-4">
-          <CardHeader>
-            <CardTitle className="font-headline">Tus Clases de la Semana</CardTitle>
-            <CardDescription>
-              Número de clases que impartes cada día.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <Overview data={teacherPerformanceData} config={teacherChartConfig} categoryKey="name" dataKey="total" />
-          </CardContent>
-        </Card>
-        <Card className="col-span-full lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="font-headline">Tus Próximas Clases</CardTitle>
-            <CardDescription>Estas son algunas de tus próximas clases.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UpcomingClasses />
-          </CardContent>
-        </Card>
-      </div>
-  )
-}
-
-function AdminDashboard() {
-   const teacherData = allUsers.filter(u => u.role === 'Profesor' || u.role === 'Socio').map(teacher => {
-        return {
-            name: teacher.name.split(' ')[0], // Use first name
-            total: danceClasses.filter(c => c.teacherIds.includes(teacher.id) && c.status === 'completed').length,
-        }
-    });
-   const teacherPerformanceConfig = {
-      total: { label: 'Clases', color: 'hsl(var(--primary))' },
-    };
-
-  return (
-    <>
-       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Estudiantes Activos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">125</div>
-            <p className="text-xs text-muted-foreground">+5 que el mes pasado</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clases Programadas</CardTitle>
-            <CalendarClock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">48</div>
-            <p className="text-xs text-muted-foreground">para esta semana</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Asistente IA</CardTitle>
-            <Bot className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Listo para ayudar</div>
-            <p className="text-xs text-muted-foreground">Gestiona la academia</p>
-          </CardContent>
-        </Card>
-      </div>
-      <div className="grid gap-4 md:grid-cols-1">
-        <Card className="col-span-full">
-          <CardHeader>
-            <CardTitle className="font-headline">Rendimiento General de Profesores</CardTitle>
-            <CardDescription>
-              Clases mensuales completadas por cada profesor.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <Overview data={teacherData} config={teacherPerformanceConfig} categoryKey="name" dataKey="total" />
-          </CardContent>
-        </Card>
-      </div>
-    </>
-  )
-}
-
-export default function DashboardPage() {
-  const { userRole } = useAuth();
-
-  const renderDashboard = () => {
-    switch(userRole) {
-      case 'student':
-        return <StudentDashboard />;
-      case 'teacher':
-        return <TeacherDashboard />;
-      case 'admin':
-        return <AdminDashboard />;
-      case 'administrativo':
-        return <AdminDashboard />; // Same as admin for now
-      case 'socio':
-        return <AdminDashboard />; // Same as admin for now
-      default:
-        return <div>Cargando...</div>;
-    }
-  }
-
-  return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight font-headline">Panel Principal</h1>
-      </div>
-      {renderDashboard()}
+      {/* CTA Section */}
+      <section className="py-20 bg-primary text-primary-foreground">
+         <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold font-headline">¿Listo/a para Dar el Primer Paso?</h2>
+            <p className="text-lg mt-2 max-w-2xl mx-auto">
+                Tu aventura en el mundo del baile está a solo un clic de distancia. ¡Te esperamos en la pista!
+            </p>
+            <Button asChild size="lg" variant="secondary" className="mt-8">
+              <Link href="/memberships">Ver Planes y Membresías</Link>
+            </Button>
+         </div>
+      </section>
     </div>
   );
 }

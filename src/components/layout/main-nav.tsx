@@ -40,29 +40,29 @@ import { LogoIcon } from '@/components/icons/logo-icon';
 
 const navItems = {
   student: [
-    { href: '/', label: 'Panel Principal', icon: LayoutDashboard },
+    { href: '/', label: 'Principal', icon: LayoutDashboard },
     { href: '/profile', label: 'Mi Perfil', icon: User },
     { href: '/schedule', label: 'Clases / Horarios', icon: Calendar },
     { href: '/memberships', label: 'Membresías', icon: CreditCard },
     { href: '/teachers', label: 'Profesores', icon: Users },
   ],
   teacher: [
-    { href: '/', label: 'Panel Principal', icon: LayoutDashboard },
+    { href: '/', label: 'Principal', icon: LayoutDashboard },
     { href: '/schedule', label: 'Clases / Horarios', icon: Calendar },
     { href: '/my-classes', label: 'Mis Clases', icon: BookMarked },
   ],
   admin: [
-    { href: '/', label: 'Panel Principal', icon: LayoutDashboard },
+    { href: '/', label: 'Principal', icon: LayoutDashboard },
     { href: '/schedule', label: 'Clases / Horarios', icon: Calendar },
     { href: '/memberships', label: 'Membresías', icon: CreditCard },
     { href: '/teachers', label: 'Profesores', icon: Users },
   ],
   administrativo: [
-    { href: '/', label: 'Panel Principal', icon: LayoutDashboard },
+    { href: '/', label: 'Principal', icon: LayoutDashboard },
     { href: '/admin/payments', label: 'Pagos de Alumnos', icon: Wallet },
   ],
   socio: [
-    { href: '/', label: 'Panel Principal', icon: LayoutDashboard },
+    { href: '/', label: 'Principal', icon: LayoutDashboard },
     { href: '/schedule', label: 'Clases / Horarios', icon: Calendar },
     { href: '/memberships', label: 'Membresías', icon: CreditCard },
     { href: '/teachers', label: 'Profesores', icon: Users },
@@ -90,7 +90,7 @@ export const userProfiles: Record<UserRole, { id: number; name: string; role: st
 export function MainNav() {
   const pathname = usePathname();
   const { open, isMobile } = useSidebar();
-  const { userRole, logout } = useAuth();
+  const { userRole, logout, isAuthenticated } = useAuth();
 
   const currentNavItems = userRole ? navItems[userRole] : [];
   const currentUser = userRole ? userProfiles[userRole] : null;
@@ -101,6 +101,10 @@ export function MainNav() {
         <span className="font-bold text-lg font-headline">FusionArte</span>
     </div>
   )
+  
+  if (!isAuthenticated) {
+      return null; // Don't show nav for unauthenticated users, layout will handle it.
+  }
 
   return (
     <>
