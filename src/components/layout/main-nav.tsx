@@ -23,7 +23,11 @@ const publicNav = [
 
 const studentNav = [
     { href: '/profile', label: 'Mi Perfil' },
-    ...publicNav.filter(item => !['/', '/about', '/contact'].includes(item.href)),
+    { href: '/schedule', label: 'Clases / Horarios' },
+    { href: '/memberships', label: 'Membresías' },
+    { href: '/teachers', label: 'Profesores' },
+    { href: '/about', label: 'Acerca de Nosotros' },
+    { href: '/contact', label: 'Contacto' },
 ];
 
 const teacherNav = [
@@ -187,7 +191,7 @@ export function MainNav() {
             break;
         case 'admin':
         case 'socio':
-            mainNavItems = publicNav.filter(item => !['/about', '/contact'].includes(item.href)); // Admins see a more focused nav
+            mainNavItems = []; // Admins/Partners only see management links
             managementNavItems = adminManagementNav;
             hasManagementDropdown = true;
             break;
