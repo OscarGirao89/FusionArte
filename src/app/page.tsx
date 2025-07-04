@@ -1,6 +1,7 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { users } from '@/lib/data';
 import { Award, Music, Users, Heart } from 'lucide-react';
 import Image from 'next/image';
@@ -12,31 +13,50 @@ export default function HomePage() {
   return (
     <div className="flex-1 bg-background">
       {/* Hero Section */}
-      <section className="relative h-[70vh] min-h-[450px] flex items-center justify-center text-center text-white bg-gray-800">
-        <Image
-          src="https://placehold.co/1200x800.png"
-          alt="Pareja bailando apasionadamente"
-          layout="fill"
-          objectFit="cover"
-          className="opacity-40"
-          priority
-          data-ai-hint="couple dancing"
-        />
-        <div className="relative z-10 p-4">
-          <h1 className="text-5xl md:text-7xl font-bold font-headline drop-shadow-lg">
-            Donde la Pasión se Convierte en Arte
-          </h1>
-          <p className="mt-4 text-xl md:text-2xl max-w-3xl mx-auto drop-shadow-md">
-            Descubre un mundo de ritmo, conexión y expresión en FusionArte. Tu viaje en el baile comienza aquí.
-          </p>
-          <div className="mt-8 flex justify-center gap-4">
-            <Button asChild size="lg">
-              <Link href="/schedule">Ver Clases</Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/memberships">Únete Ahora</Link>
-            </Button>
+      <section className="relative w-full overflow-hidden bg-slate-50 dark:bg-slate-900" style={{ minHeight: 'calc(100vh - 80px)' }}>
+        <div className="container mx-auto h-full px-4">
+          <div className="relative grid md:grid-cols-2 items-center h-full" style={{ minHeight: 'calc(100vh - 80px)' }}>
+            
+            <div className="absolute top-1/2 left-0 w-3/4 h-[90%] -translate-y-1/2 bg-primary/10 rounded-full blur-3xl" 
+                 style={{ clipPath: 'ellipse(60% 75% at 20% 50%)'}} />
+
+            <div className="relative z-10 py-16 md:py-0">
+              <p className="font-semibold text-primary uppercase tracking-widest">
+                Evento Especial: 24-28 Julio
+              </p>
+              <h1 className="mt-2 text-4xl sm:text-5xl lg:text-7xl font-extrabold font-sans text-gray-900 dark:text-white leading-tight">
+                Urban Dance Masterclass
+              </h1>
+              <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-lg">
+                Eleva tu nivel con nuestros instructores de clase mundial en un evento intensivo de 5 días. Plazas limitadas.
+              </p>
+              <div className="mt-8">
+                <Button size="lg" asChild>
+                  <Link href="/schedule">Inscríbete Ahora</Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative h-full w-full hidden md:flex items-end justify-center">
+              <div className="absolute bottom-0 right-0 w-[85%] h-[95%]">
+                <Image
+                    src="https://placehold.co/800x1200.png"
+                    alt="Bailarina de danza urbana"
+                    layout="fill"
+                    objectFit="contain"
+                    objectPosition="bottom right"
+                    data-ai-hint="dancer urban"
+                />
+              </div>
+            </div>
           </div>
+        </div>
+        <div className="absolute bottom-10 right-[35%] z-0 hidden lg:block text-slate-300/70 dark:text-slate-700/70">
+            <svg width="250" height="60" viewBox="0 0 250 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 30 C 31.25 15, 62.5 15, 93.75 30 S 156.25 45, 187.5 30 S 250 15, 250 15" stroke="currentColor" strokeWidth="2" fill="none"/>
+                <path d="M0 40 C 31.25 25, 62.5 25, 93.75 40 S 156.25 55, 187.5 40 S 250 25, 250 25" stroke="currentColor" strokeWidth="2" fill="none"/>
+                <path d="M0 50 C 31.25 35, 62.5 35, 93.75 50 S 156.25 65, 187.5 50 S 250 35, 250 35" stroke="currentColor" strokeWidth="2" fill="none"/>
+            </svg>
         </div>
       </section>
 

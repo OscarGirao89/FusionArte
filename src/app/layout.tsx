@@ -6,13 +6,16 @@ import { MainNav } from '@/components/layout/main-nav';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { usePathname } from 'next/navigation';
+import { PublicHeader } from '@/components/layout/public-header';
+import { PublicFooter } from '@/components/layout/public-footer';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
+  const publicPaths = ['/', '/schedule', '/memberships', '/teachers'];
+  const isPublicPath = publicPaths.includes(pathname);
 
-  // No sidebar for login page, or for the main page if user is not authenticated
-  if (pathname === '/login' || (pathname === '/' && !isAuthenticated)) {
+  if (pathname === '/login') {
     return (
       <>
         {children}
@@ -21,18 +24,38 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // For all other cases, show the sidebar layout
+  if (isAuthenticated) {
+    return (
+      <SidebarProvider>
+        <Sidebar>
+          <MainNav />
+        </Sidebar>
+        <SidebarInset>
+          {children}
+        </SidebarInset>
+        <Toaster />
+      </SidebarProvider>
+    );
+  }
+  
+  if (isPublicPath) {
+    return (
+       <div className="flex flex-col min-h-screen bg-background">
+          <PublicHeader />
+          <main className="flex-1">{children}</main>
+          <PublicFooter />
+          <Toaster />
+        </div>
+    )
+  }
+
+  // Fallback for any other non-public, unauthenticated route, though AuthProvider should redirect.
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <MainNav />
-      </Sidebar>
-      <SidebarInset>
+      <>
         {children}
         <Toaster />
-      </SidebarInset>
-    </SidebarProvider>
-  );
+      </>
+    );
 }
 
 export default function RootLayout({
