@@ -129,7 +129,6 @@ export default function NotesAndTasksPage() {
     const [tasks, setTasks] = useState<TaskNote[]>(initialTaskNotes);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<TaskNote | null>(null);
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
     const { toast } = useToast();
 
     const form = useForm<TaskNoteFormValues>({
@@ -194,52 +193,41 @@ export default function NotesAndTasksPage() {
     const handleStatusChange = (taskId: string, status: TaskStatus) => {
         setTasks(tasks.map(t => t.id === taskId ? { ...t, status } : t));
     };
-    
-    const filteredTasks = useMemo(() => {
-        if (!selectedDate) return tasks;
-        return tasks.filter(task => task.dueDate && isSameDay(parseISO(task.dueDate), selectedDate));
-    }, [tasks, selectedDate]);
-
 
     const columns: Record<TaskStatus, TaskNote[]> = {
-        todo: filteredTasks.filter(t => t.status === 'todo'),
-        in_progress: filteredTasks.filter(t => t.status === 'in_progress'),
-        done: filteredTasks.filter(t => t.status === 'done'),
+        todo: tasks.filter(t => t.status === 'todo'),
+        in_progress: tasks.filter(t => t.status === 'in_progress'),
+        done: tasks.filter(t => t.status === 'done'),
     };
     
     const calendarModifiers = useMemo(() => {
-        const highPriorityDates: Date[] = [];
-        const mediumPriorityDates: Date[] = [];
-        const lowPriorityDates: Date[] = [];
+        const modifiers: { high: Date[], medium: Date[], low: Date[] } = { high: [], medium: [], low: [] };
+        const datesWithTasks: Record<string, TaskPriority> = {};
 
         tasks.forEach(task => {
             if (task.dueDate) {
-                const date = parseISO(task.dueDate);
-                if (task.priority === 'high') {
-                    highPriorityDates.push(date);
-                } else if (task.priority === 'medium') {
-                    mediumPriorityDates.push(date);
-                } else {
-                    lowPriorityDates.push(date);
+                const dateStr = task.dueDate;
+                const priority = task.priority || 'low';
+
+                if (!datesWithTasks[dateStr] || (priority === 'high') || (priority === 'medium' && datesWithTasks[dateStr] === 'low')) {
+                    datesWithTasks[dateStr] = priority;
                 }
             }
         });
 
-        return {
-            high: highPriorityDates,
-            medium: mediumPriorityDates,
-            low: lowPriorityDates,
-            hasTasks: [...highPriorityDates, ...mediumPriorityDates, ...lowPriorityDates],
-        };
+        Object.entries(datesWithTasks).forEach(([dateStr, priority]) => {
+            const date = parseISO(dateStr);
+            modifiers[priority].push(date);
+        });
+        
+        return modifiers;
     }, [tasks]);
 
     const calendarModifierClassNames = {
-        hasTasks: "has-tasks", 
-        high: "priority-high",
-        medium: "priority-medium",
-        low: "priority-low",
+        high: "priority-high-day",
+        medium: "priority-medium-day",
+        low: "priority-low-day",
     };
-
 
     return (
         <div className="p-4 md:p-8">
@@ -269,29 +257,17 @@ export default function NotesAndTasksPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div>
                             <CardTitle className="flex items-center gap-2 font-headline"><CalendarIconComponent className="h-6 w-6" /> Calendario de Vencimientos</CardTitle>
-                            <CardDescription>Visualiza las tareas por su fecha de vencimiento. Los días con tareas están marcados.</CardDescription>
+                            <CardDescription>Visualiza las tareas por su fecha de vencimiento. Los días están marcados por prioridad.</CardDescription>
                         </div>
-                        {selectedDate && <Button variant="outline" onClick={() => setSelectedDate(undefined)}>Limpiar selección</Button>}
                     </div>
                 </CardHeader>
                 <CardContent className="flex justify-center">
                      <Calendar
                         mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
                         className="rounded-md border p-4"
                         locale={es}
                         modifiers={calendarModifiers}
                         modifiersClassNames={calendarModifierClassNames}
-                        classNames={{
-                            day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-full",
-                            day_today: "bg-accent text-accent-foreground rounded-full",
-                            day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 rounded-full relative",
-                            day_modifier_priority_high: "[&:not([aria-selected])]:after:bg-red-500",
-                            day_modifier_priority_medium: "[&:not([aria-selected])]:after:bg-yellow-500",
-                            day_modifier_priority_low: "[&:not([aria-selected])]:after:bg-blue-500",
-                            day_modifier_hasTasks: "after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full",
-                        }}
                      />
                 </CardContent>
             </Card>
