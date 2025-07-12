@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, MoreHorizontal, Edit, Trash2, Tag, User, Circle, CheckCircle, Clock, CalendarIcon as CalendarDaysIcon, Users as UsersIcon, Bell, Calendar as CalendarIconComponent } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
