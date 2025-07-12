@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { users as initialUsers } from '@/lib/data';
 import type { User } from '@/lib/types';
+import { useAuth } from '@/context/auth-context';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -84,6 +85,21 @@ export default function AdminUsersPage() {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const { toast } = useToast();
     const router = useRouter();
+    const { userRole } = useAuth();
+    
+    // Permission flags
+    const canCreateUser = userRole === 'admin' || userRole === 'socio';
+    const canDeleteUser = userRole === 'admin' || userRole === 'socio';
+    const canEditUser = (userToEdit: User) => {
+        if (userRole === 'admin' || userRole === 'socio') {
+            return true;
+        }
+        if (userRole === 'administrativo') {
+            return userToEdit.role === 'Estudiante' || userToEdit.role === 'Profesor';
+        }
+        return false;
+    };
+
 
     const form = useForm<UserFormValues>({
         resolver: zodResolver(userFormSchema),
@@ -218,10 +234,12 @@ export default function AdminUsersPage() {
                     <ShieldCheck className="mr-2 h-4 w-4" />
                     Gestionar Roles
                 </Button>
-                <Button onClick={() => handleOpenDialog()}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Añadir Usuario
-                </Button>
+                {canCreateUser && (
+                    <Button onClick={() => handleOpenDialog()}>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Añadir Usuario
+                    </Button>
+                )}
             </div>
         </div>
       <Card>
@@ -282,28 +300,30 @@ export default function AdminUsersPage() {
                               </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleOpenDialog(user)}>
+                              <DropdownMenuItem onClick={() => handleOpenDialog(user)} disabled={!canEditUser(user)}>
                                   <Pencil className="mr-2 h-4 w-4" /> Editar
                               </DropdownMenuItem>
-                               <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                     <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
-                                      <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                                    </DropdownMenuItem>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Esta acción no se puede deshacer. Esto eliminará permanentemente al usuario.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDelete(user.id)}>Eliminar</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                               {canDeleteUser && (
+                                <AlertDialog>
+                                   <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                       <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                     </DropdownMenuItem>
+                                   </AlertDialogTrigger>
+                                   <AlertDialogContent>
+                                     <AlertDialogHeader>
+                                       <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                       <AlertDialogDescription>
+                                         Esta acción no se puede deshacer. Esto eliminará permanentemente al usuario.
+                                       </AlertDialogDescription>
+                                     </AlertDialogHeader>
+                                     <AlertDialogFooter>
+                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                       <AlertDialogAction onClick={() => handleDelete(user.id)}>Eliminar</AlertDialogAction>
+                                     </AlertDialogFooter>
+                                   </AlertDialogContent>
+                                 </AlertDialog>
+                               )}
                           </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
