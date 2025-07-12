@@ -178,6 +178,15 @@ export default function ProfilePage() {
     
     const watchedAvatar = form.watch('avatar');
 
+    const handleEditToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        if (isEditing) {
+            form.handleSubmit(onSubmit)();
+        } else {
+            setIsEditing(true);
+        }
+    }
+
     // Student View
     if (userRole === 'student') {
         return (
@@ -274,7 +283,7 @@ export default function ProfilePage() {
                                         <CardHeader>
                                             <div className="flex w-full items-start justify-between">
                                                 <CardTitle className="font-headline text-xl">Mis Datos</CardTitle>
-                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditing(!isEditing)}>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7" type="button" onClick={handleEditToggle}>
                                                     {isEditing ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
                                                     <span className="sr-only">{isEditing ? 'Guardar' : 'Editar'}</span>
                                                 </Button>
@@ -306,11 +315,17 @@ export default function ProfilePage() {
                                                 )}
                                             </div>
                                         </CardContent>
-                                        {isEditing && ( <CardFooter><Button type="submit" form="profile-edit-form" className="w-full">Guardar Cambios</Button></CardFooter> )}
+                                        {isEditing && (
+                                            <CardFooter>
+                                                <Button type="submit" className="w-full">
+                                                    Guardar Cambios
+                                                </Button>
+                                            </CardFooter>
+                                        )}
                                     </Card>
                                 </div>
                                 <div className="lg:col-span-2">
-                                    <Card className="flex flex-col">
+                                    <Card className="flex flex-col h-full">
                                         <CardHeader>
                                             <CardTitle className="flex items-center gap-2 font-headline"><TicketPercent className="h-6 w-6 text-primary"/> Detalles de Membresía</CardTitle>
                                             <CardDescription>El estado actual de tu plan y pagos.</CardDescription>
@@ -360,7 +375,7 @@ export default function ProfilePage() {
                         <CardHeader>
                             <div className="flex w-full items-start justify-between">
                                 <CardTitle className="font-headline">Mis Datos</CardTitle>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditing(!isEditing)}>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" type="button" onClick={handleEditToggle}>
                                     {isEditing ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
                                     <span className="sr-only">{isEditing ? 'Guardar' : 'Editar'}</span>
                                 </Button>
