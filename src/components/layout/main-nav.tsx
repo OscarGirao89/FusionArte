@@ -94,7 +94,7 @@ function ManagementDropdown({ items }: { items: { href: string, label: string, i
 }
 
 function UserMenu() {
-    const { userRole, logout, currentUser } = useAuth();
+    const { logout, currentUser } = useAuth();
     const router = useRouter();
 
     if (!currentUser) return null;
@@ -117,7 +117,6 @@ function UserMenu() {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem onClick={() => router.push('/profile')}><User className="mr-2 h-4 w-4"/> Mi Perfil</DropdownMenuItem>
-                    {(userRole === 'teacher' || userRole === 'socio') && <DropdownMenuItem onClick={() => router.push('/my-classes')}><BookMarked className="mr-2 h-4 w-4"/> Mis Clases</DropdownMenuItem>}
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
