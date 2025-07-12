@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import { useState, useMemo } from 'react';
@@ -129,39 +130,68 @@ function WeeklySchedule({ classes }: { classes: DanceClass[] }) {
         return daysOfWeek.indexOf(day) + 2;
     }
 
-    return (
-        <div className="grid grid-cols-[auto_repeat(7,minmax(120px,1fr))] min-w-[900px] relative">
-            {/* Headers */}
-            <div className="sticky top-0 z-20 col-start-1 row-start-1 bg-background" />
-            {daysOfWeek.map((day, i) => (
-                <h2 key={day} className="font-headline text-center font-bold sticky top-0 py-2 z-20 bg-background/90 backdrop-blur-sm" style={{ gridColumn: i + 2 }}>
-                    {day}
-                </h2>
-            ))}
-            
-            {/* Time Slots and Grid Lines */}
-            {timeSlots.map((time, index) => (
-               <React.Fragment key={time}>
-                 <div className="row-start-auto col-start-1 h-12 flex items-start -mt-2.5 pr-2 sticky left-0 bg-background/90 backdrop-blur-sm z-10">
-                    <span className="text-xs text-muted-foreground">{time}</span>
-                </div>
-                 <div className="row-start-auto col-start-2 col-span-7 border-b border-dashed" style={{ gridRow: index + 2 }}/>
-               </React.Fragment>
-            ))}
+    const classesByDay = useMemo(() => {
+        const grouped: Record<string, DanceClass[]> = {};
+        for (const day of daysOfWeek) {
+            grouped[day] = recurringClasses
+                .filter(c => c.day === day)
+                .sort((a, b) => a.time.localeCompare(b.time));
+        }
+        return grouped;
+    }, [recurringClasses]);
 
-            {/* Classes */}
-            {recurringClasses.map(c => {
-                const gridRowStart = timeToRow(c.time);
-                const gridRowEnd = `span ${durationToSpan(c.duration)}`;
-                const gridColumn = dayToColumn(c.day);
-                if (gridColumn < 2) return null;
-                return (
-                    <div key={c.id} style={{ gridRow: `${gridRowStart} / ${gridRowEnd}`, gridColumn }} className="p-0 z-10">
-                         <TimeGridClassCard danceClass={c} />
+    return (
+        <>
+            {/* Mobile View */}
+            <div className="md:hidden space-y-6">
+                {daysOfWeek.map(day => (
+                    classesByDay[day].length > 0 && (
+                        <div key={day}>
+                            <h3 className="font-bold text-lg mb-2 font-headline">{day}</h3>
+                            <div className="space-y-2">
+                                {classesByDay[day].map(c => (
+                                    <ClassListCard key={c.id} danceClass={c} onEnrollRequest={() => {}} />
+                                ))}
+                            </div>
+                        </div>
+                    )
+                ))}
+            </div>
+
+            {/* Desktop View */}
+            <div className="hidden md:grid grid-cols-[auto_repeat(7,minmax(120px,1fr))] min-w-[900px] relative">
+                {/* Headers */}
+                <div className="sticky top-0 z-20 col-start-1 row-start-1 bg-background" />
+                {daysOfWeek.map((day, i) => (
+                    <h2 key={day} className="font-headline text-center font-bold sticky top-0 py-2 z-20 bg-background/90 backdrop-blur-sm" style={{ gridColumn: i + 2 }}>
+                        {day}
+                    </h2>
+                ))}
+                
+                {/* Time Slots and Grid Lines */}
+                {timeSlots.map((time, index) => (
+                <React.Fragment key={time}>
+                    <div className="row-start-auto col-start-1 h-12 flex items-start -mt-2.5 pr-2 sticky left-0 bg-background/90 backdrop-blur-sm z-10">
+                        <span className="text-xs text-muted-foreground">{time}</span>
                     </div>
-                );
-            })}
-        </div>
+                    <div className="row-start-auto col-start-2 col-span-7 border-b border-dashed" style={{ gridRow: index + 2 }}/>
+                </React.Fragment>
+                ))}
+
+                {/* Classes */}
+                {recurringClasses.map(c => {
+                    const gridRowStart = timeToRow(c.time);
+                    const gridRowEnd = `span ${durationToSpan(c.duration)}`;
+                    const gridColumn = dayToColumn(c.day);
+                    if (gridColumn < 2) return null;
+                    return (
+                        <div key={c.id} style={{ gridRow: `${gridRowStart} / ${gridRowEnd}`, gridColumn }} className="p-0 z-10">
+                            <TimeGridClassCard danceClass={c} />
+                        </div>
+                    );
+                })}
+            </div>
+        </>
     );
 }
 
@@ -258,6 +288,7 @@ export default function SchedulePage() {
   const [levelFilter, setLevelFilter] = useState('Todos');
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [classToEnroll, setClassToEnroll] = useState<DanceClass | null>(null);
+  const [activeTab, setActiveTab] = useState('clases');
 
   const { userRole, isAuthenticated, addStudentPayment, userId, updateStudentMembership } = useAuth();
   const { toast } = useToast();
@@ -392,8 +423,21 @@ export default function SchedulePage() {
         </AlertDialogContent>
       </AlertDialog>
 
-        <Tabs defaultValue="clases" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 md:w-fit mb-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="md:hidden mb-4">
+                <Label htmlFor="schedule-view-select">Vista</Label>
+                <Select value={activeTab} onValueChange={setActiveTab}>
+                    <SelectTrigger id="schedule-view-select">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="clases">Clases</SelectItem>
+                        <SelectItem value="semanal">Calendario Semanal</SelectItem>
+                        <SelectItem value="eventos">Calendario de Eventos</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <TabsList className="hidden md:grid w-full grid-cols-3 md:w-fit mb-8">
                 <TabsTrigger value="clases">Clases</TabsTrigger>
                 <TabsTrigger value="semanal">Calendario Semanal</TabsTrigger>
                 <TabsTrigger value="eventos">Calendario de Eventos</TabsTrigger>
@@ -431,7 +475,7 @@ export default function SchedulePage() {
                     <CardContent>
                         {filters('grid')}
                         {weeklyFilteredClasses.length > 0 ? (
-                            <div className="relative h-[70vh] overflow-auto border rounded-lg">
+                            <div className="relative md:h-[70vh] md:overflow-auto border rounded-lg">
                                 <WeeklySchedule classes={weeklyFilteredClasses} />
                             </div>
                         ) : (
