@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MoreHorizontal, Edit, Trash2, Tag, User, Circle, CheckCircle, Clock, CalendarIcon, Users as UsersIcon, Bell } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Tag, User, Circle, CheckCircle, Clock, CalendarIcon as CalendarDaysIcon, Users as UsersIcon, Bell, Calendar as CalendarIconComponent } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu';
@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
-import { format, parseISO }from 'date-fns';
+import { format, parseISO, isSameDay }from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -95,7 +95,7 @@ function TaskCard({ task, onEdit, onDelete, onStatusChange }: { task: TaskNote; 
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground pt-1">
             <Badge variant="outline">{task.category}</Badge>
             {task.priority && <Badge className={cn("border-none", priorityInfo.badgeClass)}>{priorityInfo.label}</Badge>}
-            {task.dueDate && <Badge variant="secondary" className="flex items-center gap-1"><CalendarIcon className="h-3 w-3" /> Vence: {format(parseISO(task.dueDate), 'PPP', { locale: es })}</Badge>}
+            {task.dueDate && <Badge variant="secondary" className="flex items-center gap-1"><CalendarDaysIcon className="h-3 w-3" /> Vence: {format(parseISO(task.dueDate), 'PPP', { locale: es })}</Badge>}
         </div>
       </CardHeader>
       <CardContent className="text-sm text-muted-foreground pb-4">
@@ -129,6 +129,7 @@ export default function NotesAndTasksPage() {
     const [tasks, setTasks] = useState<TaskNote[]>(initialTaskNotes);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<TaskNote | null>(null);
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
     const { toast } = useToast();
 
     const form = useForm<TaskNoteFormValues>({
@@ -193,12 +194,23 @@ export default function NotesAndTasksPage() {
     const handleStatusChange = (taskId: string, status: TaskStatus) => {
         setTasks(tasks.map(t => t.id === taskId ? { ...t, status } : t));
     };
+    
+    const filteredTasks = useMemo(() => {
+        if (!selectedDate) return tasks;
+        return tasks.filter(task => task.dueDate && isSameDay(parseISO(task.dueDate), selectedDate));
+    }, [tasks, selectedDate]);
+
 
     const columns: Record<TaskStatus, TaskNote[]> = {
-        todo: tasks.filter(t => t.status === 'todo'),
-        in_progress: tasks.filter(t => t.status === 'in_progress'),
-        done: tasks.filter(t => t.status === 'done'),
+        todo: filteredTasks.filter(t => t.status === 'todo'),
+        in_progress: filteredTasks.filter(t => t.status === 'in_progress'),
+        done: filteredTasks.filter(t => t.status === 'done'),
     };
+
+    const tasksWithDueDate = useMemo(() => {
+        return tasks.filter(task => !!task.dueDate).map(task => parseISO(task.dueDate!));
+    }, [tasks]);
+
 
     return (
         <div className="p-4 md:p-8">
@@ -211,14 +223,47 @@ export default function NotesAndTasksPage() {
                 {Object.entries(statusMap).map(([statusKey, {label, icon}]) => (
                     <div key={statusKey} className="bg-muted/50 p-4 rounded-lg">
                         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">{icon} {label} ({columns[statusKey as TaskStatus].length})</h2>
-                        <div className="space-y-4">
+                        <div className="space-y-4 h-[60vh] overflow-y-auto pr-2">
                             {columns[statusKey as TaskStatus].map(task => (
                                 <TaskCard key={task.id} task={task} onEdit={handleOpenDialog} onDelete={handleDelete} onStatusChange={handleStatusChange} />
                             ))}
+                             {columns[statusKey as TaskStatus].length === 0 && (
+                                <div className="text-center text-sm text-muted-foreground py-10">No hay tareas en esta columna.</div>
+                            )}
                         </div>
                     </div>
                 ))}
             </div>
+
+            <Card className="mt-8">
+                <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                            <CardTitle className="flex items-center gap-2 font-headline"><CalendarIconComponent className="h-6 w-6" /> Calendario de Vencimientos</CardTitle>
+                            <CardDescription>Visualiza las tareas por su fecha de vencimiento. Los días con tareas están marcados.</CardDescription>
+                        </div>
+                        {selectedDate && <Button variant="outline" onClick={() => setSelectedDate(undefined)}>Limpiar selección</Button>}
+                    </div>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                     <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        className="rounded-md border"
+                        locale={es}
+                        modifiers={{
+                           hasTask: tasksWithDueDate
+                        }}
+                         modifiersStyles={{
+                            hasTask: {
+                                border: '2px solid hsl(var(--primary))',
+                                borderRadius: '50%'
+                            }
+                        }}
+                     />
+                </CardContent>
+            </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-xl">
@@ -274,7 +319,7 @@ export default function NotesAndTasksPage() {
                                   <FormItem className="flex flex-col"><FormLabel>Fecha de Vencimiento</FormLabel>
                                     <Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                                       {field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Elegir fecha</span>)}
-                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                      <CalendarDaysIcon className="ml-auto h-4 w-4 opacity-50" />
                                     </Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
                                       <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/>
                                     </PopoverContent></Popover><FormMessage />
@@ -302,7 +347,7 @@ export default function NotesAndTasksPage() {
                                       <FormItem className="flex flex-col"><FormLabel>Fecha de Alerta</FormLabel>
                                         <Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                                           {field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Elegir fecha</span>)}
-                                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                          <CalendarDaysIcon className="ml-auto h-4 w-4 opacity-50" />
                                         </Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
                                           <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/>
                                         </PopoverContent></Popover><FormMessage />
