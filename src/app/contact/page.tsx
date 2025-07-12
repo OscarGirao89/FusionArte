@@ -94,8 +94,10 @@ export default function ContactPage() {
                              ))}
                         </CardContent>
                     </Card>
-                    {whatsAppUrl && (
-                        <Card>
+                </div>
+                <div>
+                     {whatsAppUrl && (
+                        <Card className="mb-8">
                             <CardHeader>
                                 <CardTitle>¿Prefieres WhatsApp?</CardTitle>
                             </CardHeader>
@@ -109,8 +111,6 @@ export default function ContactPage() {
                             </CardContent>
                         </Card>
                     )}
-                </div>
-                <div>
                      <Card>
                         <CardHeader>
                             <CardTitle>Envíanos un Mensaje</CardTitle>

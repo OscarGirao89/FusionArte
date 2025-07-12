@@ -207,40 +207,31 @@ export default function NotesAndTasksPage() {
         done: filteredTasks.filter(t => t.status === 'done'),
     };
     
-    const tasksByDate = useMemo(() => {
-        return tasks.reduce((acc, task) => {
-            if (task.dueDate) {
-                const dateStr = format(parseISO(task.dueDate), 'yyyy-MM-dd');
-                if (!acc[dateStr]) {
-                    acc[dateStr] = [];
-                }
-                acc[dateStr].push(task);
-            }
-            return acc;
-        }, {} as Record<string, TaskNote[]>);
-    }, [tasks]);
-
     const calendarModifiers = useMemo(() => {
-        const modifiers: Record<string, Date[]> = {
-            hasTasks: [],
-            high: [],
-            medium: [],
-            low: [],
-        };
-        for (const dateStr in tasksByDate) {
-            const date = parseISO(dateStr);
-            modifiers.hasTasks.push(date);
-            const priorities = tasksByDate[dateStr].map(t => t.priority || 'medium');
-            if (priorities.includes('high')) {
-                modifiers.high.push(date);
-            } else if (priorities.includes('medium')) {
-                modifiers.medium.push(date);
-            } else if (priorities.includes('low')) {
-                modifiers.low.push(date);
+        const highPriorityDates: Date[] = [];
+        const mediumPriorityDates: Date[] = [];
+        const lowPriorityDates: Date[] = [];
+
+        tasks.forEach(task => {
+            if (task.dueDate) {
+                const date = parseISO(task.dueDate);
+                if (task.priority === 'high') {
+                    highPriorityDates.push(date);
+                } else if (task.priority === 'medium') {
+                    mediumPriorityDates.push(date);
+                } else {
+                    lowPriorityDates.push(date);
+                }
             }
-        }
-        return modifiers;
-    }, [tasksByDate]);
+        });
+
+        return {
+            high: highPriorityDates,
+            medium: mediumPriorityDates,
+            low: lowPriorityDates,
+            hasTasks: [...highPriorityDates, ...mediumPriorityDates, ...lowPriorityDates],
+        };
+    }, [tasks]);
 
     const calendarModifierClassNames = {
         hasTasks: "has-tasks", 
