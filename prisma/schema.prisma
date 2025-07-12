@@ -1,192 +1,170 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-generator client {
-  provider = "prisma-client-js"
-  // The binaryTargets option is added to ensure compatibility with different deployment environments.
-  // 'native' is for your local machine or a similar environment.
-  // 'debian-openssl-3.0.x' is added for compatibility with environments like the one in Firebase Studio.
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                  Int                 @id @default(autoincrement())
-  name                String
-  email               String              @unique
-  role                String // e.g., 'Estudiante', 'Profesor', 'Administrador'
-  joined              DateTime            @default(now())
-  avatar              String
-  dob                 DateTime?
-  mobile              String?
-  isVisibleToStudents Boolean?
-  isPartner           Boolean?
-  bio                 String?
-  specialties         String[]
-  paymentDetailsJson  Json?
-  
-  // Relations
-  memberships         StudentMembership[]
-  payments            StudentPayment[]
-  taughtClasses       DanceClass[]        @relation("ClassTeachers")
-  assignedTasks       TaskNote[]          @relation("TaskAssignees")
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
 
-  @@map("users")
+
+model User {
+  id                    Int                 @id @default(autoincrement())
+  email                 String              @unique
+  name                  String
+  role                  String
+  joined                DateTime            @default(now())
+  avatar                String?
+  dob                   DateTime?
+  mobile                String?
+  isVisibleToStudents   Boolean?
+  isPartner             Boolean?
+  bio                   String?
+  specialties           String[]
+  paymentDetailsJson    Json? // Using Json type for flexible object
+  
+  studentMemberships    StudentMembership[]
+  studentPayments       StudentPayment[]
+  assignedTasks         TaskNote[]          @relation("TaskAssignees")
+  taughtClasses         DanceClass[]        @relation("ClassTeachers")
 }
 
 model DanceStyle {
-  id          String       @id
-  name        String
+  id          String @id @default(cuid())
+  name        String @unique
   description String
   classes     DanceClass[]
-
-  @@map("dance_styles")
 }
 
 model DanceLevel {
-  id          String       @id
-  name        String
+  id          String @id @default(cuid())
+  name        String @unique
   description String
   classes     DanceClass[]
-
-  @@map("dance_levels")
 }
 
 model DanceClass {
-  id                    String      @id
-  name                  String
-  type                  String
-  styleId               String
-  levelId               String
-  day                   String?
-  time                  String
-  room                  String
-  duration              String
-  capacity              Int
-  enrolledStudentIds    Int[]
+  id                      String @id @default(cuid())
+  name                    String
+  type                    String
+  styleId                 String
+  levelId                 String
+  teacherIds              User[] @relation("ClassTeachers")
+  day                     String?
+  time                    String
+  room                    String
+  duration                String
+  capacity                Int
+  enrolledStudentIds      Int[]
   cancellationPolicyHours Int?
-  recurrenceMonths      Int?
-  date                  DateTime?
-  status                String
-  isCancelledAndHidden  Boolean?
-  isVisibleToStudents   Boolean?
-  rentalContact         String?
-  rentalPrice           Float?
-  workshopPaymentType   String?
-  workshopPaymentValue  Float?
-
-  style     DanceStyle @relation(fields: [styleId], references: [id])
-  level     DanceLevel @relation(fields: [levelId], references: [id])
-  teachers  User[]     @relation("ClassTeachers")
-
-  @@map("dance_classes")
+  date                    DateTime?
+  status                  String
+  isCancelledAndHidden    Boolean?
+  isVisibleToStudents     Boolean?
+  rentalContact           String?
+  rentalPrice             Float?
+  workshopPaymentType     String?
+  workshopPaymentValue    Float?
+  
+  style                   DanceStyle @relation(fields: [styleId], references: [id])
+  level                   DanceLevel @relation(fields: [levelId], references: [id])
+  
+  coupons                 Coupon[] @relation("ClassCoupons")
 }
 
 model MembershipPlan {
-  id             String              @id
-  title          String
-  price          Float
-  description    String
-  features       String[]
-  isPopular      Boolean?
-  durationUnit   String
-  durationValue  Int
-  accessType     String
-  visibility     String
-  classCount     Int?
-  allowedClasses String[]
-  priceTiersJson Json?
+  id                  String @id @default(cuid())
+  title               String
+  price               Float?
+  description         String
+  features            String[]
+  isPopular           Boolean?
+  durationUnit        String
+  durationValue       Int
+  visibility          String
+  accessType          String // e.g., 'unlimited', 'class_pack'
+  classCount          Int?
+  allowedClasses      String[]
+  priceTiersJson      Json?
 
-  studentMemberships StudentMembership[]
-  studentPayments    StudentPayment[]
-
-  @@map("membership_plans")
+  studentMemberships  StudentMembership[]
+  payments            StudentPayment[]
+  coupons             Coupon[] @relation("MembershipCoupons")
 }
 
 model StudentMembership {
-  userId    Int
-  planId    String
-  startDate DateTime
-  endDate   DateTime
+  userId           Int
+  planId           String
+  startDate        DateTime
+  endDate          DateTime
   classesRemaining Int?
 
-  user User           @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
   plan MembershipPlan @relation(fields: [planId], references: [id])
 
   @@id([userId, planId])
-  @@map("student_memberships")
+}
+
+model StudentPayment {
+  id                String @id @default(cuid())
+  studentId         Int
+  planId            String
+  invoiceDate       DateTime
+  totalAmount       Float
+  status            String
+  amountPaid        Float
+  amountDue         Float
+  notes             String?
+  lastUpdatedBy     String?
+  lastUpdatedDate   DateTime?
+
+  student User @relation(fields: [studentId], references: [id])
+  plan    MembershipPlan @relation(fields: [planId], references: [id])
 }
 
 model Coupon {
-  id               String   @id
-  code             String   @unique
-  discountType     String
-  discountValue    Float
-  status           String
-  applicableTo     String
-  specificPlanIds  String[]
-  specificClassIds String[]
-  expirationDate   DateTime?
-  usageLimit       Int?
-
-  @@map("coupons")
+  id                 String @id @default(cuid())
+  code               String @unique
+  discountType       String
+  discountValue      Float
+  expirationDate     DateTime?
+  usageLimit         Int?
+  status             String
+  applicableTo       String
+  specificPlanIds    MembershipPlan[] @relation("MembershipCoupons")
+  specificClassIds   DanceClass[] @relation("ClassCoupons")
 }
 
 model Transaction {
-  id          String   @id
+  id          String @id @default(cuid())
   type        String
   category    String
   description String
   amount      Float
   date        DateTime
-
-  @@map("transactions")
-}
-
-model StudentPayment {
-  id            String   @id
-  studentId     Int
-  planId        String
-  invoiceDate   DateTime
-  totalAmount   Float
-  status        String
-  amountPaid    Float
-  amountDue     Float
-  notes         String?
-  lastUpdatedBy String?
-  lastUpdatedDate DateTime?
-
-  student User           @relation(fields: [studentId], references: [id])
-  plan    MembershipPlan @relation(fields: [planId], references: [id])
-
-  @@map("student_payments")
+  receiptUrl  String?
 }
 
 model Role {
-  id          String   @id
+  id          String   @id @default(cuid())
   name        String   @unique
   permissions String[]
-
-  @@map("roles")
 }
 
 model TaskNote {
-  id             String    @id
+  id             String   @id @default(cuid())
   title          String
   description    String?
   status         String
   category       String
   priority       String?
-  createdAt      DateTime  @default(now())
+  assignees      User[]   @relation("TaskAssignees")
+  createdAt      DateTime @default(now())
   dueDate        DateTime?
   alertDateTime  DateTime?
-  alertDismissed Boolean   @default(false)
-
-  assignees User[] @relation("TaskAssignees")
-
-  @@map("task_notes")
+  alertDismissed Boolean? @default(false)
 }
