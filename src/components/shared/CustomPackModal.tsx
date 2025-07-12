@@ -22,7 +22,7 @@ export function CustomPackModal({ plan, isOpen, onClose, onConfirm }: CustomPack
     }
 
     const [selectedTier, setSelectedTier] = useState<PriceTier | null>(null);
-    const allowedStyleNames = plan.allowedStyles.map(styleId => danceStyles.find(s => s.id === styleId)?.name || styleId).join(', ');
+    const allowedStyleNames = plan.allowedClasses.map(styleId => danceStyles.find(s => s.id === styleId)?.name || styleId).join(', ');
 
     const handleConfirm = () => {
         if (selectedTier) {
@@ -36,7 +36,7 @@ export function CustomPackModal({ plan, isOpen, onClose, onConfirm }: CustomPack
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 font-headline"><Ticket className="h-6 w-6" /> Personaliza tu Bono "{plan.title}"</DialogTitle>
                     <DialogDescription>
-                        Elige una de las opciones disponibles para continuar. Válido para: {allowedStyleNames}.
+                        Elige una de las opciones disponibles para continuar. {allowedStyleNames && `Válido para: ${allowedStyleNames}.`}
                     </DialogDescription>
                 </DialogHeader>
 
