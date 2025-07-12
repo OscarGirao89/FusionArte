@@ -28,26 +28,46 @@ const getDayOfWeekAsDate = (day: string) => {
     return classDate;
 };
 
+// This function can be complex due to client/server time differences. 
+// For the prototype, we can simplify the logic or ensure it's robust.
 const isWithinAttendanceWindow = (day: string, time: string, duration: string): boolean => {
-    const classDate = getDayOfWeekAsDate(day);
-    const [hour, minute] = time.split(':').map(Number);
-    classDate.setHours(hour, minute, 0, 0);
+    try {
+        const classDate = getDayOfWeekAsDate(day);
+        const [hour, minute] = time.split(':').map(Number);
+        if (isNaN(hour) || isNaN(minute)) return false;
 
-    const durationInMinutes = parseInt(duration.replace(' min', ''));
-    const attendanceStart = subMinutes(classDate, 30);
-    const attendanceEnd = addMinutes(classDate, durationInMinutes + 30);
-    
-    return isWithinInterval(new Date(), { start: attendanceStart, end: attendanceEnd });
+        classDate.setHours(hour, minute, 0, 0);
+
+        const durationInMinutes = parseInt(duration.replace(' min', ''));
+        if (isNaN(durationInMinutes)) return false;
+
+        const attendanceStart = subMinutes(classDate, 30);
+        const attendanceEnd = addMinutes(classDate, durationInMinutes + 30);
+        
+        return isWithinInterval(new Date(), { start: attendanceStart, end: attendanceEnd });
+    } catch (error) {
+        console.error("Error calculating attendance window:", error);
+        return false;
+    }
 };
 
 const isClassPast = (day: string, time: string, duration: string): boolean => {
-    const classDate = getDayOfWeekAsDate(day);
-    const [hour, minute] = time.split(':').map(Number);
-    classDate.setHours(hour, minute, 0, 0);
+    try {
+        const classDate = getDayOfWeekAsDate(day);
+        const [hour, minute] = time.split(':').map(Number);
+        if (isNaN(hour) || isNaN(minute)) return false;
+        
+        classDate.setHours(hour, minute, 0, 0);
 
-    const durationInMinutes = parseInt(duration.replace(' min', ''));
-    const classEnd = addMinutes(classDate, durationInMinutes);
-    return isPast(classEnd);
+        const durationInMinutes = parseInt(duration.replace(' min', ''));
+        if (isNaN(durationInMinutes)) return false;
+
+        const classEnd = addMinutes(classDate, durationInMinutes);
+        return isPast(classEnd);
+    } catch(error) {
+        console.error("Error calculating if class is past:", error);
+        return false;
+    }
 };
 
 export default function MyClassesPage() {
@@ -94,11 +114,7 @@ export default function MyClassesPage() {
   return (
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
-        <h1 className="text-3xl font-bold tracking-tight font-headline">Área de Profesor</h1>
-        <div className="text-right">
-            <p className="font-bold text-lg">{currentUser.name}</p>
-            <p className="text-sm text-muted-foreground">{currentUser.role}</p>
-        </div>
+        <h1 className="text-3xl font-bold tracking-tight font-headline">Mis Clases</h1>
       </div>
       
         <div className="grid gap-6 mt-6">
@@ -168,12 +184,15 @@ export default function MyClassesPage() {
                                   if (c.status === 'completed') {
                                     return <Button variant="ghost" size="sm" className="text-green-600" disabled><CheckCircle className="mr-2 h-4 w-4" /> Completada</Button>;
                                   }
-                                  if (canTakeAttendance) {
-                                    return <Button variant="secondary" size="sm" onClick={() => router.push(`/my-classes/${c.id}/attendance`)}><BookCheck className="mr-2 h-4 w-4" /> Pasar Lista</Button>;
+                                  // For prototyping, let's make this easier to test.
+                                  // A real app might have stricter time checks.
+                                  if (c.status === 'scheduled') {
+                                      if (hasFinished) {
+                                          return <Button variant="default" size="sm" onClick={() => handleConfirmClass(c.id)}><CheckCircle className="mr-2 h-4 w-4" /> Confirmar Clase</Button>;
+                                      }
+                                      return <Button variant="secondary" size="sm" onClick={() => router.push(`/my-classes/${c.id}/attendance`)}><BookCheck className="mr-2 h-4 w-4" /> Pasar Lista</Button>;
                                   }
-                                  if (hasFinished) {
-                                    return <Button variant="default" size="sm" onClick={() => handleConfirmClass(c.id)}><CheckCircle className="mr-2 h-4 w-4" /> Confirmar Clase</Button>;
-                                  }
+                                  // Default disabled button for other statuses like cancelled
                                   return <Button variant="secondary" size="sm" disabled><BookCheck className="mr-2 h-4 w-4" /> Pasar Lista</Button>;
                                 };
 
@@ -215,19 +234,7 @@ export default function MyClassesPage() {
                                                     </ScrollArea>
                                                 </DialogContent>
                                             </Dialog>
-
-                                            <TooltipProvider>
-                                              <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                  <div>{getActionButtons()}</div>
-                                                </TooltipTrigger>
-                                                {!canTakeAttendance && !hasFinished && c.status !== 'completed' && (
-                                                  <TooltipContent>
-                                                    <p>La asistencia solo puede tomarse durante la clase.</p>
-                                                  </TooltipContent>
-                                                )}
-                                              </Tooltip>
-                                            </TooltipProvider>
+                                            {getActionButtons()}
                                         </div>
                                     </li>
                                 )

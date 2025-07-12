@@ -8,7 +8,7 @@ import { LogoIcon } from '@/components/icons/logo-icon';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from '@/components/ui/dropdown-menu';
-import { Settings, BookMarked, User, LogOut, ChevronDown, CreditCard, Calendar, Users, ClipboardList, Banknote, GraduationCap, Wallet } from 'lucide-react';
+import { Settings, BookMarked, User, LogOut, ChevronDown, CreditCard, Calendar, Users, ClipboardList, Banknote, GraduationCap, Wallet, Home, BarChart2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { useSettings } from '@/context/settings-context';
@@ -20,6 +20,12 @@ const publicNav = [
     { href: '/memberships', label: 'Membresías' },
     { href: '/teachers', label: 'Profesores' },
     { href: '/contact', label: 'Contacto' },
+];
+
+const studentNav = [
+    { href: '/schedule', label: 'Clases' },
+    { href: '/memberships', label: 'Membresías' },
+    { href: '/profile', label: 'Mi Actividad' },
 ];
 
 const teacherNav = [
@@ -35,11 +41,6 @@ const adminManagementNav = [
     { href: '/admin/memberships', label: 'Membresías', icon: CreditCard },
     { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
-];
-
-const administrativoManagementNav = [
-    { href: '/admin/students', label: 'Alumnos', icon: GraduationCap },
-    { href: '/admin/classes', label: 'Clases', icon: ClipboardList },
 ];
 
 export const userProfiles: Record<UserRole, { id: number; name: string; role: string; avatar: string }> = {
@@ -129,9 +130,7 @@ function UserMenu() {
 }
 
 function MobileNav({ mainNav, managementNav }: { mainNav: { href: string, label: string, icon?: React.ElementType }[], managementNav?: { href: string, label: string, icon: React.ElementType }[] }) {
-    const navToShow = mainNav.length > 0 ? mainNav : (managementNav || []).map(item => ({ ...item, href: item.href, label: item.label, icon: item.icon }));
-    const managementToShow = mainNav.length > 0 ? managementNav : undefined;
-
+    
     return (
         <Sheet>
             <SheetTrigger asChild>
@@ -141,29 +140,28 @@ function MobileNav({ mainNav, managementNav }: { mainNav: { href: string, label:
             </SheetTrigger>
             <SheetContent side="right">
                 <SheetHeader>
-                    <SheetTitle>Navegación</SheetTitle>
+                    <SheetTitle>Menú</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-4 mt-8">
-                    {navToShow.map((link) => (
+                    {mainNav.map((link) => (
                         <SheetClose asChild key={link.href}>
                             <Link href={link.href} className="text-lg font-medium hover:text-primary flex items-center gap-2">
                                {link.icon && <link.icon className="h-5 w-5" />} {link.label}
                             </Link>
                         </SheetClose>
                     ))}
-                    {managementToShow && (
-                        <>
-                            <DropdownMenuSeparator className="my-2" />
-                            <p className="font-medium px-2">Gestión</p>
-                            {managementToShow.map((item) => (
+                    {managementNav && (
+                        <div className="pt-4">
+                            <p className="text-sm font-semibold text-muted-foreground px-2 mb-2">Gestión</p>
+                            {managementNav.map((item) => (
                                 <SheetClose asChild key={item.href}>
-                                    <Link href={item.href} className="flex items-center gap-2 text-muted-foreground hover:text-primary pl-2">
+                                    <Link href={item.href} className="flex items-center gap-3 text-muted-foreground hover:text-primary p-2 rounded-md">
                                         <item.icon className="h-5 w-5" />
                                         <span className="text-base">{item.label}</span>
                                     </Link>
                                 </SheetClose>
                             ))}
-                        </>
+                        </div>
                     )}
                 </nav>
             </SheetContent>
@@ -181,24 +179,25 @@ export function MainNav() {
   
     switch (userRole) {
         case 'student':
-            mainNavItems = publicNav;
+            mainNavItems = studentNav;
             break;
         case 'teacher':
-        case 'socio': // Socio now shares teacher's nav
+        case 'socio': 
             mainNavItems = teacherNav;
-            // Socio also gets management dropdown
             if (userRole === 'socio') {
                 managementNavItems = adminManagementNav;
                 hasManagementDropdown = true;
             }
             break;
         case 'admin':
-            mainNavItems = []; // Admins only see management links
+            mainNavItems = []; 
             managementNavItems = adminManagementNav;
             hasManagementDropdown = true;
             break;
         case 'administrativo':
-            mainNavItems = administrativoManagementNav.map(i => ({ href: i.href, label: i.label, icon: i.icon }));
+             mainNavItems = [];
+             managementNavItems = adminManagementNav;
+             hasManagementDropdown = true;
             break;
     }
   
@@ -215,7 +214,7 @@ export function MainNav() {
           </Link>
           <div className="flex-1 hidden md:flex items-center gap-4">
               <NavLinks items={mainNavItems} />
-              {hasManagementDropdown && <ManagementDropdown items={adminManagementNav} />}
+              {hasManagementDropdown && managementNavItems && <ManagementDropdown items={managementNavItems} />}
           </div>
           <div className="flex items-center gap-2">
               <UserMenu />
