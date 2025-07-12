@@ -201,7 +201,11 @@ export type TaskNote = {
     description?: string;
     status: TaskStatus;
     category: string;
-    assigneeId?: number;
+    assigneeIds?: number[];
+    createdAt: string; // ISO Date String
+    dueDate?: string; // YYYY-MM-DD
+    alertDateTime?: string; // ISO Date String
+    alertDismissed?: boolean;
 };
 
 export type HeroSlide = {

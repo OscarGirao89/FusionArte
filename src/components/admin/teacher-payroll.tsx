@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAttendance } from '@/context/attendance-context';
 import { format, parseISO, startOfMonth, endOfMonth, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { ClassInstance, StudentPayment } from '@/lib/types';
+import type { ClassInstance, StudentPayment, DanceClass } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { StudentPaymentsTable } from './student-payments-table';
 
@@ -28,6 +28,12 @@ const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; c
     }
 }
   
+type PayrollClassInfo = {
+    classTemplate: DanceClass;
+    instances: ClassInstance[];
+    totalPay: number;
+    payDescription: string;
+}
 
 type TeacherPayrollProps = {
     mode: 'studio_expenses' | 'partner_income' | 'teacher_income';
@@ -67,79 +73,87 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
             const teacher = users.find(u => u.id === teacherId);
             if (!teacher) return null;
 
-            const classesTaught = classInstances.filter(c => c.teacherIds.includes(teacher.id));
+            const classesTaughtInstances = classInstances.filter(c => c.teacherIds.includes(teacher.id));
             let totalIncome = 0;
             const paymentDetails = teacher.paymentDetails;
             
-            const incomeDetails = classesTaught.map(c => {
-                 let classPay = 0;
-                 let payDescription = '';
-                 const numTeachers = c.teacherIds.length || 1;
-                 
-                 if (!paymentDetails) return { ...c, classPay, payDescription };
+            const incomeDetailsByClassId: Record<string, PayrollClassInfo> = {};
 
-                 if (c.status === 'completed') {
-                    if (c.type === 'workshop') {
-                        if (c.workshopPaymentType === 'fixed') {
-                            classPay = (c.workshopPaymentValue || 0) / numTeachers;
-                            payDescription = `Tarifa fija dividida`;
-                        } else { // percentage
-                            payDescription = `Porcentaje (${c.workshopPaymentValue}%)`;
-                        }
-                    } else if (paymentDetails.type === 'per_class') {
-                        const durationHours = parseInt(c.duration.replace(' min', '')) / 60;
-                        classPay = (durationHours * (paymentDetails.payRate || 0)) / numTeachers;
-                        payDescription = `${durationHours}h a €${paymentDetails.payRate}/h`;
-                    }
-                 } else if (c.status === 'cancelled-low-attendance') {
-                     classPay = paymentDetails.cancelledClassPay / numTeachers;
-                     payDescription = `Compensación por cancelación`;
-                 }
+            classesTaughtInstances.forEach(instance => {
+                let classPay = 0;
+                let payDescription = '';
+                const numTeachers = instance.teacherIds.length || 1;
                 
-                 if (numTeachers > 1) {
-                    payDescription += ` (entre ${numTeachers})`;
-                 }
-                 
-                 totalIncome += classPay;
-                 return { ...c, classPay, payDescription };
+                if (paymentDetails) {
+                     if (instance.status === 'completed') {
+                        if (instance.type === 'workshop') {
+                            if (instance.workshopPaymentType === 'fixed') {
+                                classPay = (instance.workshopPaymentValue || 0) / numTeachers;
+                                payDescription = `Tarifa fija dividida`;
+                            } else { // percentage
+                                payDescription = `Porcentaje (${instance.workshopPaymentValue}%)`;
+                            }
+                        } else if (paymentDetails.type === 'per_class') {
+                            const durationHours = parseInt(instance.duration.replace(' min', '')) / 60;
+                            classPay = (durationHours * (paymentDetails.payRate || 0)) / numTeachers;
+                            payDescription = `${durationHours}h a €${paymentDetails.payRate}/h`;
+                        }
+                     } else if (instance.status === 'cancelled-low-attendance') {
+                         classPay = paymentDetails.cancelledClassPay / numTeachers;
+                         payDescription = `Compensación por cancelación`;
+                     }
+                }
+                
+                if (numTeachers > 1) {
+                   payDescription += ` (entre ${numTeachers})`;
+                }
+                
+                totalIncome += classPay;
+                
+                if (!incomeDetailsByClassId[instance.id]) {
+                     incomeDetailsByClassId[instance.id] = {
+                        classTemplate: danceClasses.find(dc => dc.id === instance.id)!,
+                        instances: [],
+                        totalPay: 0,
+                        payDescription: ''
+                     };
+                }
+                incomeDetailsByClassId[instance.id].instances.push(instance);
+                incomeDetailsByClassId[instance.id].totalPay += classPay;
+                incomeDetailsByClassId[instance.id].payDescription = payDescription; // Assuming it's the same for all instances of a class template
             });
 
             if (paymentDetails?.type === 'monthly') {
                 totalIncome = paymentDetails.monthlySalary || 0;
             }
-
-            const individualClasses = incomeDetails.filter(c => c.teacherIds.length === 1);
-            const sharedClasses = incomeDetails.filter(c => c.teacherIds.length > 1);
             
-            // Student data for individual classes
-            const individualStudentIds = new Set<number>();
-            individualClasses.forEach(c => c.enrolledStudentIds.forEach(id => individualStudentIds.add(id)));
-            const individualStudentsPayments = getStudentPaymentData(individualStudentIds);
-
-            // Group shared classes by partner
-            const sharedClassesByPartner: { [partnerName: string]: any[] } = {};
-            const sharedStudentsPaymentsByPartner: { [partnerName: string]: StudentPayment[] } = {};
-
-            sharedClasses.forEach(c => {
-                const partners = c.teacherIds.filter(id => id !== teacher.id);
-                partners.forEach(partnerId => {
-                    const partnerUser = users.find(u => u.id === partnerId);
+            const groupedClasses = Object.values(incomeDetailsByClassId);
+            const individualClasses = groupedClasses.filter(c => c.classTemplate.teacherIds.length === 1);
+            
+            const sharedClassesByPartner: { [partnerName: string]: PayrollClassInfo[] } = {};
+            groupedClasses.filter(c => c.classTemplate.teacherIds.length > 1).forEach(classInfo => {
+                const partnerIds = classInfo.classTemplate.teacherIds.filter(id => id !== teacher.id);
+                partnerIds.forEach(pId => {
+                    const partnerUser = users.find(u => u.id === pId);
                     if (partnerUser) {
-                        if (!sharedClassesByPartner[partnerUser.name]) {
-                            sharedClassesByPartner[partnerUser.name] = [];
-                        }
-                        sharedClassesByPartner[partnerUser.name].push(c);
+                        if (!sharedClassesByPartner[partnerUser.name]) sharedClassesByPartner[partnerUser.name] = [];
+                        sharedClassesByPartner[partnerUser.name].push(classInfo);
                     }
                 });
             });
 
-            Object.keys(sharedClassesByPartner).forEach(partnerName => {
-                const classesWithPartner = sharedClassesByPartner[partnerName];
+            const getPaymentsForGroup = (classGroup: PayrollClassInfo[]) => {
                 const studentIds = new Set<number>();
-                classesWithPartner.forEach(c => c.enrolledStudentIds.forEach(id => studentIds.add(id)));
-                sharedStudentsPaymentsByPartner[partnerName] = getStudentPaymentData(studentIds);
-            });
+                classGroup.forEach(c => c.instances.forEach(i => i.enrolledStudentIds.forEach(id => studentIds.add(id))));
+                return getStudentPaymentData(studentIds);
+            };
 
+            const individualStudentsPayments = getPaymentsForGroup(individualClasses);
+            
+            const sharedStudentsPaymentsByPartner: { [partnerName: string]: StudentPayment[] } = {};
+            Object.keys(sharedClassesByPartner).forEach(partnerName => {
+                sharedStudentsPaymentsByPartner[partnerName] = getPaymentsForGroup(sharedClassesByPartner[partnerName]);
+            });
 
             return { teacher, totalIncome, individualClasses, individualStudentsPayments, sharedClassesByPartner, sharedStudentsPaymentsByPartner };
         }
@@ -190,10 +204,10 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <Table>
-                                        <TableHeader><TableRow><TableHead>Clase</TableHead><TableHead>Fecha</TableHead><TableHead className="text-right">Pago</TableHead></TableRow></TableHeader>
+                                        <TableHeader><TableRow><TableHead>Clase</TableHead><TableHead>Instancias</TableHead><TableHead className="text-right">Pago Total</TableHead></TableRow></TableHeader>
                                         <TableBody>
                                         {classes.map((c: any) => (
-                                            <TableRow key={c.instanceId}><TableCell>{c.name}</TableCell><TableCell>{format(parseISO(c.date), 'PPP', {locale: es})}</TableCell><TableCell className="text-right font-mono">€{c.classPay.toFixed(2)}</TableCell></TableRow>
+                                            <TableRow key={c.classTemplate.id}><TableCell>{c.classTemplate.name}</TableCell><TableCell>{c.instances.length}</TableCell><TableCell className="text-right font-mono">€{c.totalPay.toFixed(2)}</TableCell></TableRow>
                                         ))}
                                         </TableBody>
                                     </Table>
@@ -233,11 +247,11 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
                                 <Card>
                                     <CardHeader><CardTitle className="text-lg flex items-center justify-center gap-2"><UserIcon/>Individual</CardTitle></CardHeader>
-                                    <CardContent><p className="text-2xl font-bold">€{individualClasses.reduce((acc, c) => acc + c.classPay, 0).toFixed(2)}</p></CardContent>
+                                    <CardContent><p className="text-2xl font-bold">€{individualClasses.reduce((acc, c) => acc + c.totalPay, 0).toFixed(2)}</p></CardContent>
                                 </Card>
                                 <Card>
                                      <CardHeader><CardTitle className="text-lg flex items-center justify-center gap-2"><Users/>Compartido</CardTitle></CardHeader>
-                                    <CardContent><p className="text-2xl font-bold">€{Object.values(sharedClassesByPartner).flat().reduce((acc, c: any) => acc + c.classPay, 0).toFixed(2)}</p></CardContent>
+                                    <CardContent><p className="text-2xl font-bold">€{Object.values(sharedClassesByPartner).flat().reduce((acc, c) => acc + c.totalPay, 0).toFixed(2)}</p></CardContent>
                                 </Card>
                             </div>
                         </CardContent>
@@ -246,20 +260,28 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                 <TabsContent value="individual" className="mt-6 space-y-6">
                      <Card>
                         <CardHeader>
+                            <CardTitle>Pagos de Alumnos (Individual)</CardTitle>
+                            <CardDescription>Gestiona los pagos de los alumnos inscritos únicamente en tus clases individuales.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <StudentPaymentsTable payments={individualStudentsPayments} title="" description=""/>
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
                             <CardTitle>Listado de Clases Individuales</CardTitle>
                             <CardDescription>Ingresos de clases impartidas en solitario.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Table>
-                                <TableHeader><TableRow><TableHead>Clase</TableHead><TableHead>Estado</TableHead><TableHead className="text-right">Ingreso</TableHead></TableRow></TableHeader>
+                                <TableHeader><TableRow><TableHead>Clase</TableHead><TableHead>Instancias</TableHead><TableHead className="text-right">Ingreso</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {individualClasses?.map((c: any) => {
-                                        const statusInfo = getStatusInfo(c.status);
+                                    {individualClasses?.map((c: PayrollClassInfo) => {
                                         return (
-                                            <TableRow key={c.instanceId}>
-                                                <TableCell><p className="font-medium">{c.name}</p><p className="text-xs text-muted-foreground capitalize">{c.type} - {format(parseISO(c.date), 'PPP', { locale: es })}</p></TableCell>
-                                                <TableCell><div className={`flex items-center gap-2 text-sm ${statusInfo.color}`}>{statusInfo.icon} {statusInfo.text}</div></TableCell>
-                                                <TableCell className="text-right"><p className="font-mono font-semibold">€{c.classPay.toFixed(2)}</p><p className="text-xs text-muted-foreground">{c.payDescription}</p></TableCell>
+                                            <TableRow key={c.classTemplate.id}>
+                                                <TableCell><p className="font-medium">{c.classTemplate.name}</p><p className="text-xs text-muted-foreground capitalize">{c.classTemplate.type} - {c.classTemplate.day} {c.classTemplate.time}</p></TableCell>
+                                                <TableCell>{c.instances.length}</TableCell>
+                                                <TableCell className="text-right"><p className="font-mono font-semibold">€{c.totalPay.toFixed(2)}</p><p className="text-xs text-muted-foreground">{c.payDescription}</p></TableCell>
                                             </TableRow>
                                         )
                                     })}
@@ -268,16 +290,15 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                             </Table>
                         </CardContent>
                     </Card>
-                    <StudentPaymentsTable payments={individualStudentsPayments} title="Pagos de Alumnos (Individual)" description="Gestiona los pagos de los alumnos inscritos únicamente en tus clases individuales."/>
                 </TabsContent>
                  <TabsContent value="shared" className="mt-6">
                     <Card>
                         <CardHeader>
                             <CardTitle>Listado de Clases Compartidas</CardTitle>
-                            <CardDescription>Ingresos de clases impartidas con otros socios/profesores.</CardDescription>
+                            <CardDescription>Ingresos y pagos de clases impartidas con otros socios/profesores.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Tabs defaultValue={Object.keys(sharedClassesByPartner)[0]} orientation="vertical">
+                            <Tabs defaultValue={Object.keys(sharedClassesByPartner)[0]} className="w-full">
                                  <TabsList>
                                      {Object.keys(sharedClassesByPartner).map(partnerName => (
                                          <TabsTrigger key={partnerName} value={partnerName}>
@@ -286,23 +307,36 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                                      ))}
                                  </TabsList>
                                  {Object.entries(sharedClassesByPartner).map(([partnerName, classes]) => (
-                                    <TabsContent key={partnerName} value={partnerName} className="mt-0">
-                                         <div className="p-4 border rounded-md">
-                                            <h4 className="font-semibold mb-2">Total con {partnerName}: €{classes.reduce((acc, c: any) => acc + c.classPay, 0).toFixed(2)}</h4>
-                                             <Table>
-                                                 <TableHeader><TableRow><TableHead>Clase</TableHead><TableHead>Fecha</TableHead><TableHead className="text-right">Mi Ingreso</TableHead></TableRow></TableHeader>
-                                                 <TableBody>
-                                                     {(classes as any[]).map((c: any) => (
-                                                         <TableRow key={c.instanceId}>
-                                                             <TableCell>{c.name}</TableCell>
-                                                             <TableCell>{format(parseISO(c.date), 'PPP', { locale: es })}</TableCell>
-                                                             <TableCell className="text-right"><p className="font-mono font-semibold">€{c.classPay.toFixed(2)}</p><p className="text-xs text-muted-foreground">{c.payDescription}</p></TableCell>
-                                                         </TableRow>
-                                                     ))}
-                                                 </TableBody>
-                                             </Table>
-                                              <StudentPaymentsTable payments={sharedStudentsPaymentsByPartner[partnerName] || []} title={`Pagos de Alumnos (Clases con ${partnerName})`} description="Gestiona los pagos de los alumnos inscritos en estas clases compartidas."/>
-                                         </div>
+                                    <TabsContent key={partnerName} value={partnerName} className="mt-4 space-y-6">
+                                        <Card>
+                                            <CardHeader>
+                                                <CardTitle>Pagos de Alumnos (Clases con {partnerName})</CardTitle>
+                                                <CardDescription>Gestiona los pagos de los alumnos inscritos en estas clases compartidas.</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <StudentPaymentsTable payments={sharedStudentsPaymentsByPartner[partnerName] || []} title="" description=""/>
+                                            </CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader>
+                                                 <CardTitle>Desglose de Clases con {partnerName}</CardTitle>
+                                                 <CardDescription>Total generado en estas clases: €{classes.reduce((acc, c: any) => acc + c.totalPay, 0).toFixed(2)}</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <Table>
+                                                     <TableHeader><TableRow><TableHead>Clase</TableHead><TableHead>Instancias</TableHead><TableHead className="text-right">Mi Ingreso</TableHead></TableRow></TableHeader>
+                                                     <TableBody>
+                                                         {(classes as any[]).map((c: any) => (
+                                                             <TableRow key={c.classTemplate.id}>
+                                                                 <TableCell>{c.classTemplate.name}</TableCell>
+                                                                 <TableCell>{c.instances.length}</TableCell>
+                                                                 <TableCell className="text-right"><p className="font-mono font-semibold">€{c.totalPay.toFixed(2)}</p><p className="text-xs text-muted-foreground">{c.payDescription}</p></TableCell>
+                                                             </TableRow>
+                                                         ))}
+                                                     </TableBody>
+                                                 </Table>
+                                             </CardContent>
+                                        </Card>
                                     </TabsContent>
                                  ))}
                             </Tabs>

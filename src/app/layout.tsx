@@ -8,6 +8,7 @@ import { PublicHeader } from '@/components/layout/public-header';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { SettingsProvider } from '@/context/settings-context';
 import { AttendanceProvider } from '@/context/attendance-context';
+import { TaskAlerts } from '@/components/shared/task-alerts';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -19,6 +20,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
           <MainNav />
           <main className="flex-1">{children}</main>
           <Toaster />
+          <TaskAlerts />
         </div>
     );
   }
