@@ -30,7 +30,6 @@ const adminManagementNav = [
     { href: '/admin/classes', label: 'Clases', icon: ClipboardList },
     { href: '/admin/memberships', label: 'Membresías', icon: CreditCard },
     { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
-    { href: '/admin/roles', label: 'Roles y Permisos', icon: ShieldCheck },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];
 
