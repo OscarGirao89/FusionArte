@@ -72,8 +72,8 @@ export function TaskAlerts() {
                         {currentAlert.dueDate && (
                             <span> que vence el <strong>{format(parseISO(currentAlert.dueDate), 'PPP', { locale: es })}</strong>.</span>
                         )}
-                        <div className="mt-2 text-sm">{currentAlert.description}</div>
                     </AlertDialogDescription>
+                    {currentAlert.description && <div className="text-sm text-muted-foreground pt-2">{currentAlert.description}</div>}
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={handleDismiss}>Descartar</AlertDialogCancel>
