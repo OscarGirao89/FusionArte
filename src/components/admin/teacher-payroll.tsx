@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { users, danceClasses, membershipPlans } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,8 +11,11 @@ import { AlertCircle, CheckCircle2, DollarSign, Handshake, MinusCircle, Percent,
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from '@/context/auth-context';
-import { format, parseISO } from 'date-fns';
+import { useAttendance } from '@/context/attendance-context';
+import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
+import type { ClassInstance } from '@/lib/types';
+
 
 const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; color: string } => {
     switch (status) {
@@ -27,67 +30,6 @@ const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; c
 const getStudentName = (id: number) => users.find(u => u.id === id)?.name || 'Desconocido';
 const getPlanName = (id: string) => membershipPlans.find(p => p.id === id)?.title || 'Desconocido';
 
-const PartnerStudentPaymentsTable = ({ classes }: { classes: any[] }) => {
-    const { studentPayments } = useAuth();
-    
-    const relevantStudentIds = useMemo(() => {
-        return [...new Set(classes.flatMap(c => c.enrolledStudentIds))];
-    }, [classes]);
-
-    const filteredPayments = useMemo(() => {
-        return studentPayments.filter(p => relevantStudentIds.includes(p.studentId));
-    }, [studentPayments, relevantStudentIds]);
-
-    if (filteredPayments.length === 0) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2"><FileText /> Pagos de Alumnos Relacionados</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground text-center py-4">No hay pagos de alumnos para las clases de esta categoría.</p>
-                </CardContent>
-            </Card>
-        );
-    }
-    
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2"><FileText /> Pagos de Alumnos Relacionados</CardTitle>
-                <CardDescription>Facturas de los alumnos inscritos en las clases de esta categoría.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="overflow-y-auto max-h-96">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Alumno</TableHead>
-                                <TableHead>Plan</TableHead>
-                                <TableHead>Estado</TableHead>
-                                <TableHead className="text-right">Monto</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredPayments.map((p) => (
-                                <TableRow key={p.id}>
-                                    <TableCell>{getStudentName(p.studentId)}</TableCell>
-                                    <TableCell>{getPlanName(p.planId)}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={p.status === 'paid' ? 'default' : p.status === 'pending' ? 'destructive' : 'secondary'}>
-                                            {{ paid: 'Pagado', pending: 'Pendiente', deposit: 'Adelanto' }[p.status]}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono">€{p.totalAmount.toFixed(2)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
 
 type TeacherPayrollProps = {
     mode: 'studio_expenses' | 'partner_income' | 'teacher_income';
@@ -96,12 +38,29 @@ type TeacherPayrollProps = {
 };
 
 export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partnerId, teacherId }: TeacherPayrollProps) {
-    
+    const { generateInstancesForTeacher, classInstances } = useAttendance();
+
+    // Generate instances for all relevant teachers when the component mounts
+    useEffect(() => {
+        const today = new Date();
+        const start = startOfMonth(today);
+        const end = endOfMonth(today);
+
+        if (mode === 'studio_expenses') {
+            const nonPartnerTeachers = users.filter(u => u.role === 'Profesor' && !u.isPartner);
+            nonPartnerTeachers.forEach(teacher => generateInstancesForTeacher(teacher.id, start, end));
+        } else if (mode === 'partner_income' && partnerId) {
+            generateInstancesForTeacher(partnerId, start, end);
+        } else if (mode === 'teacher_income' && teacherId) {
+            generateInstancesForTeacher(teacherId, start, end);
+        }
+    }, [mode, partnerId, teacherId, generateInstancesForTeacher]);
+
     const calculation = useMemo(() => {
         if (mode === 'studio_expenses') {
              const nonPartnerTeachers = users.filter(u => u.role === 'Profesor' && !u.isPartner);
              const payroll = nonPartnerTeachers.map(user => {
-                 const classesTaught = danceClasses.filter(c => c.teacherIds.includes(user.id) && c.status === 'completed');
+                 const classesTaught = classInstances.filter(c => c.teacherIds.includes(user.id) && c.status === 'completed');
                  let totalPay = 0;
                  const paymentDetails = user.paymentDetails;
                  
@@ -129,7 +88,7 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
             const teacher = users.find(u => u.id === currentTeacherId);
             if (!teacher) return null;
 
-            const classesTaught = danceClasses.filter(c => c.teacherIds.includes(teacher.id));
+            const classesTaught = classInstances.filter(c => c.teacherIds.includes(teacher.id));
             let totalIncome = 0;
             const paymentDetails = teacher.paymentDetails;
             
@@ -175,9 +134,8 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
 
         return null;
 
-    }, [mode, partnerId, teacherId]);
+    }, [mode, partnerId, teacherId, classInstances]);
     
-
     const StudioExpensesView = () => {
         if (!calculation || !('payroll' in calculation)) return null;
         const { payroll } = calculation;
@@ -200,16 +158,16 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                                         </div>
                                         <div className="text-right">
                                             <p className="text-lg font-bold text-red-600">€{totalPay.toFixed(2)}</p>
-                                            <p className="text-xs text-muted-foreground">Pago total</p>
+                                            <p className="text-xs text-muted-foreground">Pago total del mes</p>
                                         </div>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <Table>
-                                        <TableHeader><TableRow><TableHead>Clase</TableHead><TableHead className="text-right">Pago</TableHead></TableRow></TableHeader>
+                                        <TableHeader><TableRow><TableHead>Clase</TableHead><TableHead>Fecha</TableHead><TableHead className="text-right">Pago</TableHead></TableRow></TableHeader>
                                         <TableBody>
                                         {classes.map((c: any) => (
-                                            <TableRow key={c.id}><TableCell>{c.name}</TableCell><TableCell className="text-right font-mono">€{c.classPay.toFixed(2)}</TableCell></TableRow>
+                                            <TableRow key={c.instanceId}><TableCell>{c.name}</TableCell><TableCell>{format(parseISO(c.date), 'PPP', {locale: es})}</TableCell><TableCell className="text-right font-mono">€{c.classPay.toFixed(2)}</TableCell></TableRow>
                                         ))}
                                         </TableBody>
                                     </Table>
@@ -222,7 +180,7 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
         )
     };
     
-    const IncomeView = ({ isPartner }: { isPartner: boolean }) => {
+    const IncomeView = () => {
         if (!calculation || !('teacher' in calculation) || !calculation.teacher) return null;
         const { teacher, incomeDetails, totalIncome } = calculation;
         
@@ -245,10 +203,10 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                             {incomeDetails?.map((c: any) => {
                                 const statusInfo = getStatusInfo(c.status);
                                 return (
-                                    <TableRow key={c.id}>
+                                    <TableRow key={c.instanceId}>
                                         <TableCell>
                                             <p className="font-medium">{c.name}</p>
-                                            <p className="text-xs text-muted-foreground capitalize">{c.type} - {c.date ? format(parseISO(c.date), 'dd/MM/yy', { locale: es }) : c.day}</p>
+                                            <p className="text-xs text-muted-foreground capitalize">{c.type} - {format(parseISO(c.date), 'PPP', { locale: es })}</p>
                                         </TableCell>
                                         <TableCell><div className={`flex items-center gap-2 text-sm ${statusInfo.color}`}>{statusInfo.icon} {statusInfo.text}</div></TableCell>
                                         <TableCell className="text-right">
@@ -268,11 +226,11 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                  </CardContent>
             </Card>
         )
-    }
+    };
 
     if (mode === 'studio_expenses') return <StudioExpensesView />;
-    if (mode === 'partner_income') return <IncomeView isPartner={true} />;
-    if (mode === 'teacher_income') return <IncomeView isPartner={false} />;
+    if (mode === 'partner_income') return <IncomeView />;
+    if (mode === 'teacher_income') return <IncomeView />;
 
     return null;
 });

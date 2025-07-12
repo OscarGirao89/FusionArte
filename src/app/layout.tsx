@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/context/auth-context';
 import { PublicHeader } from '@/components/layout/public-header';
 import { PublicFooter } from '@/components/layout/public-footer';
 import { SettingsProvider } from '@/context/settings-context';
+import { AttendanceProvider } from '@/context/attendance-context';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -50,9 +51,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <SettingsProvider>
-          <AuthProvider>
-            <AppLayout>{children}</AppLayout>
-          </AuthProvider>
+          <AttendanceProvider>
+            <AuthProvider>
+              <AppLayout>{children}</AppLayout>
+            </AuthProvider>
+          </AttendanceProvider>
         </SettingsProvider>
       </body>
     </html>

@@ -2,33 +2,40 @@
 
 import { useState } from 'react';
 import { danceClasses, users } from '@/lib/data';
+import { useAttendance } from '@/context/attendance-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, ArrowLeft, Calendar, Check, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import type { UserRole } from '@/context/auth-context';
 
 type AttendanceSheetProps = {
   classId: string;
+  date: string; // YYYY-MM-DD
   userRole: UserRole | null;
 };
 
-export function AttendanceSheet({ classId, userRole }: AttendanceSheetProps) {
+export function AttendanceSheet({ classId, date, userRole }: AttendanceSheetProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { recordAttendance, getAttendanceForClass } = useAttendance();
   
   const danceClass = danceClasses.find((c) => c.id === classId);
   const enrolledStudents = users.filter((u) => danceClass?.enrolledStudentIds.includes(u.id));
 
-  // Initialize attendance state with all students marked as present for simulation
-  const [attendance, setAttendance] = useState<Record<number, boolean>>(
-    enrolledStudents.reduce((acc, student) => ({ ...acc, [student.id]: true }), {})
-  );
+  const initialAttendance = getAttendanceForClass(classId, date);
+  const [attendance, setAttendance] = useState<Record<number, boolean>>(() => {
+    if (initialAttendance && initialAttendance.studentStatus) {
+       return Object.fromEntries(initialAttendance.studentStatus.map(s => [s.studentId, s.present]));
+    }
+    // Default to all present if no record exists
+    return enrolledStudents.reduce((acc, student) => ({ ...acc, [student.id]: true }), {});
+  });
 
   if (!danceClass) {
     return (
@@ -48,11 +55,16 @@ export function AttendanceSheet({ classId, userRole }: AttendanceSheetProps) {
   };
 
   const handleSaveAttendance = () => {
-    // This is where you would send the data to your backend in a real application
-    console.log('Saving attendance:', attendance);
+    const studentStatus = Object.entries(attendance).map(([studentId, present]) => ({
+      studentId: Number(studentId),
+      present,
+    }));
+    
+    recordAttendance(classId, date, studentStatus);
+
     toast({
       title: 'Asistencia Guardada',
-      description: 'La asistencia para la clase ha sido guardada con éxito (simulación).',
+      description: `La asistencia para la clase del ${format(parseISO(date), 'PPP', {locale: es})} ha sido guardada.`,
     });
     router.back();
   };
@@ -72,7 +84,7 @@ export function AttendanceSheet({ classId, userRole }: AttendanceSheetProps) {
           <CardDescription className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
             <span className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                {danceClass.date ? format(new Date(danceClass.date), 'EEEE, d \'de\' MMMM', {locale: es}) : danceClass.day}
+                {format(parseISO(date), 'EEEE, d \'de\' MMMM', {locale: es})}
             </span>
              <span className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
@@ -98,7 +110,7 @@ export function AttendanceSheet({ classId, userRole }: AttendanceSheetProps) {
                   <TableRow key={student.id}>
                     <TableCell>
                       <Checkbox
-                        checked={attendance[student.id] || false}
+                        checked={attendance[student.id] ?? true}
                         onCheckedChange={(checked) => handleAttendanceChange(student.id, !!checked)}
                         aria-label={`Marcar asistencia para ${student.name}`}
                       />

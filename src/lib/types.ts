@@ -78,24 +78,33 @@ export type DanceClass = {
   styleId: string;
   levelId: string;
   teacherIds: number[];
-  day: string;
+  day: string; // Only for 'recurring'
   time: string; // "HH:MM"
   room: string;
   duration: string; // e.g. '60 min'
   capacity: number;
-  status: 'completed' | 'scheduled' | 'cancelled-low-attendance' | 'cancelled-teacher';
   enrolledStudentIds: number[];
   cancellationPolicyHours?: number;
   
-  // Type-specific fields
+  // Fields for specific types, now less reliant on a single status
   recurrenceMonths?: number; // For 'recurring'
   date?: string; // "YYYY-MM-DD" for 'one-time', 'workshop', 'rental'
-  isCancelledAndHidden?: boolean; // For cancelled classes, to hide from public schedule
-  isVisibleToStudents?: boolean; // For 'rental'
-  rentalContact?: string; // For 'rental'
-  rentalPrice?: number; // For 'rental'
-  workshopPaymentType?: 'fixed' | 'percentage'; // For 'workshop'
-  workshopPaymentValue?: number; // For 'workshop'
+  
+  // These were for the old status system and might be deprecated or used differently
+  status: 'scheduled' | 'completed' | 'cancelled-low-attendance' | 'cancelled-teacher'; // Now represents the template's default status
+  isCancelledAndHidden?: boolean;
+  isVisibleToStudents?: boolean;
+  rentalContact?: string;
+  rentalPrice?: number;
+  workshopPaymentType?: 'fixed' | 'percentage';
+  workshopPaymentValue?: number;
+};
+
+// Represents a specific occurrence of a DanceClass on a given date.
+export type ClassInstance = DanceClass & {
+  instanceId: string; // Unique ID for this specific instance, e.g., 'clase-1-2024-07-24'
+  date: string; // "YYYY-MM-DD" - This is THE date of the instance.
+  status: 'completed' | 'scheduled' | 'cancelled-low-attendance' | 'cancelled-teacher';
 };
 
 

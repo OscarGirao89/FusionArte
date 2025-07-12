@@ -8,6 +8,7 @@ import type { StudentMembership, StudentPayment, User } from '@/lib/types';
 import { studentMemberships as initialMemberships, users as allUsers } from '@/lib/data';
 import { studentPayments as initialPayments } from '@/lib/finances-data';
 import { userProfiles } from '@/components/layout/main-nav';
+import { useAttendance } from './attendance-context';
 
 export type UserRole = 'admin' | 'teacher' | 'student' | 'administrativo' | 'socio';
 
@@ -90,6 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [studentMemberships, setStudentMemberships] = useState<StudentMembership[]>(initialMemberships);
   const [studentPayments, setStudentPayments] = useState<StudentPayment[]>(initialPayments);
+  const { resetAttendance } = useAttendance();
 
   const router = useRouter();
   const pathname = usePathname();
@@ -162,6 +164,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUserRole(null);
       setUserId(null);
       setCurrentUser(null);
+      resetAttendance(); // Clear attendance data on logout
       router.push('/login');
     } catch (error) {
       console.error("Could not access localStorage", error);
