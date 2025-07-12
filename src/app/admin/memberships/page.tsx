@@ -65,9 +65,7 @@ const formSchema = z.discriminatedUnion("accessType", [
       classCount: z.coerce.number().int().min(1, 'Debe ser al menos 1'),
       price: z.coerce.number().min(0, 'Debe ser positivo')
     })).min(1, "Debes añadir al menos un tramo de precios."),
-    allowedStyles: z.array(z.string()).refine((value) => value.length > 0, {
-        message: "Debes seleccionar al menos un estilo.",
-    }),
+    allowedClasses: z.array(z.string()).default([]),
   }).merge(baseSchema)
 ]);
 
@@ -90,7 +88,7 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
     case 'course_pass':
       return { ...common, accessType: 'course_pass', allowedClasses: plan.allowedClasses || [] };
     case 'custom_pack':
-      return { ...common, accessType: 'custom_pack', allowedStyles: plan.allowedStyles || [], priceTiers: plan.priceTiers || [] };
+      return { ...common, accessType: 'custom_pack', allowedClasses: plan.allowedClasses || [], priceTiers: plan.priceTiers || [] };
   }
 };
 
@@ -153,7 +151,6 @@ export default function AdminMembershipsPage() {
         allowedClasses: [],
         visibility: 'public',
         priceTiers: [{ classCount: 4, price: 40 }],
-        allowedStyles: [],
       });
     }
     setIsDialogOpen(true);
@@ -193,7 +190,7 @@ export default function AdminMembershipsPage() {
             planToSave = { ...commonData, accessType: 'course_pass', allowedClasses: data.allowedClasses };
             break;
         case 'custom_pack':
-            planToSave = { ...commonData, accessType: 'custom_pack', priceTiers: data.priceTiers, allowedStyles: data.allowedStyles };
+            planToSave = { ...commonData, accessType: 'custom_pack', priceTiers: data.priceTiers, allowedClasses: data.allowedClasses };
             break;
     }
 
@@ -215,6 +212,16 @@ export default function AdminMembershipsPage() {
       variant: "destructive"
     });
   }
+
+  const allowedClassesDescription = (
+    <>
+      Selecciona las clases a las que dará acceso este plan.
+      {accessType === 'course_pass' ? 
+      " Es obligatorio seleccionar al menos una." :
+      " Si no marcas ninguna, se permitirá el acceso a todas."
+      }
+    </>
+  )
 
   return (
     <div className="p-4 md:p-8">
@@ -379,7 +386,7 @@ export default function AdminMembershipsPage() {
               </div>
 
 
-              {(accessType === 'class_pack' || accessType === 'trial_class' || accessType === 'course_pass') && (
+              {(accessType === 'class_pack' || accessType === 'trial_class' || accessType === 'course_pass' || accessType === 'custom_pack') && (
                   <div className="space-y-4 p-4 border rounded-md">
                      {(accessType === 'class_pack' || accessType === 'trial_class') && (
                          <FormField control={form.control} name="classCount" render={({ field }) => (
@@ -400,12 +407,7 @@ export default function AdminMembershipsPage() {
                           <FormItem>
                             <div className="mb-4">
                               <FormLabel className="text-base">Clases Permitidas</FormLabel>
-                              <FormDescription>
-                                {accessType === 'course_pass' 
-                                  ? "Selecciona las clases a las que dará acceso este pase. Es obligatorio seleccionar al menos una."
-                                  : "Selecciona las clases a las que da acceso este plan. Si no marcas ninguna, se permitirá el acceso a todas."
-                                }
-                              </FormDescription>
+                              <FormDescription>{allowedClassesDescription}</FormDescription>
                             </div>
                             <ScrollArea className="h-40 rounded-md border p-4">
                             <div className="flex items-center space-x-2 mb-4">
@@ -499,43 +501,6 @@ export default function AdminMembershipsPage() {
                       </Button>
                        <FormMessage>{form.formState.errors.priceTiers?.message || form.formState.errors.priceTiers?.root?.message}</FormMessage>
                     </div>
-
-                   <FormField
-                        control={form.control}
-                        name="allowedStyles"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Estilos Permitidos</FormLabel>
-                             <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" className="w-full justify-start font-normal">
-                                        {field.value?.length > 0 ? field.value.map(styleId => danceStyles.find(s => s.id === styleId)?.name).join(', ') : 'Seleccionar estilos'}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <ScrollArea className="h-48">
-                                    {danceStyles.map((style) => (
-                                        <div key={style.id} className="flex items-center space-x-2 p-2">
-                                            <Checkbox
-                                                id={`style-${style.id}`}
-                                                checked={field.value?.includes(style.id)}
-                                                onCheckedChange={(checked) => {
-                                                    const currentIds = field.value || [];
-                                                    return checked
-                                                        ? field.onChange([...currentIds, style.id])
-                                                        : field.onChange(currentIds.filter((id) => id !== style.id));
-                                                }}
-                                            />
-                                            <label htmlFor={`style-${style.id}`} className="font-normal">{style.name}</label>
-                                        </div>
-                                    ))}
-                                    </ScrollArea>
-                                </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                 </div>
               )}
 

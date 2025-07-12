@@ -67,7 +67,7 @@ export type PriceTier = {
 type CustomPackPlan = MembershipPlanBase & {
   accessType: 'custom_pack';
   priceTiers: PriceTier[];
-  allowedStyles: string[];
+  allowedClasses: string[];
 };
 
 export type MembershipPlan = UnlimitedPlan | ClassPackPlan | TrialClassPlan | CoursePassPlan | CustomPackPlan;

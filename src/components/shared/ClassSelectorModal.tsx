@@ -94,9 +94,7 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
 
         let eligibleClasses: DanceClass[] = [];
 
-        if (plan.accessType === 'custom_pack' && plan.allowedStyles) {
-             eligibleClasses = allClasses.filter(c => plan.allowedStyles.includes(c.styleId));
-        } else if (plan.allowedClasses && plan.allowedClasses.length > 0) {
+        if (plan.allowedClasses && plan.allowedClasses.length > 0) {
             eligibleClasses = allClasses.filter(c => plan.allowedClasses.includes(c.id));
         } else {
             eligibleClasses = allClasses;

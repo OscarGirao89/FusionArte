@@ -120,14 +120,14 @@ export const membershipPlans: MembershipPlan[] = [
     title: 'Bono Personalizado',
     description: 'Crea tu propio bono eligiendo el número de clases.',
     price: 0, // Price is determined by tiers
-    features: ['Ahorra comprando más clases', 'Aplica a estilos seleccionados', 'La mejor opción flexible'],
+    features: ['Ahorra comprando más clases', 'Aplica a clases seleccionadas', 'La mejor opción flexible'],
     accessType: 'custom_pack',
     priceTiers: [
       { classCount: 2, price: 25 },
       { classCount: 4, price: 45 },
       { classCount: 8, price: 80 },
     ],
-    allowedStyles: ['salsa', 'bachata', 'm-zouk'],
+    allowedClasses: [],
     durationUnit: 'months',
     durationValue: 3,
     visibility: 'public',
