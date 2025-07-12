@@ -2,18 +2,19 @@
 'use client';
 
 import React, { useMemo, useEffect } from 'react';
-import { users, danceClasses, membershipPlans } from '@/lib/data';
+import { users, danceClasses, membershipPlans, studentMemberships } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { AlertCircle, CheckCircle2, DollarSign, Handshake, MinusCircle, Percent, Users, XCircle, Shield, FileText, UserCheck, Briefcase, User as UserIcon } from 'lucide-react';
+import { AlertCircle, CheckCircle2, DollarSign, Handshake, MinusCircle, Percent, Users, XCircle, Shield, FileText, UserCheck, Briefcase, User as UserIcon, GraduationCap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAttendance } from '@/context/attendance-context';
-import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { ClassInstance } from '@/lib/types';
+import type { ClassInstance, StudentPayment } from '@/lib/types';
+import { useAuth } from '@/context/auth-context';
 
 
 const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; color: string } => {
@@ -38,6 +39,7 @@ type TeacherPayrollProps = {
 
 export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partnerId, teacherId }: TeacherPayrollProps) {
     const { generateInstancesForTeacher, classInstances } = useAttendance();
+    const { studentPayments } = useAuth();
 
     // Generate instances for all relevant teachers when the component mounts
     useEffect(() => {
@@ -56,35 +58,8 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
     }, [mode, partnerId, teacherId, generateInstancesForTeacher]);
 
     const calculation = useMemo(() => {
-        if (mode === 'studio_expenses') {
-             const nonPartnerTeachers = users.filter(u => u.role === 'Profesor' && !u.isPartner);
-             const payroll = nonPartnerTeachers.map(user => {
-                 const classesTaught = classInstances.filter(c => c.teacherIds.includes(user.id) && c.status === 'completed');
-                 let totalPay = 0;
-                 const paymentDetails = user.paymentDetails;
-                 
-                 const classDetails = classesTaught.map(c => {
-                     let classPay = 0;
-                     if (!paymentDetails) return { ...c, classPay };
-                     if (paymentDetails.type === 'per_class' && c.status === 'completed') {
-                         const durationHours = parseInt(c.duration.replace(' min', '')) / 60;
-                         classPay = (durationHours * (paymentDetails.payRate || 0));
-                     }
-                     totalPay += classPay;
-                     return { ...c, classPay };
-                 });
-
-                 if (paymentDetails?.type === 'monthly') {
-                     totalPay = paymentDetails.monthlySalary || 0;
-                 }
-                 return { user, classes: classDetails, totalPay };
-             });
-             return { payroll };
-        }
-
-        if ((mode === 'partner_income' && partnerId) || (mode === 'teacher_income' && teacherId)) {
-            const currentTeacherId = partnerId || teacherId;
-            const teacher = users.find(u => u.id === currentTeacherId);
+        const calculateForTeacher = (teacherId: number) => {
+            const teacher = users.find(u => u.id === teacherId);
             if (!teacher) return null;
 
             const classesTaught = classInstances.filter(c => c.teacherIds.includes(teacher.id));
@@ -130,13 +105,44 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
 
             const individualClasses = incomeDetails.filter(c => c.teacherIds.length === 1);
             const sharedClasses = incomeDetails.filter(c => c.teacherIds.length > 1);
+
+            // Get students for this partner's classes
+            const partnerClassIds = new Set(classesTaught.map(c => c.id));
+            const enrolledStudentIds = new Set<number>();
+            classesTaught.forEach(c => c.enrolledStudentIds.forEach(id => enrolledStudentIds.add(id)));
+            const enrolledStudentsData = Array.from(enrolledStudentIds).map(id => {
+                const student = users.find(u => u.id === id);
+                const membership = studentMemberships.find(sm => sm.userId === id);
+                const plan = membership ? membershipPlans.find(p => p.id === membership.planId) : null;
+                const payment = studentPayments.find(p => p.studentId === id && p.planId === membership?.planId);
+                return {
+                    student,
+                    membership,
+                    plan,
+                    payment
+                }
+            }).filter(d => d.student); // filter out any potential nulls
             
-            return { teacher, incomeDetails, totalIncome, individualClasses, sharedClasses };
+            return { teacher, incomeDetails, totalIncome, individualClasses, sharedClasses, enrolledStudentsData };
+        }
+
+        if (mode === 'studio_expenses') {
+             const nonPartnerTeachers = users.filter(u => u.role === 'Profesor' && !u.isPartner);
+             const payroll = nonPartnerTeachers.map(user => {
+                 const calc = calculateForTeacher(user.id);
+                 return { user, classes: calc?.incomeDetails || [], totalPay: calc?.totalIncome || 0 };
+             });
+             return { payroll };
+        }
+
+        if ((mode === 'partner_income' && partnerId) || (mode === 'teacher_income' && teacherId)) {
+            const currentTeacherId = partnerId || teacherId;
+            return calculateForTeacher(currentTeacherId!);
         }
 
         return null;
 
-    }, [mode, partnerId, teacherId, classInstances]);
+    }, [mode, partnerId, teacherId, classInstances, studentPayments]);
     
     const StudioExpensesView = () => {
         if (!calculation || !('payroll' in calculation)) return null;
@@ -184,7 +190,7 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
     
     const IncomeView = () => {
         if (!calculation || !('teacher' in calculation) || !calculation.teacher) return null;
-        const { teacher, totalIncome, individualClasses, sharedClasses } = calculation;
+        const { teacher, totalIncome, individualClasses, sharedClasses, enrolledStudentsData } = calculation;
 
         const getSharedTeacherNames = (ids: number[]) => {
             return users.filter(u => ids.includes(u.id) && u.id !== teacher.id).map(u => u.name).join(', ');
@@ -192,10 +198,11 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
         
         return (
             <Tabs defaultValue="total" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="total">Ingresos Totales</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="total">Ingresos</TabsTrigger>
                     <TabsTrigger value="individual">Clases Individuales</TabsTrigger>
                     <TabsTrigger value="shared">Clases Compartidas</TabsTrigger>
+                    <TabsTrigger value="students">Alumnos y Pagos</TabsTrigger>
                 </TabsList>
                 <TabsContent value="total" className="mt-6">
                     <Card>
@@ -265,6 +272,72 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                                             <TableCell className="text-right"><p className="font-mono font-semibold">€{c.classPay.toFixed(2)}</p><p className="text-xs text-muted-foreground">{c.payDescription}</p></TableCell>
                                         </TableRow>
                                     ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="students" className="mt-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><GraduationCap /> Alumnos Inscritos y Estado de Pago</CardTitle>
+                            <CardDescription>
+                                Revisa el estado de pago de los alumnos inscritos en tus clases (individuales y compartidas).
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Alumno</TableHead>
+                                        <TableHead>Membresía</TableHead>
+                                        <TableHead>Estado Pago</TableHead>
+                                        <TableHead className="text-right">Pendiente</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {enrolledStudentsData?.map(({ student, membership, plan, payment }) => {
+                                        if (!student) return null;
+                                        const isMembershipActive = membership ? isBefore(new Date(), parseISO(membership.endDate)) : false;
+                                        return (
+                                            <TableRow key={student.id}>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar className="h-8 w-8">
+                                                            <AvatarImage src={student.avatar} alt={student.name} />
+                                                            <AvatarFallback>{student.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                                        </Avatar>
+                                                        {student.name}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {plan ? (
+                                                        <>
+                                                         <Badge variant={isMembershipActive ? 'default' : 'outline'}>{plan.title}</Badge>
+                                                         <p className="text-xs text-muted-foreground">Expira: {format(parseISO(membership!.endDate), 'PPP', {locale: es})}</p>
+                                                        </>
+                                                    ) : <Badge variant="destructive">Sin membresía</Badge>}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {payment ? (
+                                                         <Badge variant={payment.status === 'paid' ? 'secondary' : payment.status === 'pending' ? 'destructive' : 'default'}>
+                                                            {payment.status}
+                                                         </Badge>
+                                                    ): <Badge variant="outline">N/A</Badge>}
+                                                </TableCell>
+                                                <TableCell className="text-right font-mono text-red-600">
+                                                    {payment && payment.amountDue > 0 ? `€${payment.amountDue.toFixed(2)}` : '€0.00'}
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                    {enrolledStudentsData.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="text-center text-muted-foreground">
+                                                No hay alumnos inscritos en tus clases este mes.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>

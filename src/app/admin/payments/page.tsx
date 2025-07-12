@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { users, membershipPlans } from '@/lib/data';
+import { users, membershipPlans, danceClasses } from '@/lib/data';
 import type { StudentPayment } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -39,7 +39,7 @@ const newInvoiceSchema = z.object({
 type NewInvoiceFormValues = z.infer<typeof newInvoiceSchema>;
 
 export default function AdminPaymentsPage() {
-  const { studentPayments: payments, addStudentPayment, updateStudentMembership, userRole } = useAuth();
+  const { studentPayments: allPayments, addStudentPayment, updateStudentMembership, userRole } = useAuth();
   const [editingPayment, setEditingPayment] = useState<StudentPayment | null>(null);
   const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
   const { toast } = useToast();
@@ -49,6 +49,39 @@ export default function AdminPaymentsPage() {
   const canCreate = userRole === 'admin' || userRole === 'administrativo' || userRole === 'socio';
 
   const students = users.filter(u => u.role === 'Estudiante');
+  const partners = useMemo(() => users.filter(u => u.isPartner), []);
+  const partnerClassIds = useMemo(() => {
+    const ids = new Set<string>();
+    danceClasses.forEach(c => {
+      if (c.teacherIds.some(tid => partners.some(p => p.id === tid))) {
+        ids.add(c.id);
+      }
+    });
+    return ids;
+  }, [partners]);
+
+  // Filter payments to only show those NOT related to partner classes
+  const payments = useMemo(() => {
+    // A payment is a studio payment if the plan it's for allows access
+    // to at least one class that is NOT a partner class.
+    // This is an approximation. A more complex system might tag plans themselves.
+    return allPayments.filter(p => {
+        const plan = membershipPlans.find(mp => mp.id === p.planId);
+        if (!plan) return true; // Default to showing if plan not found
+
+        if (plan.accessType === 'unlimited') return true; // Assume unlimited is a general studio plan for now
+        
+        if (plan.allowedClasses && plan.allowedClasses.length > 0) {
+            // If any allowed class is NOT a partner class, it's a studio payment
+            return plan.allowedClasses.some(classId => !partnerClassIds.has(classId));
+        }
+
+        // If no classes are specified, it might apply to all. This is ambiguous.
+        // We'll assume for now if no classes are specified, it's a general plan.
+        return true;
+    });
+  }, [allPayments, partnerClassIds]);
+
 
   const editForm = useForm<PaymentEditFormValues>({
     resolver: zodResolver(paymentEditSchema),
@@ -189,7 +222,7 @@ export default function AdminPaymentsPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Volver a Finanzas
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight font-headline">Pagos de Alumnos</h1>
+            <h1 className="text-3xl font-bold tracking-tight font-headline">Pagos de Alumnos (Estudio)</h1>
         </div>
          {canCreate && (
             <Dialog open={isNewInvoiceOpen} onOpenChange={setIsNewInvoiceOpen}>
@@ -264,8 +297,8 @@ export default function AdminPaymentsPage() {
         <CardHeader>
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                 <div>
-                    <CardTitle>Listado de Pagos</CardTitle>
-                    <CardDescription>Gestiona los pagos de las membresías de los alumnos.</CardDescription>
+                    <CardTitle>Listado de Pagos (Estudio)</CardTitle>
+                    <CardDescription>Gestiona los pagos de membresías no directamente ligadas a clases de socios.</CardDescription>
                 </div>
                  <div className="flex gap-2 flex-shrink-0 flex-wrap no-print">
                     <Button variant="outline" size="sm" onClick={handleExportCSV}>
