@@ -183,6 +183,7 @@ export type Permission =
   | 'manage_finances'
   | 'manage_settings'
   | 'manage_roles'
+  | 'manage_notes'
   | 'view_teacher_area'
   | 'take_attendance';
 
@@ -190,6 +191,17 @@ export type Role = {
   id: string;
   name: string;
   permissions: Permission[];
+};
+
+export type TaskStatus = 'todo' | 'in_progress' | 'done';
+
+export type TaskNote = {
+    id: string;
+    title: string;
+    description?: string;
+    status: TaskStatus;
+    category: string;
+    assigneeId?: number;
 };
 
 export type HeroSlide = {

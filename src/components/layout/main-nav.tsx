@@ -8,7 +8,7 @@ import { LogoIcon } from '@/components/icons/logo-icon';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from '@/components/ui/dropdown-menu';
-import { Settings, BookMarked, User, LogOut, CreditCard, Calendar, Users, ClipboardList, Banknote, GraduationCap, HandCoins, LayoutDashboard, Ticket, ShieldCheck, Palette, Signal } from 'lucide-react';
+import { Settings, BookMarked, User, LogOut, CreditCard, Calendar, Users, ClipboardList, Banknote, GraduationCap, HandCoins, LayoutDashboard, Ticket, Palette, Signal, StickyNote } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { useSettings } from '@/context/settings-context';
@@ -30,7 +30,6 @@ const adminManagementNav = [
     { href: '/admin/classes', label: 'Clases', icon: ClipboardList },
     { href: '/admin/memberships', label: 'Membresías', icon: CreditCard },
     { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
-    { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];
 
 export const userProfiles: Record<UserRole, { id: number; name: string; role: string; avatar: string }> = {
@@ -85,6 +84,16 @@ function UserMenu() {
                                     <span>{item.label}</span>
                                 </DropdownMenuItem>
                             ))}
+                            {(userRole === 'admin' || userRole === 'socio') && (
+                                <DropdownMenuItem onClick={() => router.push('/admin/notes')}>
+                                    <StickyNote className="mr-2 h-4 w-4" />
+                                    <span>Notas y Tareas</span>
+                                </DropdownMenuItem>
+                            )}
+                             <DropdownMenuItem onClick={() => router.push('/admin/settings')}>
+                                <Settings className="mr-2 h-4 w-4" />
+                                <span>Configuración</span>
+                            </DropdownMenuItem>
                         </DropdownMenuGroup>
                     </>
                  )}

@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, GraduationCap, Users, Banknote, CreditCard, Settings, ShieldCheck, Palette, Signal } from "lucide-react";
+import { ClipboardList, GraduationCap, Users, Banknote, CreditCard, Settings, ShieldCheck, Palette, Signal, StickyNote } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 
@@ -12,6 +12,7 @@ export default function AdminDashboardPage() {
     
     const canViewFinances = userRole === 'admin' || userRole === 'socio';
     const canViewSettings = userRole === 'admin' || userRole === 'socio' || userRole === 'administrativo';
+    const canViewNotes = userRole === 'admin' || userRole === 'socio';
 
     return (
         <div className="p-4 md:p-8">
@@ -138,7 +139,27 @@ export default function AdminDashboardPage() {
                         </CardFooter>
                     </Card>
                  )}
-
+                 
+                 {canViewNotes && (
+                     <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-4">
+                                <div className="bg-primary/10 p-3 rounded-full">
+                                    <StickyNote className="h-6 w-6 text-primary" />
+                                </div>
+                                <CardTitle>Notas y Tareas</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground">Organiza tareas, eventos y pendientes del equipo directivo.</p>
+                        </CardContent>
+                        <CardFooter>
+                            <Button asChild variant="outline">
+                                <Link href="/admin/notes">Gestionar Notas</Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                 )}
 
                 <Card>
                     <CardHeader>

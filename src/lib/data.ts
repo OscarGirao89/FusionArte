@@ -1,6 +1,6 @@
 
 
-import type { MembershipPlan, DanceClass, User, DanceStyle, DanceLevel, StudentMembership, Role } from './types';
+import type { MembershipPlan, DanceClass, User, DanceStyle, DanceLevel, StudentMembership, Role, TaskNote } from './types';
 
 export const danceStyles: DanceStyle[] = [
   { id: 'salsa', name: 'Salsa', description: 'Ritmos latinos vibrantes y enérgicos. Origen cubano y puertorriqueño.' },
@@ -227,6 +227,7 @@ export const roles: Role[] = [
         'manage_finances',
         'manage_settings',
         'manage_roles',
+        'manage_notes',
         'take_attendance'
       ]
     },
@@ -240,6 +241,9 @@ export const roles: Role[] = [
         'manage_classes',
         'manage_memberships',
         'manage_finances',
+        'manage_settings',
+        'manage_roles',
+        'manage_notes',
         'view_teacher_area',
         'take_attendance'
       ]
@@ -267,7 +271,16 @@ export const roles: Role[] = [
         'view_dashboard',
         'manage_users',
         'manage_students',
+        'manage_settings',
         'take_attendance'
       ]
     }
   ];
+
+export const taskNotes: TaskNote[] = [
+    { id: 'task-1', title: 'Organizar fiesta de verano', description: 'Buscar catering, DJ y decorar el estudio.', status: 'in_progress', category: 'Evento', assigneeId: 5 },
+    { id: 'task-2', title: 'Comprar botellas de agua', description: 'Comprar 2 packs de 24 botellas para la nevera.', status: 'todo', category: 'Compras' },
+    { id: 'task-3', title: 'Reparar espejo del Estudio 2', description: 'El espejo tiene una grieta en la esquina inferior derecha.', status: 'done', category: 'Mantenimiento', assigneeId: 2 },
+    { id: 'task-4', title: 'Planificar taller de Halloween', description: 'Definir estilo, fecha y profesores para el taller de octubre.', status: 'todo', category: 'Evento', assigneeId: 6 },
+    { id: 'task-5', title: 'Llamar al técnico del aire acondicionado', description: 'El aire del Estudio 1 no enfría lo suficiente.', status: 'in_progress', category: 'Mantenimiento', assigneeId: 2 },
+];
