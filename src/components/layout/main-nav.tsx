@@ -52,7 +52,7 @@ export const userProfiles: Record<UserRole, { id: number; name: string; role: st
 function NavLinks({ items, className }: { items: { href: string, label: string }[], className?: string }) {
     const pathname = usePathname();
     return (
-        <nav className={cn("hidden md:flex items-center gap-6", className)}>
+        <nav className={cn("hidden md:flex items-center gap-4", className)}>
             {items.map((link) => (
                 <Link
                   key={link.href}

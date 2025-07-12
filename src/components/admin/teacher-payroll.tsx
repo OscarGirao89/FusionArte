@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { users, danceClasses, membershipPlans } from '@/lib/data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -94,7 +94,7 @@ type TeacherPayrollProps = {
     partnerId?: number | null;
 };
 
-export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
+export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
     
     const calculation = useMemo(() => {
         if (mode === 'studio_expenses') {
@@ -292,7 +292,7 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
 
         return (
              <Tabs defaultValue="summary" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
                     <TabsTrigger value="summary">Resumen</TabsTrigger>
                     <TabsTrigger value="individual">Ingresos Individuales</TabsTrigger>
                     <TabsTrigger value="shared">Ingresos Compartidos</TabsTrigger>
@@ -349,4 +349,4 @@ export function TeacherPayroll({ mode, partnerId }: TeacherPayrollProps) {
     if (mode === 'partner_income') return <PartnerIncomeView />;
 
     return null;
-}
+});

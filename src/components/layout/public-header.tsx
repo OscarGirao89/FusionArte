@@ -47,10 +47,10 @@ export function PublicHeader() {
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-2">
-          <Button asChild size="sm">
+          <Button asChild size="sm" variant="default">
             <Link href="/login">Acceder</Link>
           </Button>
-          <Button asChild size="sm">
+          <Button asChild size="sm" variant="default">
             <Link href="/register">Registrar</Link>
           </Button>
         </div>

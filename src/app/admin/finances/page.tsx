@@ -1,9 +1,10 @@
+
 'use client';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { TeacherPayroll } from '@/components/admin/teacher-payroll';
 import { IncomeExpenseLedger } from '@/components/admin/income-expense-ledger';
-import { TrendingUp, TrendingDown, Scale, Users, Handshake, Link as LinkIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, Scale, Users, Handshake } from 'lucide-react';
 import { extraTransactions } from '@/lib/finances-data';
 import { danceClasses, users } from '@/lib/data';
 import { useAuth } from '@/context/auth-context';
@@ -33,7 +34,7 @@ export default function AdminFinancesPage() {
 
   const AdminView = () => (
      <Tabs defaultValue="studio" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-2">
             <TabsTrigger value="studio">Finanzas del Estudio</TabsTrigger>
             <TabsTrigger value="partners">Finanzas de Socios</TabsTrigger>
         </TabsList>
@@ -113,7 +114,7 @@ export default function AdminFinancesPage() {
   const PartnerView = () => {
     return (
     <Tabs defaultValue="studio" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-2">
             <TabsTrigger value="studio">Finanzas del Estudio</TabsTrigger>
             <TabsTrigger value="personal">Mis Finanzas</TabsTrigger>
         </TabsList>

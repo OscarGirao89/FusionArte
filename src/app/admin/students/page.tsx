@@ -332,7 +332,7 @@ export default function AdminStudentsPage() {
         </div>
       </div>
 
-      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen} modal={true}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col no-print">
             {selectedStudent && (
             <>

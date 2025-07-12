@@ -283,11 +283,11 @@ export default function AdminPaymentsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Alumno</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">Pagado</TableHead>
-                  <TableHead className="text-right">Pendiente</TableHead>
+                  <TableHead className="hidden sm:table-cell">Plan</TableHead>
+                  <TableHead className="hidden md:table-cell">Estado</TableHead>
+                  <TableHead className="hidden lg:table-cell text-right">Total</TableHead>
+                  <TableHead className="hidden lg:table-cell text-right">Pagado</TableHead>
+                  <TableHead className="hidden lg:table-cell text-right">Pendiente</TableHead>
                   <TableHead className="no-print">Acción</TableHead>
                 </TableRow>
               </TableHeader>
@@ -298,8 +298,8 @@ export default function AdminPaymentsPage() {
                         <p className="font-medium">{getStudentName(p.studentId)}</p>
                         <p className="text-xs text-muted-foreground">{format(parseISO(p.invoiceDate), 'dd/MM/yyyy')}</p>
                     </TableCell>
-                    <TableCell>{getPlanName(p.planId)}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">{getPlanName(p.planId)}</TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <Badge variant={p.status === 'paid' ? 'default' : p.status === 'pending' ? 'destructive' : 'secondary'}>
                         {{
                           paid: 'Pagado',
@@ -308,9 +308,9 @@ export default function AdminPaymentsPage() {
                         }[p.status]}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-mono">€{p.totalAmount.toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono text-green-600">€{p.amountPaid.toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono text-red-600">€{p.amountDue.toFixed(2)}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-right font-mono">€{p.totalAmount.toFixed(2)}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-right font-mono text-green-600">€{p.amountPaid.toFixed(2)}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-right font-mono text-red-600">€{p.amountDue.toFixed(2)}</TableCell>
                     <TableCell className="no-print">
                       {canEdit && (
                           <Dialog open={editingPayment?.id === p.id} onOpenChange={(isOpen) => !isOpen && setEditingPayment(null)}>

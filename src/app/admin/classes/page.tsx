@@ -433,7 +433,7 @@ export default function AdminClassesPage() {
         </CardContent>
       </Card>
       
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} modal={true}>
         <DialogContent className="sm:max-w-2xl no-print">
           <DialogHeader>
             <DialogTitle>{editingClass ? 'Editar Evento' : 'Añadir Nuevo Evento'}</DialogTitle>
@@ -591,7 +591,7 @@ export default function AdminClassesPage() {
                 )}
                 
                 {eventType === 'rental' && (
-                    <div className="md:col-span-2 grid grid-cols-2 gap-4 border p-4 rounded-md items-center">
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border p-4 rounded-md items-center">
                         <FormField control={form.control} name="rentalContact" render={({ field }) => (
                             <FormItem><FormLabel>Responsable/Contacto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
