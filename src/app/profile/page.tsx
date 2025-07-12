@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { useAuth } from "@/context/auth-context";
-import { membershipPlans, danceClasses as allDanceClasses, users } from '@/lib/data';
+import { membershipPlans, danceClasses as allDanceClasses, users, danceStyles } from '@/lib/data';
 import type { StudentPayment, DanceClass } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -73,20 +73,38 @@ export default function ProfilePage() {
         if (!currentUser) return [];
         return allDanceClasses.filter(c => c.enrolledStudentIds.includes(currentUser.id));
     }, [currentUser]);
+    
+    const upcomingClassesToShow = isMembershipActive ? myEnrolledClasses : [];
 
     const suggestedClasses = useMemo(() => {
         if (!currentUser) return [];
+        
         const enrolledClassIds = new Set(myEnrolledClasses.map(c => c.id));
         const enrolledStyleIds = new Set(myEnrolledClasses.map(c => c.styleId));
+        
+        // Suggest classes in styles the user is already taking but isn't enrolled in
+        const sameStyleSuggestions = allDanceClasses.filter(c => 
+            !enrolledClassIds.has(c.id) &&
+            enrolledStyleIds.has(c.styleId) &&
+            c.type === 'recurring' &&
+            c.status === 'scheduled'
+        );
 
-        return allDanceClasses
-            .filter(c => 
-                !enrolledClassIds.has(c.id) &&
-                enrolledStyleIds.has(c.styleId) &&
-                c.type === 'recurring' &&
-                c.status === 'scheduled'
-            )
+        // Suggest classes from other popular styles the user isn't taking
+        const otherPopularStyleIds = ['salsa', 'bachata', 'hip-hop'];
+        const otherStyleSuggestions = allDanceClasses.filter(c => 
+            !enrolledClassIds.has(c.id) &&
+            !enrolledStyleIds.has(c.styleId) &&
+            otherPopularStyleIds.includes(c.styleId) &&
+            c.type === 'recurring' &&
+            c.status === 'scheduled'
+        );
+
+        // Combine and limit suggestions
+        return [...sameStyleSuggestions, ...otherStyleSuggestions]
+            .filter((value, index, self) => self.findIndex(v => v.id === value.id) === index) // Unique classes
             .slice(0, 3);
+            
     }, [currentUser, myEnrolledClasses]);
 
     const popularStylesData = [
@@ -180,11 +198,12 @@ export default function ProfilePage() {
 
     const handleEditToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
-        if (isEditing) {
-            form.handleSubmit(onSubmit)();
-        } else {
-            setIsEditing(true);
-        }
+        setIsEditing(prev => !prev);
+    }
+    
+    const handleSaveSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        form.handleSubmit(onSubmit)();
     }
 
     // Student View
@@ -231,18 +250,12 @@ export default function ProfilePage() {
                             <Card className="col-span-1 md:col-span-2 lg:col-span-1">
                                 <CardHeader><CardTitle className="text-sm font-medium">Mis Próximas Clases</CardTitle></CardHeader>
                                 <CardContent>
-                                    <UpcomingClasses classes={myEnrolledClasses} />
+                                    <UpcomingClasses classes={upcomingClassesToShow} />
                                 </CardContent>
                             </Card>
                         </div>
                         
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <Card>
-                                <CardHeader><CardTitle className="font-headline">Popularidad de Estilos</CardTitle></CardHeader>
-                                <CardContent className="pl-2">
-                                    <Overview data={popularStylesData} config={popularStylesConfig} categoryKey="name" dataKey="total"/>
-                                </CardContent>
-                            </Card>
                             <Card>
                                 <CardHeader><CardTitle className="font-headline flex items-center gap-2"><Sparkles className="h-5 w-5 text-accent"/> Clases que podrían interesarte</CardTitle></CardHeader>
                                 <CardContent>
@@ -272,6 +285,12 @@ export default function ProfilePage() {
                                 )}
                                 </CardContent>
                             </Card>
+                            <Card>
+                                <CardHeader><CardTitle className="font-headline">Popularidad de Estilos</CardTitle></CardHeader>
+                                <CardContent className="pl-2">
+                                    <Overview data={popularStylesData} config={popularStylesConfig} categoryKey="name" dataKey="total"/>
+                                </CardContent>
+                            </Card>
                         </div>
                     </TabsContent>
 
@@ -283,7 +302,7 @@ export default function ProfilePage() {
                                         <CardHeader>
                                             <div className="flex w-full items-start justify-between">
                                                 <CardTitle className="font-headline text-xl">Mis Datos</CardTitle>
-                                                <Button variant="ghost" size="icon" className="h-7 w-7" type="button" onClick={handleEditToggle}>
+                                                 <Button variant="ghost" size="icon" className="h-7 w-7" type="button" onClick={isEditing ? handleSaveSubmit : handleEditToggle}>
                                                     {isEditing ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
                                                     <span className="sr-only">{isEditing ? 'Guardar' : 'Editar'}</span>
                                                 </Button>
@@ -350,7 +369,7 @@ export default function ProfilePage() {
                                                 <div className="text-center py-8"><p className="text-muted-foreground">No tienes una membresía activa en este momento.</p><Button className="mt-4" onClick={() => router.push('/memberships')}>Ver Planes</Button></div>
                                             )}
                                         </CardContent>
-                                        <CardFooter>
+                                        <CardFooter className="flex-col items-start gap-4">
                                             <Button variant="outline" size="sm" onClick={handlePrintReceipt} disabled={!membership}><Printer className="mr-2 h-4 w-4" />Imprimir Comprobante</Button>
                                         </CardFooter>
                                     </Card>
@@ -375,7 +394,7 @@ export default function ProfilePage() {
                         <CardHeader>
                             <div className="flex w-full items-start justify-between">
                                 <CardTitle className="font-headline">Mis Datos</CardTitle>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" type="button" onClick={handleEditToggle}>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" type="button" onClick={isEditing ? handleSaveSubmit : handleEditToggle}>
                                     {isEditing ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
                                     <span className="sr-only">{isEditing ? 'Guardar' : 'Editar'}</span>
                                 </Button>
