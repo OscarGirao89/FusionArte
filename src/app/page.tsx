@@ -2,16 +2,35 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { users } from '@/lib/data';
 import { Award, Music, Users, Heart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSettings } from '@/context/settings-context';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { useEffect, useState } from 'react';
+import type { User } from '@/lib/types';
 
 export default function HomePage() {
-  const featuredTeachers = users.filter(u => (u.role === 'Profesor' || u.role === 'Socio') && u.isVisibleToStudents).slice(0, 3);
+  const [featuredTeachers, setFeaturedTeachers] = useState<User[]>([]);
   const { settings } = useSettings();
+
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      try {
+        const response = await fetch('/api/users');
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+        const users: User[] = await response.json();
+        const teachers = users.filter(u => (u.role === 'Profesor' || u.role === 'Socio') && u.isVisibleToStudents).slice(0, 3);
+        setFeaturedTeachers(teachers);
+      } catch (error) {
+        console.error("Error fetching featured teachers:", error);
+      }
+    };
+
+    fetchTeachers();
+  }, []);
 
   return (
     <div className="flex-1 bg-background">
@@ -139,7 +158,7 @@ export default function HomePage() {
                <Card key={teacher.id} className="overflow-hidden text-center group">
                   <div className="relative h-64 w-full">
                     <Image
-                      src={teacher.avatar}
+                      src={teacher.avatar || "https://placehold.co/400x400.png"}
                       alt={`Foto de ${teacher.name}`}
                       layout="fill"
                       objectFit="cover"

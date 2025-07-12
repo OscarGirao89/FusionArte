@@ -1,7 +1,6 @@
 
 'use client';
 import { useState, useEffect } from 'react';
-import { taskNotes } from '@/lib/data';
 import type { TaskNote } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format, parseISO, isPast } from 'date-fns';
@@ -12,23 +11,37 @@ export function TaskAlerts() {
     const [currentAlertIndex, setCurrentAlertIndex] = useState(0);
 
     useEffect(() => {
-        // In a real app, this would be a subscription to notifcations
-        // Here we simulate loading tasks and checking for pending alerts
-        const now = new Date();
-        const alertsToShow: TaskNote[] = [];
+        const fetchTasks = async () => {
+            try {
+                const response = await fetch('/api/notes');
+                if (!response.ok) {
+                    console.error("Failed to fetch tasks for alerts");
+                    return;
+                }
+                const tasks: TaskNote[] = await response.json();
+                
+                // In a real app, this would be a subscription to notifications
+                // Here we simulate loading tasks and checking for pending alerts
+                const alertsToShow: TaskNote[] = [];
 
-        taskNotes.forEach(task => {
-            // Try to get the alert state from localStorage
-            const isDismissed = localStorage.getItem(`alert_dismissed_${task.id}`) === 'true';
+                tasks.forEach(task => {
+                    // Try to get the alert state from localStorage
+                    const isDismissed = localStorage.getItem(`alert_dismissed_${task.id}`) === 'true';
 
-            if (task.alertDateTime && !task.alertDismissed && !isDismissed && isPast(parseISO(task.alertDateTime))) {
-                alertsToShow.push(task);
+                    if (task.alertDateTime && !task.alertDismissed && !isDismissed && isPast(parseISO(task.alertDateTime))) {
+                        alertsToShow.push(task);
+                    }
+                });
+
+                if (alertsToShow.length > 0) {
+                    setUpcomingAlerts(alertsToShow);
+                }
+            } catch (error) {
+                console.error("Error fetching tasks:", error);
             }
-        });
+        };
 
-        if (alertsToShow.length > 0) {
-            setUpcomingAlerts(alertsToShow);
-        }
+        fetchTasks();
     }, []);
 
     const handleDismiss = () => {
@@ -47,11 +60,11 @@ export function TaskAlerts() {
             // Mark the alert as permanently dismissed (simulated with localStorage)
             try {
                 localStorage.setItem(`alert_dismissed_${currentTask.id}`, 'true');
+                // Here you might also want to send a request to your API to update the task in the database
+                // fetch(`/api/notes/${currentTask.id}`, { method: 'PUT', body: JSON.stringify({ alertDismissed: true }) });
             } catch (error) {
                 console.error("Could not access localStorage", error);
             }
-            // This could also update the state in a database
-            currentTask.alertDismissed = true; 
         }
         handleDismiss();
     };
