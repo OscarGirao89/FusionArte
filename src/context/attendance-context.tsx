@@ -2,8 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { danceClasses } from '@/lib/data';
-import type { ClassInstance } from '@/lib/types';
+import type { ClassInstance, DanceClass } from '@/lib/types';
 import { format, eachDayOfInterval, getDay, isSameDay, parseISO } from 'date-fns';
 
 type StudentAttendanceStatus = {
@@ -20,7 +19,7 @@ type ClassAttendanceRecord = {
 
 export interface AttendanceContextType {
   classInstances: ClassInstance[];
-  generateInstancesForTeacher: (teacherId: number, start: Date, end: Date) => void;
+  generateInstancesForTeacher: (teacherId: number, start: Date, end: Date, allClasses: DanceClass[]) => void;
   confirmClass: (classId: string, date: string) => void;
   recordAttendance: (classId: string, date: string, studentStatus: StudentAttendanceStatus[]) => void;
   getAttendanceForClass: (classId: string, date: string) => ClassAttendanceRecord | undefined;
@@ -35,8 +34,8 @@ export const AttendanceProvider = ({ children }: { children: ReactNode }) => {
   const [classInstances, setClassInstances] = useState<ClassInstance[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, ClassAttendanceRecord>>({});
 
-  const generateInstancesForTeacher = useCallback((teacherId: number, start: Date, end: Date) => {
-    const teacherClasses = danceClasses.filter(c => c.teacherIds.includes(teacherId));
+  const generateInstancesForTeacher = useCallback((teacherId: number, start: Date, end: Date, allClasses: DanceClass[]) => {
+    const teacherClasses = allClasses.filter(c => c.teacherIds.includes(teacherId));
     
     const newInstances: ClassInstance[] = [];
     const interval = eachDayOfInterval({ start, end });
@@ -61,14 +60,13 @@ export const AttendanceProvider = ({ children }: { children: ReactNode }) => {
               ...c,
               instanceId,
               date: dateStr,
-              status: record ? record.status : 'scheduled', // Use recorded status or default to scheduled
+              status: record ? record.status : 'scheduled',
             });
           }
         }
       });
     });
 
-    // We only update if there are new instances to avoid infinite loops
     if (newInstances.length > 0) {
         setClassInstances(prev => {
             const existingIds = new Set(prev.map(i => i.instanceId));
