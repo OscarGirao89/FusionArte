@@ -208,8 +208,6 @@ export default function NotesAndTasksPage() {
     };
     
     const tasksByDate = useMemo(() => {
-        const priorityOrder: Record<TaskPriority, number> = { high: 0, medium: 1, low: 2 };
-
         return tasks.reduce((acc, task) => {
             if (task.dueDate) {
                 const dateStr = format(parseISO(task.dueDate), 'yyyy-MM-dd');
@@ -237,18 +235,18 @@ export default function NotesAndTasksPage() {
                 modifiers.high.push(date);
             } else if (priorities.includes('medium')) {
                 modifiers.medium.push(date);
-            } else {
+            } else if (priorities.includes('low')) {
                 modifiers.low.push(date);
             }
         }
         return modifiers;
     }, [tasksByDate]);
 
-    const calendarModifierStyles = {
-        hasTasks: {}, 
-        high: { 'data-priority': 'high' },
-        medium: { 'data-priority': 'medium' },
-        low: { 'data-priority': 'low' },
+    const calendarModifierClassNames = {
+        hasTasks: "has-tasks", 
+        high: "priority-high",
+        medium: "priority-medium",
+        low: "priority-low",
     };
 
 
@@ -293,14 +291,14 @@ export default function NotesAndTasksPage() {
                         className="rounded-md border p-4"
                         locale={es}
                         modifiers={calendarModifiers}
-                        modifiersStyles={calendarModifierStyles}
+                        modifiersClassNames={calendarModifierClassNames}
                         classNames={{
                             day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-full",
                             day_today: "bg-accent text-accent-foreground rounded-full",
                             day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 rounded-full relative",
-                            day_modifier_high: "[&[aria-selected=false]]:after:bg-red-500",
-                            day_modifier_medium: "[&[aria-selected=false]]:after:bg-yellow-500",
-                            day_modifier_low: "[&[aria-selected=false]]:after:bg-blue-500",
+                            day_modifier_priority_high: "[&:not([aria-selected])]:after:bg-red-500",
+                            day_modifier_priority_medium: "[&:not([aria-selected])]:after:bg-yellow-500",
+                            day_modifier_priority_low: "[&:not([aria-selected])]:after:bg-blue-500",
                             day_modifier_hasTasks: "after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full",
                         }}
                      />
