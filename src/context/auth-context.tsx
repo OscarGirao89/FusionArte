@@ -38,7 +38,7 @@ const protectedRoutes: { path: string; roles: UserRole[] }[] = [
   { path: '/my-classes', roles: ['teacher', 'socio'] },
   { path: '/my-finances', roles: ['teacher', 'socio'] },
   { path: '/profile', roles: ['student', 'teacher', 'admin', 'administrativo', 'socio'] },
-  { path: '/admin/finances', roles: ['admin', 'socio']},
+  { path: '/admin/finances', roles: ['admin', 'socio', 'administrativo']},
   { path: '/admin/payments', roles: ['admin', 'socio', 'administrativo']},
   { path: '/admin/settings', roles: ['admin', 'socio']},
   { path: '/admin/roles', roles: ['admin', 'socio']},
@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
          if (role === 'student') {
             router.push('/profile');
-          } else if (role === 'teacher') {
+          } else if (role === 'teacher' || role === 'socio') {
             router.push('/my-classes');
           } else {
             router.push('/admin/dashboard'); // Redirect all management roles to the dashboard
