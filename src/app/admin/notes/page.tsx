@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MoreHorizontal, Edit, Trash2, Tag, User, Circle, CheckCircle, Clock, CalendarIcon as CalendarDaysIcon, Users as UsersIcon, Bell, Calendar as CalendarIconComponent } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Tag, User, Circle, CheckCircle, Clock, Calendar as CalendarDaysIcon, Users as UsersIcon, Bell } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu';
@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
-import { format, parseISO, startOfDay }from 'date-fns';
+import { format, parseISO }from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -200,37 +200,6 @@ export default function NotesAndTasksPage() {
         done: tasks.filter(t => t.status === 'done'),
     };
     
-    const calendarModifiers = useMemo(() => {
-        const modifiers: { high?: Date[]; medium?: Date[]; low?: Date[] } = {};
-        const datesWithTasks: Record<string, TaskPriority> = {};
-        const priorityOrder: Record<TaskPriority, number> = { high: 2, medium: 1, low: 0 };
-
-        tasks.forEach(task => {
-            if (task.dueDate) {
-                const dateStr = format(startOfDay(parseISO(task.dueDate)), 'yyyy-MM-dd');
-                const priority = task.priority || 'low';
-                if (!datesWithTasks[dateStr] || priorityOrder[priority] > priorityOrder[datesWithTasks[dateStr]]) {
-                    datesWithTasks[dateStr] = priority;
-                }
-            }
-        });
-
-        Object.entries(datesWithTasks).forEach(([dateStr, priority]) => {
-            if (!modifiers[priority]) {
-                modifiers[priority] = [];
-            }
-            modifiers[priority]!.push(parseISO(dateStr));
-        });
-
-        return modifiers;
-    }, [tasks]);
-
-    const calendarModifierClassNames = {
-        high: "day_modifier_priority_high",
-        medium: "day_modifier_priority_medium",
-        low: "day_modifier_priority_low",
-    };
-
     return (
         <div className="p-4 md:p-8">
             <div className="flex items-center justify-between mb-8">
@@ -253,26 +222,6 @@ export default function NotesAndTasksPage() {
                     </div>
                 ))}
             </div>
-
-            <Card className="mt-8">
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <div>
-                            <CardTitle className="flex items-center gap-2 font-headline"><CalendarIconComponent className="h-6 w-6" /> Calendario de Vencimientos</CardTitle>
-                            <CardDescription>Visualiza las tareas por su fecha de vencimiento. Los días están marcados por prioridad.</CardDescription>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                     <Calendar
-                        mode="single"
-                        className="rounded-md border p-4"
-                        locale={es}
-                        modifiers={calendarModifiers}
-                        modifiersClassNames={calendarModifierClassNames}
-                     />
-                </CardContent>
-            </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-xl">
