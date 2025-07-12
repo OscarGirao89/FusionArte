@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, MoreHorizontal, Edit, Trash2, Tag, User, Circle, CheckCircle, Clock, CalendarIcon as CalendarDaysIcon, Users as UsersIcon, Bell, Calendar as CalendarIconComponent } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -50,10 +50,10 @@ const statusMap: Record<TaskStatus, { label: string; icon: React.ReactNode; colo
   done: { label: 'Finalizado', icon: <CheckCircle className="h-4 w-4" />, color: 'text-green-500' },
 };
 
-const priorityMap: Record<TaskPriority, { label: string; badgeClass: string; borderClass: string }> = {
-    low: { label: 'Baja', badgeClass: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200', borderClass: 'border-l-4 border-blue-500' },
-    medium: { label: 'Media', badgeClass: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200', borderClass: 'border-l-4 border-yellow-500' },
-    high: { label: 'Alta', badgeClass: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200', borderClass: 'border-l-4 border-red-500' },
+const priorityMap: Record<TaskPriority, { label: string; badgeClass: string; borderClass: string; dotClass: string; }> = {
+    low: { label: 'Baja', badgeClass: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200', borderClass: 'border-l-4 border-blue-500', dotClass: 'bg-blue-500' },
+    medium: { label: 'Media', badgeClass: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200', borderClass: 'border-l-4 border-yellow-500', dotClass: 'bg-yellow-500' },
+    high: { label: 'Alta', badgeClass: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200', borderClass: 'border-l-4 border-red-500', dotClass: 'bg-red-500' },
 };
 
 function TaskCard({ task, onEdit, onDelete, onStatusChange }: { task: TaskNote; onEdit: (task: TaskNote) => void; onDelete: (taskId: string) => void; onStatusChange: (taskId: string, status: TaskStatus) => void; }) {
@@ -206,10 +206,50 @@ export default function NotesAndTasksPage() {
         in_progress: filteredTasks.filter(t => t.status === 'in_progress'),
         done: filteredTasks.filter(t => t.status === 'done'),
     };
+    
+    const tasksByDate = useMemo(() => {
+        const priorityOrder: Record<TaskPriority, number> = { high: 0, medium: 1, low: 2 };
 
-    const tasksWithDueDate = useMemo(() => {
-        return tasks.filter(task => !!task.dueDate).map(task => parseISO(task.dueDate!));
+        return tasks.reduce((acc, task) => {
+            if (task.dueDate) {
+                const dateStr = format(parseISO(task.dueDate), 'yyyy-MM-dd');
+                if (!acc[dateStr]) {
+                    acc[dateStr] = [];
+                }
+                acc[dateStr].push(task);
+            }
+            return acc;
+        }, {} as Record<string, TaskNote[]>);
     }, [tasks]);
+
+    const calendarModifiers = useMemo(() => {
+        const modifiers: Record<string, Date[]> = {
+            hasTasks: [],
+            high: [],
+            medium: [],
+            low: [],
+        };
+        for (const dateStr in tasksByDate) {
+            const date = parseISO(dateStr);
+            modifiers.hasTasks.push(date);
+            const priorities = tasksByDate[dateStr].map(t => t.priority || 'medium');
+            if (priorities.includes('high')) {
+                modifiers.high.push(date);
+            } else if (priorities.includes('medium')) {
+                modifiers.medium.push(date);
+            } else {
+                modifiers.low.push(date);
+            }
+        }
+        return modifiers;
+    }, [tasksByDate]);
+
+    const calendarModifierStyles = {
+        hasTasks: {}, 
+        high: { 'data-priority': 'high' },
+        medium: { 'data-priority': 'medium' },
+        low: { 'data-priority': 'low' },
+    };
 
 
     return (
@@ -250,16 +290,18 @@ export default function NotesAndTasksPage() {
                         mode="single"
                         selected={selectedDate}
                         onSelect={setSelectedDate}
-                        className="rounded-md border"
+                        className="rounded-md border p-4"
                         locale={es}
-                        modifiers={{
-                           hasTask: tasksWithDueDate
-                        }}
-                         modifiersStyles={{
-                            hasTask: {
-                                border: '2px solid hsl(var(--primary))',
-                                borderRadius: '50%'
-                            }
+                        modifiers={calendarModifiers}
+                        modifiersStyles={calendarModifierStyles}
+                        classNames={{
+                            day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-full",
+                            day_today: "bg-accent text-accent-foreground rounded-full",
+                            day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 rounded-full relative",
+                            day_modifier_high: "[&[aria-selected=false]]:after:bg-red-500",
+                            day_modifier_medium: "[&[aria-selected=false]]:after:bg-yellow-500",
+                            day_modifier_low: "[&[aria-selected=false]]:after:bg-blue-500",
+                            day_modifier_hasTasks: "after:content-[''] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full",
                         }}
                      />
                 </CardContent>
