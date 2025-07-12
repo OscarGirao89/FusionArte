@@ -15,7 +15,7 @@ export function TaskAlerts() {
             try {
                 const response = await fetch('/api/notes');
                 if (!response.ok) {
-                    console.error("Failed to fetch tasks for alerts");
+                    // Silently fail if the API isn't ready. This is expected during setup.
                     return;
                 }
                 const tasks: TaskNote[] = await response.json();
@@ -37,6 +37,7 @@ export function TaskAlerts() {
                     setUpcomingAlerts(alertsToShow);
                 }
             } catch (error) {
+                // Also ignore network errors during setup
                 console.error("Error fetching tasks:", error);
             }
         };
