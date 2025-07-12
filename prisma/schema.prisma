@@ -11,204 +11,152 @@ datasource db {
 }
 
 model User {
-  id                  Int                 @id @default(autoincrement())
-  name                String
-  email               String              @unique
-  passwordHash        String? // For real authentication
-  role                String
-  joined              DateTime            @default(now())
-  avatar              String?
-  dob                 String?
-  mobile              String?
-  isVisibleToStudents Boolean?            @default(false)
-  isPartner           Boolean?            @default(false)
-  bio                 String?
-  specialties         String[]
-
-  paymentType         String?
-  payRate             Float?
-  monthlySalary       Float?
-  cancelledClassPay   Float?
-
-  taughtClasses     DanceClass[]        @relation("ClassTeachers")
-  enrolledClasses   DanceClass[]        @relation("ClassStudents")
-  memberships       StudentMembership[]
-  payments          StudentPayment[]
-  attendanceHistory AttendanceRecord[]
-  assignedTasks     TaskNote[]          @relation("TaskAssignees")
+  id                    Int                  @id @default(autoincrement())
+  email                 String               @unique
+  name                  String
+  role                  String // Estudiante, Profesor, Administrador, Administrativo, Socio
+  joined                DateTime             @default(now())
+  avatar                String?
+  dob                   String? // YYYY-MM-DD
+  mobile                String?
+  isVisibleToStudents   Boolean?
+  isPartner             Boolean?
+  bio                   String?
+  specialties           String[]
+  paymentDetailsJson    String? // JSON string for payment details
+  enrolledClasses       DanceClass[]         @relation("ClassEnrolledStudents")
+  taughtClasses         DanceClass[]         @relation("ClassTeachers")
+  assignedTasks         TaskNote[]           @relation("TaskAssignees")
+  studentMemberships    StudentMembership[]
+  studentPayments       StudentPayment[]
+  attendanceHistory     AttendanceRecord[]
 }
 
 model DanceClass {
   id                      String   @id @default(cuid())
   name                    String
-  type                    String
+  type                    String // recurring, one-time, workshop, rental
   styleId                 String
   levelId                 String
+  teacherIds              User[]   @relation("ClassTeachers")
   day                     String?
   time                    String
   room                    String
   duration                String
   capacity                Int
-  enrolledStudentIds      Int[]
-
+  enrolledStudentIds      User[]   @relation("ClassEnrolledStudents")
   cancellationPolicyHours Int?
   recurrenceMonths        Int?
   date                    String?
-
   status                  String
   isCancelledAndHidden    Boolean?
-  isVisibleToStudents     Boolean?            @default(false)
+  isVisibleToStudents     Boolean?
   rentalContact           String?
   rentalPrice             Float?
   workshopPaymentType     String?
   workshopPaymentValue    Float?
-
-  teachers      User[]             @relation("ClassTeachers")
-  students      User[]             @relation("ClassStudents")
-  style         DanceStyle         @relation(fields: [styleId], references: [id])
-  level         DanceLevel         @relation(fields: [levelId], references: [id])
-  coupons       Coupon[]           @relation("ClassCoupons")
-  attendance    AttendanceRecord[]
-  allowedInPlan MembershipPlan[]   @relation("AllowedClasses")
 }
 
 model DanceStyle {
-  id          String       @id @default(cuid())
-  name        String       @unique
+  id          String @id @default(cuid())
+  name        String @unique
   description String
-  classes     DanceClass[]
 }
 
 model DanceLevel {
-  id          String       @id @default(cuid())
-  name        String       @unique
+  id          String @id @default(cuid())
+  name        String @unique
   description String
-  classes     DanceClass[]
-}
-
-model StudentMembership {
-  id               Int      @id @default(autoincrement())
-  userId           Int
-  planId           String
-  startDate        DateTime
-  endDate          DateTime
-  classesRemaining Int?
-
-  user User @relation(fields: [userId], references: [id])
-  plan MembershipPlan @relation(fields: [planId], references: [id])
 }
 
 model MembershipPlan {
-  id                 String   @id @default(cuid())
-  title              String
-  price              Float
-  description        String
-  features           String[]
-  isPopular          Boolean? @default(false)
-  durationUnit       String
-  durationValue      Int
-  visibility         String   @default("public")
-  accessType         String
-  classCount         Int?
-  priceTiersJson     String?
+  id              String   @id @default(cuid())
+  title           String
+  price           Float
+  description     String
+  features        String[]
+  isPopular       Boolean?
+  durationUnit    String
+  durationValue   Int
+  visibility      String
+  accessType      String
+  classCount      Int?
+  allowedClasses  String[]
+  priceTiersJson  String? // JSON string for price tiers
+  studentMemberships StudentMembership[]
+  studentPayments StudentPayment[]
+  coupons         Coupon[] @relation("CouponApplicablePlans")
+}
 
-  allowedClassesJson String? // Will store an array of class IDs as a JSON string
-  allowedClasses     DanceClass[]      @relation("AllowedClasses")
-  students           StudentMembership[]
-  payments           StudentPayment[]
-  coupons            Coupon[]          @relation("PlanCoupons")
+model StudentMembership {
+  id                Int      @id @default(autoincrement())
+  user              User     @relation(fields: [userId], references: [id])
+  userId            Int
+  plan              MembershipPlan @relation(fields: [planId], references: [id])
+  planId            String
+  startDate         DateTime
+  endDate           DateTime
+  classesRemaining  Int?
 }
 
 model StudentPayment {
-  id              String    @id @default(cuid())
-  studentId       Int
-  planId          String
-  invoiceDate     DateTime
-  totalAmount     Float
-  status          String
-  amountPaid      Float
-  amountDue       Float
-  notes           String?
-  lastUpdatedBy   String?
-  lastUpdatedDate DateTime?
+  id               String   @id @default(cuid())
+  user             User     @relation(fields: [studentId], references: [id])
+  studentId        Int
+  plan             MembershipPlan @relation(fields: [planId], references: [id])
+  planId           String
+  invoiceDate      DateTime
+  totalAmount      Float
+  status           String
+  amountPaid       Float
+  amountDue        Float
+  notes            String?
+  lastUpdatedBy    String?
+  lastUpdatedDate  DateTime?
+}
 
-  student User           @relation(fields: [studentId], references: [id])
-  plan    MembershipPlan @relation(fields: [planId], references: [id])
+model Coupon {
+  id                  String   @id @default(cuid())
+  code                String   @unique
+  discountType        String
+  discountValue       Float
+  expirationDate      DateTime?
+  usageLimit          Int?
+  status              String
+  applicableTo        String
+  specificPlanIds     MembershipPlan[] @relation("CouponApplicablePlans")
+  specificClassIds    String[]
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  type        String
+  category    String
+  description String
+  amount      Float
+  date        DateTime
+  receiptUrl  String?
 }
 
 model AttendanceRecord {
   id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
   classId   String
-  studentId Int
   date      DateTime
-  status    String
-
-  class   DanceClass @relation(fields: [classId], references: [id])
-  student User       @relation(fields: [studentId], references: [id])
-}
-
-model Coupon {
-  id             String   @id @default(cuid())
-  code           String   @unique
-  discountType   String
-  discountValue  Float
-  expirationDate DateTime?
-  usageLimit     Int?
-  status         String
-
-  applicableTo   String
-  specificPlanIdsJson String? // Store array of IDs as JSON string
-  specificClassIdsJson String? // Store array of IDs as JSON string
-  
-  plans          MembershipPlan[] @relation("PlanCoupons")
-  classes        DanceClass[]     @relation("ClassCoupons")
-}
-
-model Role {
-  id          String   @id
-  name        String
-  permissions String[]
+  status    String // presente, ausente
 }
 
 model TaskNote {
-  id             String    @id @default(cuid())
-  title          String
-  description    String?
-  status         String
-  category       String
-  priority       String?
-  createdAt      DateTime  @default(now())
-  dueDate        DateTime?
-  alertDateTime  DateTime?
-  alertDismissed Boolean?
-
-  assignees User[] @relation("TaskAssignees")
-}
-
-model AcademySettings {
-  id                       Int      @id @default(1)
-  academyName              String
-  contactEmail             String
-  phone                    String?
-  whatsappPhone            String?
-  address                  String?
-  welcomeMessage           String?
-  enableNewSignups         Boolean
-  maintenanceMode          Boolean
-  logoUrl                  String?
-  instagramUrl             String?
-  facebookUrl              String?
-  tiktokUrl                String?
-  openingHours             String?
-  registrationEmailMessage String?
-  membershipEmailMessage   String?
-  aboutUsTitle             String
-  aboutUsStory             String
-  aboutUsMission           String
-  aboutUsVision            String
-  aboutUsValues            String
-  aboutUsTeamTitle         String
-  aboutUsTeamDescription   String
-  heroSlidesJson           String // Store array of HeroSlide objects as JSON
-  scheduleImagesJson       String? // Store array of ScheduleImage objects as JSON
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  status          String
+  category        String
+  priority        String?
+  assignees       User[]   @relation("TaskAssignees")
+  createdAt       DateTime @default(now())
+  dueDate         DateTime?
+  alertDateTime   DateTime?
+  alertDismissed  Boolean? @default(false)
 }
