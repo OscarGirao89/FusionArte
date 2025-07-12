@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import { z } from "zod"
 import { membershipPlans as initialPlans, danceClasses, danceStyles } from '@/lib/data';
 import type { MembershipPlan } from '@/lib/types';
@@ -22,7 +22,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { MoreHorizontal, PlusCircle, Pencil, Trash2, TicketPercent, InfinityIcon, Settings } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Pencil, Trash2, TicketPercent, InfinityIcon, Settings, GripVertical } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -61,22 +61,16 @@ const formSchema = z.discriminatedUnion("accessType", [
   }).merge(baseSchema),
   z.object({
     accessType: z.literal("custom_pack"),
-    pricePerClass: z.coerce.number().min(1, "El precio por clase debe ser al menos 1."),
-    minClasses: z.coerce.number().int().min(1, "Debe ser al menos 1."),
-    maxClasses: z.coerce.number().int().min(1, "Debe ser al menos 1."),
+    priceTiers: z.array(z.object({
+      classCount: z.coerce.number().int().min(1, 'Debe ser al menos 1'),
+      price: z.coerce.number().min(0, 'Debe ser positivo')
+    })).min(1, "Debes añadir al menos un tramo de precios."),
     allowedStyles: z.array(z.string()).refine((value) => value.length > 0, {
         message: "Debes seleccionar al menos un estilo.",
     }),
-  }).merge(baseSchema),
-]).refine(data => {
-    if (data.accessType === 'custom_pack') {
-        return data.maxClasses >= data.minClasses;
-    }
-    return true;
-}, {
-    message: 'El máximo de clases debe ser mayor o igual al mínimo.',
-    path: ['maxClasses']
-});
+  }).merge(baseSchema)
+]);
+
 
 type MembershipFormValues = z.infer<typeof formSchema>;
 
@@ -96,7 +90,7 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
     case 'course_pass':
       return { ...common, accessType: 'course_pass', allowedClasses: plan.allowedClasses || [] };
     case 'custom_pack':
-      return { ...common, accessType: 'custom_pack', allowedStyles: plan.allowedStyles || [] };
+      return { ...common, accessType: 'custom_pack', allowedStyles: plan.allowedStyles || [], priceTiers: plan.priceTiers || [] };
   }
 };
 
@@ -133,6 +127,11 @@ export default function AdminMembershipsPage() {
     },
   });
 
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "priceTiers"
+  });
+
   const accessType = form.watch('accessType');
   const allClassIds = danceClasses.map(c => c.id);
 
@@ -153,9 +152,7 @@ export default function AdminMembershipsPage() {
         classCount: 10,
         allowedClasses: [],
         visibility: 'public',
-        pricePerClass: 10,
-        minClasses: 2,
-        maxClasses: 12,
+        priceTiers: [{ classCount: 4, price: 40 }],
         allowedStyles: [],
       });
     }
@@ -196,7 +193,7 @@ export default function AdminMembershipsPage() {
             planToSave = { ...commonData, accessType: 'course_pass', allowedClasses: data.allowedClasses };
             break;
         case 'custom_pack':
-            planToSave = { ...commonData, accessType: 'custom_pack', pricePerClass: data.pricePerClass, minClasses: data.minClasses, maxClasses: data.maxClasses, allowedStyles: data.allowedStyles };
+            planToSave = { ...commonData, accessType: 'custom_pack', priceTiers: data.priceTiers, allowedStyles: data.allowedStyles };
             break;
     }
 
@@ -275,7 +272,7 @@ export default function AdminMembershipsPage() {
                         </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {plan.accessType === 'custom_pack' ? `€${plan.pricePerClass} / clase` : `€${plan.price}`}
+                      {plan.accessType === 'custom_pack' ? `Desde €${plan.priceTiers[0].price}` : `€${plan.price}`}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                         <Badge variant={plan.visibility === 'public' ? 'default' : 'outline'}>
@@ -342,7 +339,7 @@ export default function AdminMembershipsPage() {
                         <SelectItem value="unlimited">Pase Ilimitado (Todas las clases)</SelectItem>
                         <SelectItem value="course_pass">Pase por Curso/Estilo (Acceso limitado por tiempo)</SelectItem>
                         <SelectItem value="class_pack">Bono de Clases (Número de clases fijo)</SelectItem>
-                        <SelectItem value="custom_pack">Bono Personalizado (por clases y estilos)</SelectItem>
+                        <SelectItem value="custom_pack">Bono Personalizado (por tramos de precios)</SelectItem>
                         <SelectItem value="trial_class">Clase de Prueba</SelectItem>
                       </SelectContent>
                     </Select><FormMessage />
@@ -431,7 +428,6 @@ export default function AdminMembershipsPage() {
                                 control={form.control}
                                 name="allowedClasses"
                                 render={({ field }) => {
-                                  // Ensure field.value is an array
                                   const fieldValue = Array.isArray(field.value) ? field.value : [];
                                   return (
                                     <FormItem
@@ -471,17 +467,39 @@ export default function AdminMembershipsPage() {
 
               {accessType === 'custom_pack' && (
                 <div className="space-y-4 p-4 border rounded-md">
-                  <div className="grid grid-cols-3 gap-4">
-                    <FormField control={form.control} name="pricePerClass" render={({ field }) => (
-                      <FormItem><FormLabel>Precio por Clase (€)</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
-                    <FormField control={form.control} name="minClasses" render={({ field }) => (
-                      <FormItem><FormLabel>Mín. de Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
-                    <FormField control={form.control} name="maxClasses" render={({ field }) => (
-                      <FormItem><FormLabel>Máx. de Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
-                  </div>
+                    <div>
+                      <h3 className="font-medium mb-2">Tramos de Precios</h3>
+                      <p className="text-sm text-muted-foreground mb-4">Define los precios para diferentes cantidades de clases.</p>
+                      <div className="space-y-3">
+                        {fields.map((field, index) => (
+                          <div key={field.id} className="flex items-end gap-3 p-2 border rounded-md">
+                              <GripVertical className="h-5 w-5 text-muted-foreground" />
+                              <FormField
+                                control={form.control}
+                                name={`priceTiers.${index}.classCount`}
+                                render={({ field }) => (
+                                  <FormItem className="flex-1"><FormLabel>Nº de Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`priceTiers.${index}.price`}
+                                render={({ field }) => (
+                                  <FormItem className="flex-1"><FormLabel>Precio Total (€)</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}
+                              />
+                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button type="button" size="sm" variant="outline" className="mt-4" onClick={() => append({ classCount: 8, price: 80 })}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Tramo
+                      </Button>
+                       <FormMessage>{form.formState.errors.priceTiers?.message || form.formState.errors.priceTiers?.root?.message}</FormMessage>
+                    </div>
+
                    <FormField
                         control={form.control}
                         name="allowedStyles"

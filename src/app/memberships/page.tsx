@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { membershipPlans } from '@/lib/data';
-import type { MembershipPlan, StudentPayment } from '@/lib/types';
+import type { MembershipPlan, StudentPayment, PriceTier } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, Star } from 'lucide-react';
@@ -30,7 +31,7 @@ const getPlanPriceDisplay = (plan: MembershipPlan) => {
     return ` / ${plan.classCount} clases`;
   }
   if (plan.accessType === 'custom_pack') {
-    return `/ desde €${plan.pricePerClass} por clase`;
+    return `/ bono personalizable`;
   }
   return '/ pago único';
 };
@@ -51,7 +52,7 @@ function PlanCard({ plan, onPurchaseRequest }: { plan: MembershipPlan, onPurchas
         <CardTitle className="font-headline text-2xl">{plan.title}</CardTitle>
         <CardDescription>
           {plan.accessType === 'custom_pack' 
-            ? <span className="text-muted-foreground">Personaliza tu bono</span>
+            ? <span className="text-4xl font-bold text-foreground">Desde €{plan.priceTiers[0].price}</span>
             : <span className="text-4xl font-bold text-foreground">€{plan.price}</span>
           }
           <span className="text-muted-foreground">{getPlanPriceDisplay(plan)}</span>
@@ -158,12 +159,12 @@ export default function MembershipsPage() {
     router.push('/profile');
   };
 
-  const handleCustomPackCountSelected = (classCount: number) => {
+  const handleCustomPackTierSelected = (tier: PriceTier) => {
     if (!selectedPlan || selectedPlan.accessType !== 'custom_pack') return;
 
     setCustomPackConfig({
-        classCount,
-        totalPrice: classCount * selectedPlan.pricePerClass,
+        classCount: tier.classCount,
+        totalPrice: tier.price,
     });
 
     setIsCustomPackOpen(false);
@@ -313,7 +314,7 @@ export default function MembershipsPage() {
           plan={selectedPlan}
           isOpen={isCustomPackOpen}
           onClose={() => setIsCustomPackOpen(false)}
-          onConfirm={handleCustomPackCountSelected}
+          onConfirm={handleCustomPackTierSelected}
         />
       )}
     </>

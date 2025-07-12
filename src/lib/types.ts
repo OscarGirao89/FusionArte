@@ -1,5 +1,6 @@
 
 
+
 export type DanceStyle = {
   id: string;
   name: string;
@@ -58,11 +59,14 @@ type CoursePassPlan = MembershipPlanBase & {
   allowedClasses: string[];
 };
 
+export type PriceTier = {
+  classCount: number;
+  price: number;
+};
+
 type CustomPackPlan = MembershipPlanBase & {
   accessType: 'custom_pack';
-  pricePerClass: number;
-  minClasses: number;
-  maxClasses: number;
+  priceTiers: PriceTier[];
   allowedStyles: string[];
 };
 
