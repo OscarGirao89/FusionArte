@@ -76,45 +76,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    setIsLoading(true);
-    let storedRole: UserRole | null = null;
-    try {
-        storedRole = localStorage.getItem('userRole') as UserRole | null;
-    } catch (e) {
-        console.error("Could not access localStorage", e);
-    }
-
-    const { authorized, redirect } = checkAccess(pathname, storedRole);
-
-    if (authorized) {
-        if (storedRole && (!currentUser || storedRole !== userRole)) {
-            // This part is for simulation, in a real app you'd fetch user data
-            const userProfile = userProfiles[storedRole];
-            // This is a placeholder, a real app would fetch from DB
-            const placeholderUser: User = { 
-                id: userProfile.id, 
-                name: userProfile.name, 
-                email: 'user@example.com',
-                role: 'Estudiante', // a default
-                joined: new Date().toISOString(),
-                avatar: userProfile.avatar,
-                specialties: []
-             };
-            setUserRole(storedRole);
-            setUserId(userProfile?.id || null);
-            setCurrentUser(placeholderUser);
+    const checkAuthStatus = async () => {
+        let storedRole: UserRole | null = null;
+        try {
+            storedRole = localStorage.getItem('userRole') as UserRole | null;
+        } catch (e) {
+            console.error("Could not access localStorage", e);
         }
-        setIsLoading(false);
-    } else {
-        if (redirect === '/login' && pathname !== '/login') {
-            try {
-              localStorage.setItem('redirectPath', pathname);
-            } catch (error) {
-              console.error("Could not access localStorage", error);
+
+        const { authorized, redirect } = checkAccess(pathname, storedRole);
+
+        if (!authorized) {
+            if (redirect === '/login' && pathname !== '/login') {
+                try {
+                    localStorage.setItem('redirectPath', pathname);
+                } catch (error) {
+                    console.error("Could not access localStorage", error);
+                }
+            }
+            router.replace(redirect || '/login');
+            setIsLoading(false);
+            return;
+        }
+
+        if (storedRole) {
+            if (!currentUser || storedRole !== userRole) {
+                // This part is for simulation, in a real app you'd fetch user data
+                const userProfile = userProfiles[storedRole];
+                // This is a placeholder, a real app would fetch from DB
+                const placeholderUser: User = { 
+                    id: userProfile.id, 
+                    name: userProfile.name, 
+                    email: 'user@example.com',
+                    role: 'Estudiante', // a default
+                    joined: new Date().toISOString(),
+                    avatar: userProfile.avatar,
+                    specialties: []
+                 };
+                setUserRole(storedRole);
+                setUserId(userProfile?.id || null);
+                setCurrentUser(placeholderUser);
             }
         }
-        router.replace(redirect || '/login');
-    }
+        setIsLoading(false);
+    };
+
+    checkAuthStatus().catch(err => {
+        console.error("Auth check failed, redirecting to login.", err);
+        setUserRole(null);
+        setCurrentUser(null);
+        setIsLoading(false);
+        if(!publicPaths.includes(pathname)) {
+            router.replace('/login');
+        }
+    });
   }, [pathname, router, currentUser, userRole]);
 
 

@@ -19,7 +19,10 @@ export default function HomePage() {
       try {
         const response = await fetch('/api/users');
         if (!response.ok) {
-          throw new Error('Failed to fetch users');
+          // Don't throw an error, just log it. This allows the page to render
+          // even if the database isn't connected yet.
+          console.error('Failed to fetch users, response status:', response.status);
+          return;
         }
         const users: User[] = await response.json();
         const teachers = users.filter(u => (u.role === 'Profesor' || u.role === 'Socio') && u.isVisibleToStudents).slice(0, 3);
