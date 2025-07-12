@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -33,7 +34,7 @@ export default function AdminFinancesPage() {
   }, [studentPayments]);
   
 
-  const AdminView = () => (
+  const AdminAndSocioView = () => (
      <Tabs defaultValue="studio" className="w-full">
         <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 lg:w-fit">
             <TabsTrigger value="studio">Finanzas del Estudio</TabsTrigger>
@@ -112,6 +113,34 @@ export default function AdminFinancesPage() {
     </Tabs>
   );
 
+  const AdministrativeView = () => (
+     <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <Card className="lg:col-span-1">
+                <CardHeader>
+                    <CardTitle>Pagos de Alumnos</CardTitle>
+                    <CardDescription>Gestiona las facturas y los pagos de las membresías.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">Revisa facturas pendientes, registra pagos y crea nuevas facturas para los estudiantes.</p>
+                </CardContent>
+                <CardFooter>
+                    <Button asChild>
+                        <Link href="/admin/payments">Gestionar Pagos de Alumnos</Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+            <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Libro de Transacciones (General)</CardTitle>
+                  <CardDescription>Otros ingresos y egresos operativos.</CardDescription>
+                </CardHeader>
+                <CardContent><IncomeExpenseLedger /></CardContent>
+            </Card>
+        </div>
+    </div>
+  );
+
   const PartnerView = () => {
     if (!userId) return null;
 
@@ -162,8 +191,9 @@ export default function AdminFinancesPage() {
       <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Panel de Finanzas</h1>
       </div>
-        {(userRole === 'admin' || userRole === 'administrativo') && <AdminView />}
+        {(userRole === 'admin') && <AdminAndSocioView />}
         {userRole === 'socio' && <PartnerView />}
+        {userRole === 'administrativo' && <AdministrativeView />}
     </div>
   );
 }
