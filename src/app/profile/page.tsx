@@ -22,7 +22,6 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Overview } from '@/components/dashboard/overview';
 import { UpcomingClasses } from '@/components/dashboard/upcoming-classes';
-import { SmartSuggestion } from '@/components/dashboard/smart-suggestion';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -165,10 +164,10 @@ export default function ProfilePage() {
                     </Button>
                 </div>
                 
-                <Tabs defaultValue="dashboard" className="w-full">
+                <Tabs defaultValue="details" className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="dashboard">Mi Actividad</TabsTrigger>
                         <TabsTrigger value="details">Mi Perfil y Membresía</TabsTrigger>
+                        <TabsTrigger value="dashboard">Mi Actividad</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="dashboard" className="mt-6 space-y-6">
@@ -202,21 +201,12 @@ export default function ProfilePage() {
                                 <CardContent><UpcomingClasses /></CardContent>
                             </Card>
                         </div>
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                            <Card className="col-span-full lg:col-span-4">
-                                <CardHeader><CardTitle className="font-headline">Popularidad de Estilos</CardTitle></CardHeader>
-                                <CardContent className="pl-2">
-                                    <Overview data={popularStylesData} config={popularStylesConfig} categoryKey="name" dataKey="total"/>
-                                </CardContent>
-                            </Card>
-                            <Card className="col-span-full lg:col-span-3">
-                                <CardHeader>
-                                    <CardTitle className="font-headline flex items-center gap-2"><Bot size={24} className="text-primary"/>Sugerencias Inteligentes</CardTitle>
-                                    <CardDescription>¿Conflicto de horario? Encuentra la alternativa perfecta con nuestro asistente de IA.</CardDescription>
-                                </CardHeader>
-                                <CardContent><SmartSuggestion /></CardContent>
-                            </Card>
-                        </div>
+                         <Card>
+                            <CardHeader><CardTitle className="font-headline">Popularidad de Estilos</CardTitle></CardHeader>
+                            <CardContent className="pl-2">
+                                <Overview data={popularStylesData} config={popularStylesConfig} categoryKey="name" dataKey="total"/>
+                            </CardContent>
+                        </Card>
                     </TabsContent>
 
                     <TabsContent value="details" className="mt-6">

@@ -1,4 +1,4 @@
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/smart-class-suggestion.ts';
+// This file is intentionally left empty after removing the smart suggestions feature.
