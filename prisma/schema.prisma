@@ -10,127 +10,122 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                    Int                  @id @default(autoincrement())
-  email                 String               @unique
-  name                  String
-  role                  String // Estudiante, Profesor, Administrador, Administrativo, Socio
-  joined                DateTime             @default(now())
-  avatar                String?
-  dob                   String? // YYYY-MM-DD
-  mobile                String?
-  isVisibleToStudents   Boolean?
-  isPartner             Boolean?
-  bio                   String?
-  specialties           String[]
-  paymentDetailsJson    String? // JSON string for payment details
-  enrolledClasses       DanceClass[]         @relation("ClassEnrolledStudents")
-  taughtClasses         DanceClass[]         @relation("ClassTeachers")
-  assignedTasks         TaskNote[]           @relation("TaskAssignees")
-  studentMemberships    StudentMembership[]
-  studentPayments       StudentPayment[]
-  attendanceHistory     AttendanceRecord[]
+model DanceStyle {
+  id          String       @id @default(cuid())
+  name        String
+  description String
+  classes     DanceClass[]
+}
+
+model DanceLevel {
+  id          String       @id @default(cuid())
+  name        String
+  description String
+  classes     DanceClass[]
+}
+
+model Coupon {
+  id                String    @id @default(cuid())
+  code              String    @unique
+  discountType      String // 'percentage' or 'fixed'
+  discountValue     Float
+  expirationDate    DateTime?
+  usageLimit        Int?
+  status            String // 'active' or 'inactive'
+  applicableTo      String // 'all_memberships', 'specific_memberships', etc.
+  specificPlanIds   String[]
+  specificClassIds  String[]
+  payments          StudentPayment[]
+}
+
+model MembershipPlan {
+  id              String    @id @default(cuid())
+  title           String
+  price           Float
+  description     String
+  features        String[]
+  isPopular       Boolean   @default(false)
+  durationUnit    String // 'days', 'weeks', 'months'
+  durationValue   Int
+  visibility      String    @default("public") // 'public', 'unlisted'
+  accessType      String // 'unlimited', 'class_pack', etc.
+  classCount      Int?
+  allowedClasses  String[]
+  priceTiersJson  Json?      @map("priceTiers")
+
+  studentMemberships StudentMembership[]
+  studentPayments    StudentPayment[]
 }
 
 model DanceClass {
   id                      String   @id @default(cuid())
   name                    String
-  type                    String // recurring, one-time, workshop, rental
+  type                    String // 'recurring', 'one-time', 'workshop', 'rental'
   styleId                 String
   levelId                 String
-  teacherIds              User[]   @relation("ClassTeachers")
-  day                     String?
+  day                     String
   time                    String
   room                    String
   duration                String
   capacity                Int
-  enrolledStudentIds      User[]   @relation("ClassEnrolledStudents")
+  enrolledStudentIds      Int[]
   cancellationPolicyHours Int?
   recurrenceMonths        Int?
-  date                    String?
-  status                  String
+  date                    DateTime?
+  status                  String // 'scheduled', 'completed', etc.
   isCancelledAndHidden    Boolean?
   isVisibleToStudents     Boolean?
   rentalContact           String?
   rentalPrice             Float?
   workshopPaymentType     String?
   workshopPaymentValue    Float?
+
+  style         DanceStyle @relation(fields: [styleId], references: [id])
+  level         DanceLevel @relation(fields: [levelId], references: [id])
+  teacherIds    User[]     @relation("ClassTeachers")
 }
 
-model DanceStyle {
-  id          String @id @default(cuid())
-  name        String @unique
-  description String
+model ClassInstance {
+  id            String   @id @default(cuid())
+  classId       String
+  date          DateTime
+  status        String   // 'completed', 'scheduled', etc.
 }
 
-model DanceLevel {
-  id          String @id @default(cuid())
-  name        String @unique
-  description String
+model AttendanceRecord {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  classId   String
+  date      DateTime
+  status    String   // 'presente', 'ausente'
+  student   User     @relation(fields: [userId], references: [id])
 }
 
-model MembershipPlan {
-  id              String   @id @default(cuid())
-  title           String
-  price           Float
-  description     String
-  features        String[]
-  isPopular       Boolean?
-  durationUnit    String
-  durationValue   Int
-  visibility      String
-  accessType      String
-  classCount      Int?
-  allowedClasses  String[]
-  priceTiersJson  String? // JSON string for price tiers
-  studentMemberships StudentMembership[]
-  studentPayments StudentPayment[]
-  coupons         Coupon[] @relation("CouponApplicablePlans")
-}
-
-model StudentMembership {
+model User {
   id                Int      @id @default(autoincrement())
-  user              User     @relation(fields: [userId], references: [id])
-  userId            Int
-  plan              MembershipPlan @relation(fields: [planId], references: [id])
-  planId            String
-  startDate         DateTime
-  endDate           DateTime
-  classesRemaining  Int?
-}
+  name              String
+  email             String   @unique
+  role              String   // 'Estudiante', 'Profesor', etc.
+  joined            DateTime @default(now())
+  avatar            String
+  dob               DateTime?
+  mobile            String?
+  isVisibleToStudents Boolean?
+  isPartner         Boolean?
+  bio               String?
+  specialties       String[]
+  paymentDetailsJson Json? @map("paymentDetails")
 
-model StudentPayment {
-  id               String   @id @default(cuid())
-  user             User     @relation(fields: [studentId], references: [id])
-  studentId        Int
-  plan             MembershipPlan @relation(fields: [planId], references: [id])
-  planId           String
-  invoiceDate      DateTime
-  totalAmount      Float
-  status           String
-  amountPaid       Float
-  amountDue        Float
-  notes            String?
-  lastUpdatedBy    String?
-  lastUpdatedDate  DateTime?
-}
-
-model Coupon {
-  id                  String   @id @default(cuid())
-  code                String   @unique
-  discountType        String
-  discountValue       Float
-  expirationDate      DateTime?
-  usageLimit          Int?
-  status              String
-  applicableTo        String
-  specificPlanIds     MembershipPlan[] @relation("CouponApplicablePlans")
-  specificClassIds    String[]
+  taughtClasses      DanceClass[]        @relation("ClassTeachers")
+  studentMemberships StudentMembership[]
+  studentPayments    StudentPayment[]
+  attendanceHistory  AttendanceRecord[]
+  assignedTasks      TaskNote[]          @relation("TaskAssignees")
 }
 
 model Transaction {
   id          String   @id @default(cuid())
-  type        String
+  type        String   // 'ingreso', 'egreso'
   category    String
   description String
   amount      Float
@@ -138,25 +133,56 @@ model Transaction {
   receiptUrl  String?
 }
 
-model AttendanceRecord {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  classId   String
-  date      DateTime
-  status    String // presente, ausente
+model StudentMembership {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  planId          String
+  startDate       DateTime
+  endDate         DateTime
+  classesRemaining Int?
+
+  student User            @relation(fields: [userId], references: [id])
+  plan    MembershipPlan  @relation(fields: [planId], references: [id])
+
+  @@unique([userId, planId])
+}
+
+model StudentPayment {
+  id              String    @id @default(cuid())
+  studentId       Int
+  planId          String
+  couponCode      String?
+  invoiceDate     DateTime  @default(now())
+  totalAmount     Float
+  status          String    // 'paid', 'pending', 'deposit'
+  amountPaid      Float
+  amountDue       Float
+  notes           String?
+  lastUpdatedBy   String?
+  lastUpdatedDate DateTime? @updatedAt
+
+  student User            @relation(fields: [studentId], references: [id])
+  plan    MembershipPlan  @relation(fields: [planId], references: [id])
+  coupon  Coupon?         @relation(fields: [couponCode], references: [code])
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  permissions String[]
 }
 
 model TaskNote {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   title           String
   description     String?
-  status          String
+  status          String    // 'todo', 'in_progress', 'done'
   category        String
-  priority        String?
-  assignees       User[]   @relation("TaskAssignees")
-  createdAt       DateTime @default(now())
+  priority        String?   // 'low', 'medium', 'high'
+  createdAt       DateTime  @default(now())
   dueDate         DateTime?
   alertDateTime   DateTime?
-  alertDismissed  Boolean? @default(false)
+  alertDismissed  Boolean?  @default(false)
+
+  assignees User[] @relation("TaskAssignees")
 }
