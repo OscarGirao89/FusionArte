@@ -7,14 +7,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { useAuth } from "@/context/auth-context";
-import { membershipPlans, danceClasses as allDanceClasses } from '@/lib/data';
+import { membershipPlans, danceClasses as allDanceClasses, users } from '@/lib/data';
 import type { StudentPayment, DanceClass } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, parseISO, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
-import { Printer, TicketPercent, User, Calendar, BadgeCheck, XCircle, Clock, Pencil, Save, HandHelping, CalendarClock, Bot } from "lucide-react";
+import { Printer, TicketPercent, User, Calendar, BadgeCheck, XCircle, Clock, Pencil, Save, HandHelping, CalendarClock, Sparkles, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -24,6 +24,8 @@ import { Overview } from '@/components/dashboard/overview';
 import { UpcomingClasses } from '@/components/dashboard/upcoming-classes';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useSettings } from '@/context/settings-context';
+import Image from 'next/image';
 
 const paymentStatusLabels: Record<StudentPayment['status'], string> = {
     paid: 'Pagado',
@@ -41,6 +43,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfilePage() {
     const { userRole, currentUser, updateCurrentUser, studentMemberships, studentPayments } = useAuth();
+    const { settings } = useSettings();
     const { toast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
     const router = useRouter();
@@ -50,7 +53,6 @@ export default function ProfilePage() {
         resolver: zodResolver(profileFormSchema),
     });
 
-    // Populate form with current user data when component mounts or user changes
     useEffect(() => {
       if (currentUser) {
         form.reset({
@@ -67,10 +69,25 @@ export default function ProfilePage() {
     const payment = currentUser ? studentPayments.find(p => p.studentId === currentUser.id && p.planId === membership?.planId) : null;
     const isMembershipActive = membership ? isBefore(new Date(), parseISO(membership.endDate)) : false;
     
-    const myUpcomingClasses = useMemo(() => {
-        if (!currentUser || !isMembershipActive) return [];
+    const myEnrolledClasses = useMemo(() => {
+        if (!currentUser) return [];
         return allDanceClasses.filter(c => c.enrolledStudentIds.includes(currentUser.id));
-    }, [currentUser, isMembershipActive]);
+    }, [currentUser]);
+
+    const suggestedClasses = useMemo(() => {
+        if (!currentUser) return [];
+        const enrolledClassIds = new Set(myEnrolledClasses.map(c => c.id));
+        const enrolledStyleIds = new Set(myEnrolledClasses.map(c => c.styleId));
+
+        return allDanceClasses
+            .filter(c => 
+                !enrolledClassIds.has(c.id) &&
+                enrolledStyleIds.has(c.styleId) &&
+                c.type === 'recurring' &&
+                c.status === 'scheduled'
+            )
+            .slice(0, 3);
+    }, [currentUser, myEnrolledClasses]);
 
     const popularStylesData = [
         { name: 'Salsa', total: 420 },
@@ -123,11 +140,18 @@ export default function ProfilePage() {
         const printWindow = window.open('', '', 'height=600,width=800');
         if (printWindow) {
             printWindow.document.write('<html><head><title>Comprobante de Membresía</title>');
-            printWindow.document.write('<style>body { font-family: sans-serif; margin: 2rem; } .receipt { border: 1px solid #ccc; padding: 1.5rem; border-radius: 8px; } h1 { text-align: center; } table { width: 100%; border-collapse: collapse; margin-top: 1rem; } td { padding: 0.5rem; border-bottom: 1px solid #eee; } .status { font-weight: bold; text-transform: uppercase; } .status-paid { color: green; } .status-pending { color: orange; } .status-deposit { color: blue; }</style>');
+            printWindow.document.write('<style>body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 2rem; color: #333; } .receipt { border: 1px solid #e2e8f0; padding: 2rem; border-radius: 0.5rem; max-width: 800px; margin: auto; } .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; } .header h1 { font-size: 1.5rem; margin: 0; color: #673AB7; } .header img { max-width: 120px; max-height: 50px; } table { width: 100%; border-collapse: collapse; margin-top: 1rem; } th, td { padding: 0.75rem 0.5rem; text-align: left; border-bottom: 1px solid #e2e8f0; } th { background-color: #f7fafc; font-weight: 600; } .status { font-weight: bold; text-transform: uppercase; } .status-paid { color: #22c55e; } .status-pending { color: #f97316; } .status-deposit { color: #3b82f6; } .footer { margin-top: 2rem; text-align: center; font-size: 0.8rem; color: #64748b; }</style>');
             printWindow.document.write('</head><body>');
             printWindow.document.write('<div class="receipt">');
-            printWindow.document.write('<h1>Comprobante de Membresía - FusionArte</h1>');
-            printWindow.document.write('<hr>');
+            printWindow.document.write('<div class="header">');
+            printWindow.document.write(`<h1>Comprobante de Membresía</h1>`);
+            if (settings.logoUrl) {
+                printWindow.document.write(`<img src="${settings.logoUrl}" alt="${settings.academyName}" />`);
+            } else {
+                 printWindow.document.write(`<h2>${settings.academyName}</h2>`);
+            }
+            printWindow.document.write('</div>');
+            printWindow.document.write('<table>');
             printWindow.document.write(`<tr><td><strong>Alumno:</strong></td><td>${currentUser.name}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Plan:</strong></td><td>${plan.title}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Precio Total:</strong></td><td>€${payment.totalAmount.toFixed(2)}</td></tr>`);
@@ -135,12 +159,12 @@ export default function ProfilePage() {
             printWindow.document.write(`<tr><td><strong>Monto Pendiente:</strong></td><td>€${payment.amountDue.toFixed(2)}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Estado:</strong></td><td class="status status-${payment.status}">${paymentStatusLabels[payment.status]}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Fecha de Inicio:</strong></td><td>${format(parseISO(membership.startDate), 'PPP', { locale: es })}</td></tr>`);
-            printWindow.document.write(`<tr><td><strong>Fecha de Vencimiento:</strong></td><td>${format(parseISO(membership.endDate), 'PPP', { locale: es })}</td></tr>`);
+            printWindow.document.write(`<tr><td><strong>Vencimiento:</strong></td><td>${format(parseISO(membership.endDate), 'PPP', { locale: es })}</td></tr>`);
             if (plan.accessType === 'class_pack') {
                 printWindow.document.write(`<tr><td><strong>Clases Restantes:</strong></td><td>${membership.classesRemaining || 0}</td></tr>`);
             }
             printWindow.document.write('</table>');
-            printWindow.document.write('<p style="margin-top: 2rem; text-align: center; font-size: 0.8rem; color: #666;">¡Gracias por ser parte de nuestra comunidad!</p>');
+            printWindow.document.write('<p class="footer">¡Gracias por ser parte de nuestra comunidad!</p>');
             printWindow.document.write('</div>');
             printWindow.document.write('</body></html>');
             printWindow.document.close();
@@ -198,16 +222,48 @@ export default function ProfilePage() {
                             <Card className="col-span-1 md:col-span-2 lg:col-span-1">
                                 <CardHeader><CardTitle className="text-sm font-medium">Mis Próximas Clases</CardTitle></CardHeader>
                                 <CardContent>
-                                    <UpcomingClasses classes={myUpcomingClasses} />
+                                    <UpcomingClasses classes={myEnrolledClasses} />
                                 </CardContent>
                             </Card>
                         </div>
-                         <Card>
-                            <CardHeader><CardTitle className="font-headline">Popularidad de Estilos</CardTitle></CardHeader>
-                            <CardContent className="pl-2">
-                                <Overview data={popularStylesData} config={popularStylesConfig} categoryKey="name" dataKey="total"/>
-                            </CardContent>
-                        </Card>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <Card>
+                                <CardHeader><CardTitle className="font-headline">Popularidad de Estilos</CardTitle></CardHeader>
+                                <CardContent className="pl-2">
+                                    <Overview data={popularStylesData} config={popularStylesConfig} categoryKey="name" dataKey="total"/>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader><CardTitle className="font-headline flex items-center gap-2"><Sparkles className="h-5 w-5 text-accent"/> Clases que podrían interesarte</CardTitle></CardHeader>
+                                <CardContent>
+                                {suggestedClasses.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {suggestedClasses.map((c) => {
+                                            const teacher = users.find(u => u.id === c.teacherIds[0]);
+                                            return (
+                                                <div key={c.id} className="flex items-center">
+                                                    <Avatar className="h-10 w-10">
+                                                        <AvatarImage src={teacher?.avatar} alt={teacher?.name} />
+                                                        <AvatarFallback>{teacher?.name.charAt(0)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="ml-4 space-y-1">
+                                                        <p className="text-sm font-medium leading-none">{c.name} ({c.levelId})</p>
+                                                        <p className="text-sm text-muted-foreground">{c.day} a las {c.time}</p>
+                                                    </div>
+                                                    <Button size="sm" variant="ghost" className="ml-auto" onClick={() => router.push('/schedule')}><UserPlus className="mr-2 h-4 w-4" /> Inscribirse</Button>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="text-center text-sm text-muted-foreground py-8">
+                                        <p>¡Sigue así! Estás inscrito/a en todas las clases de tus estilos preferidos.</p>
+                                    </div>
+                                )}
+                                </CardContent>
+                            </Card>
+                        </div>
                     </TabsContent>
 
                     <TabsContent value="details" className="mt-6">
@@ -254,15 +310,12 @@ export default function ProfilePage() {
                                     </Card>
                                 </div>
                                 <div className="lg:col-span-2">
-                                    <Card>
-                                        <CardHeader className="flex flex-row items-center justify-between">
-                                            <div>
-                                                <CardTitle className="flex items-center gap-2 font-headline"><TicketPercent className="h-6 w-6 text-primary"/> Detalles de Membresía</CardTitle>
-                                                <CardDescription>El estado actual de tu plan y pagos.</CardDescription>
-                                            </div>
-                                            <Button variant="outline" size="sm" onClick={handlePrintReceipt} disabled={!membership}><Printer className="mr-2 h-4 w-4" />Imprimir Comprobante</Button>
+                                    <Card className="flex flex-col">
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2 font-headline"><TicketPercent className="h-6 w-6 text-primary"/> Detalles de Membresía</CardTitle>
+                                            <CardDescription>El estado actual de tu plan y pagos.</CardDescription>
                                         </CardHeader>
-                                        <CardContent>
+                                        <CardContent className="flex-grow">
                                             {membership && plan && payment ? (
                                                 <div className="space-y-4">
                                                     <h3 className="text-xl font-semibold">{plan.title}</h3>
@@ -282,6 +335,9 @@ export default function ProfilePage() {
                                                 <div className="text-center py-8"><p className="text-muted-foreground">No tienes una membresía activa en este momento.</p><Button className="mt-4" onClick={() => router.push('/memberships')}>Ver Planes</Button></div>
                                             )}
                                         </CardContent>
+                                        <CardFooter>
+                                            <Button variant="outline" size="sm" onClick={handlePrintReceipt} disabled={!membership}><Printer className="mr-2 h-4 w-4" />Imprimir Comprobante</Button>
+                                        </CardFooter>
                                     </Card>
                                 </div>
                             </form>
