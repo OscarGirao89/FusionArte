@@ -24,6 +24,7 @@ const publicNav = [
 
 const teacherNav = [
     { href: '/my-classes', label: 'Mis Clases' },
+    { href: '/my-finances', label: 'Mis Finanzas' },
     { href: '/schedule', label: 'Horario General' },
 ];
 
@@ -184,11 +185,16 @@ export function MainNav() {
             mainNavItems = publicNav;
             break;
         case 'teacher':
+        case 'socio': // Socio now shares teacher's nav
             mainNavItems = teacherNav;
+            // Socio also gets management dropdown
+            if (userRole === 'socio') {
+                managementNavItems = adminManagementNav;
+                hasManagementDropdown = true;
+            }
             break;
         case 'admin':
-        case 'socio':
-            mainNavItems = []; // Admins/Partners only see management links
+            mainNavItems = []; // Admins only see management links
             managementNavItems = adminManagementNav;
             hasManagementDropdown = true;
             break;
