@@ -7,8 +7,8 @@ import { useAuth, UserRole } from '@/context/auth-context';
 import { LogoIcon } from '@/components/icons/logo-icon';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
-import { Settings, BookMarked, User, LogOut, ChevronDown, CreditCard, Calendar, Users, ClipboardList, Banknote, GraduationCap, Wallet, Home, BarChart2, Ticket, BarChart, LayoutDashboard, HandCoins } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from '@/components/ui/dropdown-menu';
+import { Settings, BookMarked, User, LogOut, CreditCard, Calendar, Users, ClipboardList, Banknote, GraduationCap, HandCoins, LayoutDashboard, Ticket } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { useSettings } from '@/context/settings-context';
@@ -45,7 +45,6 @@ export const userProfiles: Record<UserRole, { id: number; name: string; role: st
 function UserMenu() {
     const { userRole, logout, currentUser } = useAuth();
     const router = useRouter();
-    const pathname = usePathname();
 
     if (!currentUser) return null;
 
@@ -80,24 +79,15 @@ function UserMenu() {
                  {canManage && (
                     <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                                <LayoutDashboard className="mr-2 h-4 w-4" />
-                                <span>Gestión</span>
-                            </DropdownMenuSubTrigger>
-                             <DropdownMenuPortal>
-                                <DropdownMenuSubContent>
-                                    {adminManagementNav.map((item) => (
-                                        <DropdownMenuItem key={item.href} asChild>
-                                            <Link href={item.href} className={cn("flex items-center gap-2", pathname.startsWith(item.href) && "text-primary")}>
-                                                <item.icon className="h-4 w-4" />
-                                                <span>{item.label}</span>
-                                            </Link>
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuSubContent>
-                             </DropdownMenuPortal>
-                        </DropdownMenuSub>
+                        <DropdownMenuLabel>Gestión</DropdownMenuLabel>
+                         <DropdownMenuGroup>
+                            {adminManagementNav.map((item) => (
+                                <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                                    <item.icon className="mr-2 h-4 w-4" />
+                                    <span>{item.label}</span>
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuGroup>
                     </>
                  )}
                 <DropdownMenuSeparator />

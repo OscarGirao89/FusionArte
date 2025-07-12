@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, GraduationCap, Users } from "lucide-react";
+import { ClipboardList, GraduationCap, Users, Banknote, CreditCard, Settings } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 
@@ -71,6 +71,63 @@ export default function AdminDashboardPage() {
                     <CardFooter>
                         <Button asChild variant="outline">
                             <Link href="/admin/users">Gestionar Usuarios</Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
+                            <div className="bg-primary/10 p-3 rounded-full">
+                                <CreditCard className="h-6 w-6 text-primary" />
+                            </div>
+                            <CardTitle>Membresías</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Define los planes y cupones de descuento que ofreces en la academia.</p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button asChild variant="outline">
+                            <Link href="/admin/memberships">Gestionar Membresías</Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
+                            <div className="bg-primary/10 p-3 rounded-full">
+                                <Banknote className="h-6 w-6 text-primary" />
+                            </div>
+                            <CardTitle>Finanzas</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Supervisa los ingresos, egresos, pagos y nóminas de la academia.</p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button asChild variant="outline">
+                            <Link href="/admin/finances">Gestionar Finanzas</Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
+                            <div className="bg-primary/10 p-3 rounded-full">
+                                <Settings className="h-6 w-6 text-primary" />
+                            </div>
+                            <CardTitle>Configuración General</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Personaliza los ajustes, el contenido y la apariencia de la aplicación.</p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button asChild variant="outline">
+                            <Link href="/admin/settings">Gestionar Configuración</Link>
                         </Button>
                     </CardFooter>
                 </Card>
