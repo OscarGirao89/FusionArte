@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from '@/components/ui/dropdown-menu';
 import { Settings, BookMarked, User, LogOut, ChevronDown, CreditCard, Calendar, Users, ClipboardList, Banknote, GraduationCap, Wallet } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { useSettings } from '@/context/settings-context';
 import Image from 'next/image';
@@ -142,19 +142,23 @@ function MobileNav({ mainNav, managementNav }: { mainNav: { href: string, label:
             <SheetContent side="right">
                 <nav className="flex flex-col gap-4 mt-8">
                     {navToShow.map((link) => (
-                        <Link key={link.href} href={link.href} className="text-lg font-medium hover:text-primary flex items-center gap-2">
-                           {link.icon && <link.icon className="h-5 w-5" />} {link.label}
-                        </Link>
+                        <SheetClose asChild key={link.href}>
+                            <Link href={link.href} className="text-lg font-medium hover:text-primary flex items-center gap-2">
+                               {link.icon && <link.icon className="h-5 w-5" />} {link.label}
+                            </Link>
+                        </SheetClose>
                     ))}
                     {managementToShow && (
                         <>
                             <DropdownMenuSeparator className="my-2" />
-                            <p className="text-lg font-medium px-2">Gestión</p>
+                            <p className="font-medium px-2">Gestión</p>
                             {managementToShow.map((item) => (
-                                <Link key={item.href} href={item.href} className="flex items-center gap-2 text-muted-foreground hover:text-primary pl-2">
-                                    <item.icon className="h-5 w-5" />
-                                    <span className="text-base">{item.label}</span>
-                                </Link>
+                                <SheetClose asChild key={item.href}>
+                                    <Link href={item.href} className="flex items-center gap-2 text-muted-foreground hover:text-primary pl-2">
+                                        <item.icon className="h-5 w-5" />
+                                        <span className="text-base">{item.label}</span>
+                                    </Link>
+                                </SheetClose>
                             ))}
                         </>
                     )}
