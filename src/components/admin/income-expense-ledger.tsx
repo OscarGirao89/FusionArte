@@ -1,12 +1,10 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { initialStudentPayments, extraTransactions } from '@/lib/finances-data';
 import type { Transaction } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -17,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Paperclip, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Skeleton } from '../ui/skeleton';
 
 const transactionFormSchema = z.object({
   type: z.enum(['ingreso', 'egreso'], { required_error: "Debes seleccionar un tipo." }),
@@ -24,15 +23,36 @@ const transactionFormSchema = z.object({
   description: z.string().min(3, "La descripción es obligatoria."),
   amount: z.coerce.number().positive("El monto debe ser un número positivo."),
   date: z.date({ required_error: "La fecha es obligatoria." }),
-  receiptUrl: z.any().optional(), // No se validará el archivo en el prototipo
+  receiptUrl: z.any().optional(),
 });
 
 type TransactionFormValues = z.infer<typeof transactionFormSchema>;
 
 export function IncomeExpenseLedger() {
-  const [transactions, setTransactions] = useState<Transaction[]>([...initialStudentPayments, ...extraTransactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/transactions');
+        if (res.ok) {
+          const data = await res.json();
+          setTransactions(data.sort((a: Transaction, b: Transaction) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        } else {
+          console.error("Failed to fetch transactions");
+        }
+      } catch (error) {
+        console.error("Error fetching transactions", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTransactions();
+  }, []);
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionFormSchema),
@@ -45,19 +65,33 @@ export function IncomeExpenseLedger() {
     }
   });
 
-  const onSubmit = (data: TransactionFormValues) => {
-    const newTransaction: Transaction = {
-      id: `trans-${Date.now()}`,
+  const onSubmit = async (data: TransactionFormValues) => {
+    const newTransactionData = {
       ...data,
       date: format(data.date, 'yyyy-MM-dd'),
     };
-    setTransactions([newTransaction, ...transactions]);
-    toast({
-      title: "Transacción añadida",
-      description: "La transacción ha sido registrada exitosamente (simulación)."
-    });
-    setIsDialogOpen(false);
-    form.reset();
+    
+    try {
+        const res = await fetch('/api/transactions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newTransactionData)
+        });
+
+        if (!res.ok) throw new Error('Failed to save transaction');
+
+        const savedTransaction = await res.json();
+        setTransactions(prev => [savedTransaction, ...prev]);
+
+        toast({
+          title: "Transacción añadida",
+          description: "La transacción ha sido registrada exitosamente."
+        });
+        setIsDialogOpen(false);
+        form.reset();
+    } catch (error) {
+        toast({ title: "Error", description: "No se pudo guardar la transacción.", variant: "destructive" });
+    }
   };
 
   return (
@@ -121,25 +155,34 @@ export function IncomeExpenseLedger() {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {transactions.map((t) => (
-                <TableRow key={t.id}>
-                    <TableCell>
-                        <div className="flex items-center gap-2">
-                            {t.type === 'ingreso' 
-                                ? <ArrowUpCircle className="h-5 w-5 text-green-500" />
-                                : <ArrowDownCircle className="h-5 w-5 text-red-500" />
-                            }
-                            <div>
-                                <p className="font-medium">{t.description}</p>
-                                <p className="text-xs text-muted-foreground">{t.category} - {format(parseISO(t.date), 'PPP', { locale: es })}</p>
+                {isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i}>
+                            <TableCell><Skeleton className="h-8 w-3/4" /></TableCell>
+                            <TableCell><Skeleton className="h-8 w-1/4 ml-auto" /></TableCell>
+                        </TableRow>
+                    ))
+                ) : (
+                    transactions.map((t) => (
+                    <TableRow key={t.id}>
+                        <TableCell>
+                            <div className="flex items-center gap-2">
+                                {t.type === 'ingreso' 
+                                    ? <ArrowUpCircle className="h-5 w-5 text-green-500" />
+                                    : <ArrowDownCircle className="h-5 w-5 text-red-500" />
+                                }
+                                <div>
+                                    <p className="font-medium">{t.description}</p>
+                                    <p className="text-xs text-muted-foreground">{t.category} - {format(parseISO(t.date), 'PPP', { locale: es })}</p>
+                                </div>
                             </div>
-                        </div>
-                    </TableCell>
-                    <TableCell className={`text-right font-mono font-bold ${t.type === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
-                        {t.type === 'ingreso' ? '+' : '-'}€{t.amount.toFixed(2)}
-                    </TableCell>
-                </TableRow>
-                ))}
+                        </TableCell>
+                        <TableCell className={`text-right font-mono font-bold ${t.type === 'ingreso' ? 'text-green-600' : 'text-red-600'}`}>
+                            {t.type === 'ingreso' ? '+' : '-'}€{t.amount.toFixed(2)}
+                        </TableCell>
+                    </TableRow>
+                    ))
+                )}
             </TableBody>
             </Table>
         </div>

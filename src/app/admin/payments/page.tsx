@@ -4,8 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { users, membershipPlans, danceClasses } from '@/lib/data';
-import type { StudentPayment } from '@/lib/types';
+import type { StudentPayment, User, MembershipPlan, DanceClass } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DollarSign, Download, Edit, Printer, TrendingDown, TrendingUp, Wallet, PlusCircle, ArrowLeft } from 'lucide-react';
 import { userProfiles } from '@/components/layout/main-nav';
 import { StudentPaymentsTable } from '@/components/admin/student-payments-table';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const newInvoiceSchema = z.object({
   studentId: z.string().min(1, "Debes seleccionar un alumno."),
@@ -37,6 +37,32 @@ export default function AdminPaymentsPage() {
   const { toast } = useToast();
   const router = useRouter();
   
+  const [users, setUsers] = useState<User[]>([]);
+  const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
+  const [danceClasses, setDanceClasses] = useState<DanceClass[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [usersRes, plansRes, classesRes] = await Promise.all([
+          fetch('/api/users'),
+          fetch('/api/memberships'),
+          fetch('/api/classes'),
+        ]);
+        if (usersRes.ok) setUsers(await usersRes.json());
+        if (plansRes.ok) setMembershipPlans(await plansRes.json());
+        if (classesRes.ok) setDanceClasses(await classesRes.json());
+      } catch (error) {
+        console.error("Failed to fetch data for payments page", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const canCreate = userRole === 'admin' || userRole === 'administrativo' || userRole === 'socio';
 
   const students = users.filter(u => u.role === 'Estudiante');
@@ -50,7 +76,7 @@ export default function AdminPaymentsPage() {
       }
     });
     return ids;
-  }, []);
+  }, [users, danceClasses]);
 
   const studioPayments = useMemo(() => {
     return allPayments.filter(p => {
@@ -73,7 +99,7 @@ export default function AdminPaymentsPage() {
       // If all allowed classes are partner classes, it's NOT a studio payment.
       return false;
     });
-  }, [allPayments, partnerClassIds]);
+  }, [allPayments, membershipPlans, partnerClassIds]);
 
 
   const newInvoiceForm = useForm<NewInvoiceFormValues>({
@@ -134,6 +160,20 @@ export default function AdminPaymentsPage() {
       acc.total += p.totalAmount;
       return acc;
   }, { collected: 0, pending: 0, total: 0 });
+  
+  if (isLoading) {
+    return (
+        <div className="p-4 md:p-8 space-y-8">
+            <Skeleton className="h-12 w-96" />
+            <div className="grid gap-4 md:grid-cols-3">
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+            </div>
+            <Skeleton className="h-96" />
+        </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8">
@@ -214,7 +254,13 @@ export default function AdminPaymentsPage() {
         </Card>
       </div>
 
-      <StudentPaymentsTable payments={studioPayments} title="Listado de Pagos (Estudio)" description="Gestiona los pagos de membresías no directamente ligadas a clases de socios."/>
+      <StudentPaymentsTable 
+        payments={studioPayments}
+        users={users}
+        membershipPlans={membershipPlans}
+        title="Listado de Pagos (Estudio)"
+        description="Gestiona los pagos de membresías no directamente ligadas a clases de socios."
+      />
       
     </div>
   );

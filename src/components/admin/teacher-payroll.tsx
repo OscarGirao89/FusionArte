@@ -1,8 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useEffect } from 'react';
-import { users, danceClasses, membershipPlans, studentMemberships } from '@/lib/data';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,9 +12,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAttendance } from '@/context/attendance-context';
 import { format, parseISO, startOfMonth, endOfMonth, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { ClassInstance, StudentPayment, DanceClass } from '@/lib/types';
+import type { ClassInstance, StudentPayment, DanceClass, User, MembershipPlan } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { StudentPaymentsTable } from './student-payments-table';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const getStatusInfo = (status: string): { text: string; icon: React.ReactNode; color: string } => {
@@ -45,23 +45,54 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
     const { generateInstancesForTeacher, classInstances } = useAttendance();
     const { studentPayments } = useAuth();
 
+    const [users, setUsers] = useState<User[]>([]);
+    const [danceClasses, setDanceClasses] = useState<DanceClass[]>([]);
+    const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+      const fetchData = async () => {
+        setIsLoading(true);
+        try {
+          const [usersRes, classesRes, plansRes] = await Promise.all([
+            fetch('/api/users'),
+            fetch('/api/classes'),
+            fetch('/api/memberships'),
+          ]);
+
+          if (usersRes.ok) setUsers(await usersRes.json());
+          if (classesRes.ok) setDanceClasses(await classesRes.json());
+          if (plansRes.ok) setMembershipPlans(await plansRes.json());
+          
+        } catch (error) {
+          console.error("Error fetching payroll data:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchData();
+    }, []);
+
     // Generate instances for all relevant teachers when the component mounts
     useEffect(() => {
+        if (isLoading) return;
         const today = new Date();
         const start = startOfMonth(today);
         const end = endOfMonth(today);
 
         if (mode === 'studio_expenses') {
             const nonPartnerTeachers = users.filter(u => u.role === 'Profesor' && !u.isPartner);
-            nonPartnerTeachers.forEach(teacher => generateInstancesForTeacher(teacher.id, start, end));
+            nonPartnerTeachers.forEach(teacher => generateInstancesForTeacher(teacher.id, start, end, danceClasses));
         } else if (mode === 'partner_income' && partnerId) {
-            generateInstancesForTeacher(partnerId, start, end);
+            generateInstancesForTeacher(partnerId, start, end, danceClasses);
         } else if (mode === 'teacher_income' && teacherId) {
-            generateInstancesForTeacher(teacherId, start, end);
+            generateInstancesForTeacher(teacherId, start, end, danceClasses);
         }
-    }, [mode, partnerId, teacherId, generateInstancesForTeacher]);
+    }, [mode, partnerId, teacherId, generateInstancesForTeacher, users, danceClasses, isLoading]);
 
     const calculation = useMemo(() => {
+        if (isLoading) return null;
+
         const getStudentPaymentData = (studentIds: Set<number>) => {
             return Array.from(studentIds).map(id => {
                 const student = users.find(u => u.id === id);
@@ -80,6 +111,9 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
             const incomeDetailsByClassId: Record<string, PayrollClassInfo> = {};
 
             classesTaughtInstances.forEach(instance => {
+                const classTemplate = danceClasses.find(dc => dc.id === instance.id);
+                if (!classTemplate) return;
+
                 let classPay = 0;
                 let payDescription = '';
                 const numTeachers = instance.teacherIds.length || 1;
@@ -112,7 +146,7 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                 
                 if (!incomeDetailsByClassId[instance.id]) {
                      incomeDetailsByClassId[instance.id] = {
-                        classTemplate: danceClasses.find(dc => dc.id === instance.id)!,
+                        classTemplate: classTemplate,
                         instances: [],
                         totalPay: 0,
                         payDescription: ''
@@ -174,8 +208,26 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
 
         return null;
 
-    }, [mode, partnerId, teacherId, classInstances, studentPayments]);
+    }, [mode, partnerId, teacherId, classInstances, studentPayments, isLoading, users, danceClasses]);
     
+    if (isLoading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
+
     const StudioExpensesView = () => {
         if (!calculation || !('payroll' in calculation)) return null;
         const { payroll } = calculation;
@@ -258,7 +310,13 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                     </Card>
                 </TabsContent>
                 <TabsContent value="individual" className="mt-6 space-y-6">
-                     <StudentPaymentsTable payments={individualStudentsPayments} title="Pagos de Alumnos (Clases Individuales)" description="Gestiona los pagos de los alumnos inscritos únicamente en tus clases individuales."/>
+                     <StudentPaymentsTable 
+                        payments={individualStudentsPayments} 
+                        users={users} 
+                        membershipPlans={membershipPlans} 
+                        title="Pagos de Alumnos (Clases Individuales)" 
+                        description="Gestiona los pagos de los alumnos inscritos únicamente en tus clases individuales."
+                     />
 
                      <Card>
                         <CardHeader>
@@ -296,12 +354,18 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                             </TabsList>
                             {Object.entries(sharedClassesByPartner).map(([partnerName, classes]) => (
                                 <TabsContent key={partnerName} value={partnerName} className="mt-4 space-y-6">
-                                    <StudentPaymentsTable payments={sharedStudentsPaymentsByPartner[partnerName] || []} title={`Pagos de Alumnos (Clases con ${partnerName})`} description="Gestiona los pagos de los alumnos inscritos en estas clases compartidas."/>
+                                    <StudentPaymentsTable 
+                                        payments={sharedStudentsPaymentsByPartner[partnerName] || []}
+                                        users={users}
+                                        membershipPlans={membershipPlans}
+                                        title={`Pagos de Alumnos (Clases con ${partnerName})`}
+                                        description="Gestiona los pagos de los alumnos inscritos en estas clases compartidas."
+                                    />
                                     
                                     <Card>
                                         <CardHeader>
                                             <CardTitle>Desglose de Clases con {partnerName}</CardTitle>
-                                            <CardDescription>Total generado en estas clases: €{classes.reduce((acc, c: any) => acc + c.totalPay, 0).toFixed(2)}</CardDescription>
+                                            <CardDescription>Total generado en estas clases: €{classes.reduce((acc: any, c: any) => acc + c.totalPay, 0).toFixed(2)}</CardDescription>
                                         </CardHeader>
                                         <CardContent>
                                             <Table>

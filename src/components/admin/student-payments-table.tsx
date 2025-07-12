@@ -3,8 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { users, membershipPlans } from '@/lib/data';
-import type { StudentPayment } from '@/lib/types';
+import type { StudentPayment, User, MembershipPlan } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,11 +33,13 @@ type PaymentEditFormValues = z.infer<typeof paymentEditSchema>;
 
 interface StudentPaymentsTableProps {
     payments: StudentPayment[];
+    users: User[];
+    membershipPlans: MembershipPlan[];
     title: string;
     description: string;
 }
 
-export function StudentPaymentsTable({ payments, title, description }: StudentPaymentsTableProps) {
+export function StudentPaymentsTable({ payments, users, membershipPlans, title, description }: StudentPaymentsTableProps) {
   const { addStudentPayment, userRole } = useAuth();
   const [editingPayment, setEditingPayment] = useState<StudentPayment | null>(null);
   const { toast } = useToast();
@@ -208,4 +209,3 @@ export function StudentPaymentsTable({ payments, title, description }: StudentPa
     </Card>
   );
 }
-
