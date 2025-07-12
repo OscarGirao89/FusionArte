@@ -16,7 +16,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { LoginRequiredDialog } from '@/components/shared/login-required-dialog';
 import Link from 'next/link';
 import { useSettings } from '@/context/settings-context';
-import { sendEmail } from '@/ai/flows/send-email-flow';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -142,24 +141,7 @@ export default function MembershipsPage() {
     
     toast({
         title: "¡Membresía adquirida con éxito!",
-        description: "Se ha generado tu factura y te hemos enviado un email de confirmación.",
-    });
-
-    const emailBody = `
-      <h1>¡Gracias por tu compra, ${currentUser.name}!</h1>
-      <p>${settings.membershipEmailMessage || 'Gracias por unirte a nuestra comunidad. Estamos emocionados de verte en la pista de baile.'}</p>
-      <h2>Detalles de tu Membresía:</h2>
-      <ul>
-        <li><b>Plan:</b> ${planToPurchase.title}</li>
-        <li><b>Precio:</b> €${finalPrice.toFixed(2)}</li>
-        ${finalClassCount ? `<li><b>Clases Incluidas:</b> ${finalClassCount}</li>` : ''}
-      </ul>
-      <p>Puedes ver todos los detalles y gestionar tus pagos en tu perfil.</p>
-    `;
-
-    await sendEmail({
-      to: currentUser.email, bcc: settings.contactEmail,
-      subject: `Confirmación de tu membresía en ${settings.academyName}`, body: emailBody
+        description: "Se ha generado tu factura. Revisa tu perfil para más detalles.",
     });
 
     router.push('/profile');
