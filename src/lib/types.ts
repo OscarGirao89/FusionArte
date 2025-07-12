@@ -1,3 +1,4 @@
+import { z } from "zod";
 
 export type DanceStyle = {
   id: string;
@@ -248,3 +249,11 @@ export type AcademySettings = {
   aboutUsTeamTitle: string;
   aboutUsTeamDescription: string;
 };
+
+export const SendEmailInputSchema = z.object({
+  to: z.string().email().describe("The recipient's email address."),
+  subject: z.string().describe("The subject of the email."),
+  body: z.string().describe("The HTML content of the email."),
+  bcc: z.string().email().optional().describe("The BCC recipient's email address."),
+});
+export type SendEmailInput = z.infer<typeof SendEmailInputSchema>;
