@@ -12,6 +12,7 @@ import { useAuth } from '@/context/auth-context';
 import { useAttendance } from '@/context/attendance-context';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { parse, addMinutes, subMinutes, isWithinInterval, isPast, format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, parseISO } from 'date-fns';
+import { es } from "date-fns/locale";
 import type { DanceClass, ClassInstance } from '@/lib/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -171,24 +172,8 @@ export default function MyClassesPage() {
                             {myClassInstances.map(c => {
                                 const canTakeAttendance = isWithinAttendanceWindow(c.date, c.time, c.duration);
                                 const hasFinished = isClassPastTime(c.date, c.time, c.duration);
-
-                                const getActionButtons = () => {
-                                  if (c.status === 'completed') {
-                                    return <Button variant="ghost" size="sm" className="text-green-600" disabled><CheckCircle className="mr-2 h-4 w-4" /> Completada</Button>;
-                                  }
-                                  
-                                  if (c.status === 'scheduled') {
-                                      if (canTakeAttendance) {
-                                          return <Button variant="default" size="sm" onClick={() => router.push(`/my-classes/${c.id}/attendance?date=${c.date}`)}><BookCheck className="mr-2 h-4 w-4" /> Pasar Lista</Button>;
-                                      }
-                                      if (hasFinished) {
-                                          return <Button variant="default" size="sm" onClick={() => handleConfirmClass(c.id, c.date)}><CheckCircle className="mr-2 h-4 w-4" /> Confirmar Clase</Button>;
-                                      }
-                                      return <Button variant="secondary" size="sm" disabled><BookCheck className="mr-2 h-4 w-4" /> Pasar Lista</Button>;
-                                  }
-                                  
-                                  return <Button variant="secondary" size="sm" disabled>No Acción</Button>;
-                                };
+                                const canConfirm = hasFinished && c.status === 'scheduled';
+                                const isCompleted = c.status === 'completed';
 
                                 return (
                                     <li key={c.instanceId} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
@@ -232,7 +217,16 @@ export default function MyClassesPage() {
                                                     </ScrollArea>
                                                 </DialogContent>
                                             </Dialog>
-                                            {getActionButtons()}
+                                            
+                                            {isCompleted ? (
+                                                <Button variant="ghost" size="sm" className="text-green-600" disabled><CheckCircle className="mr-2 h-4 w-4" /> Completada</Button>
+                                            ) : canConfirm ? (
+                                                <Button variant="default" size="sm" onClick={() => handleConfirmClass(c.id, c.date)}><CheckCircle className="mr-2 h-4 w-4" /> Confirmar Clase</Button>
+                                            ) : (
+                                                <Button variant={canTakeAttendance ? 'default' : 'secondary'} size="sm" onClick={() => router.push(`/my-classes/${c.id}/attendance?date=${c.date}`)} disabled={!canTakeAttendance}>
+                                                    <BookCheck className="mr-2 h-4 w-4" /> Pasar Lista
+                                                </Button>
+                                            )}
                                         </div>
                                     </li>
                                 )
