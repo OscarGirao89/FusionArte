@@ -74,7 +74,7 @@ const checkAccess = (pathname: string, role: UserRole | null): { authorized: boo
             // Role is not authorized, redirect to their default page
             let defaultPath = '/profile';
             if (role === 'teacher' || role === 'socio') defaultPath = '/my-classes';
-            if (role === 'admin' || role === 'administrativo') defaultPath = '/admin/users';
+            if (role === 'admin' || role === 'administrativo') defaultPath = '/admin/dashboard';
             return { authorized: false, redirect: defaultPath };
         }
     }
@@ -149,7 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           } else if (role === 'teacher' || role === 'socio') {
             router.push('/my-classes');
           } else {
-            router.push('/admin/users');
+            router.push('/admin/dashboard'); // Redirect all management roles to the dashboard
           }
       }
     } catch (error) {

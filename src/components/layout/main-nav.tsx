@@ -14,7 +14,7 @@ import { Menu } from 'lucide-react';
 import { useSettings } from '@/context/settings-context';
 import Image from 'next/image';
 
-const mainNav = [
+const publicNav = [
     { href: '/', label: 'Inicio' },
     { href: '/about', label: 'Acerca de Nosotros' },
     { href: '/schedule', label: 'Clases / Horarios' },
@@ -24,6 +24,7 @@ const mainNav = [
 ];
 
 const adminManagementNav = [
+    { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/users', label: 'Usuarios', icon: User },
     { href: '/admin/students', label: 'Alumnos', icon: GraduationCap },
     { href: '/admin/classes', label: 'Clases', icon: ClipboardList },
@@ -40,25 +41,6 @@ export const userProfiles: Record<UserRole, { id: number; name: string; role: st
     administrativo: { id: 7, name: 'Laura Martinez', role: 'Recepción', avatar: 'https://placehold.co/100x100.png?text=LM' },
     socio: { id: 2, name: 'Oscar Girao', role: 'Socio', avatar: 'https://placehold.co/100x100.png?text=OG' },
 };
-
-function NavLinks({ items, className }: { items: { href: string, label: string }[], className?: string }) {
-    const pathname = usePathname();
-    return (
-        <nav className={cn("hidden md:flex items-center gap-4", className)}>
-            {items.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn('text-sm font-medium transition-colors hover:text-primary',
-                    pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href)) ? 'text-primary' : 'text-muted-foreground'
-                  )}
-                >
-                  {link.label}
-                </Link>
-            ))}
-        </nav>
-    );
-}
 
 function UserMenu() {
     const { userRole, logout, currentUser } = useAuth();
@@ -128,6 +110,25 @@ function UserMenu() {
     )
 }
 
+function NavLinks() {
+    const pathname = usePathname();
+    return (
+        <nav className="hidden md:flex items-center gap-4 lg:gap-6">
+            {publicNav.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn('text-sm font-medium transition-colors hover:text-primary',
+                    pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href)) ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                >
+                  {link.label}
+                </Link>
+            ))}
+        </nav>
+    );
+}
+
 function MobileNav() {
     return (
         <Sheet>
@@ -141,7 +142,7 @@ function MobileNav() {
                     <SheetTitle>Menú</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-4 mt-8">
-                    {mainNav.map((link) => (
+                    {publicNav.map((link) => (
                         <SheetClose asChild key={link.href}>
                             <Link href={link.href} className="text-lg font-medium hover:text-primary flex items-center gap-2">
                                {link.label}
@@ -169,7 +170,7 @@ export function MainNav() {
             <span className="hidden sm:inline-block font-bold text-lg font-headline">{settings.academyName}</span>
           </Link>
           <div className="flex-1">
-              <NavLinks items={mainNav} />
+              <NavLinks />
           </div>
           <div className="flex items-center gap-2">
               <UserMenu />

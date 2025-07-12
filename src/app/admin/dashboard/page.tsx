@@ -1,0 +1,80 @@
+
+'use client';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ClipboardList, GraduationCap, Users } from "lucide-react";
+import Link from "next/link";
+import { useAuth } from "@/context/auth-context";
+
+export default function AdminDashboardPage() {
+    const { currentUser } = useAuth();
+    
+    return (
+        <div className="p-4 md:p-8">
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold tracking-tight font-headline">Panel de Administración</h1>
+                <p className="text-lg text-muted-foreground">Bienvenido/a de nuevo, {currentUser?.name}.</p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
+                             <div className="bg-primary/10 p-3 rounded-full">
+                                <GraduationCap className="h-6 w-6 text-primary" />
+                            </div>
+                            <CardTitle>Alumnos</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Gestiona los perfiles, membresías e inscripciones de los estudiantes.</p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button asChild variant="outline">
+                            <Link href="/admin/students">Gestionar Alumnos</Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
+                            <div className="bg-primary/10 p-3 rounded-full">
+                                <ClipboardList className="h-6 w-6 text-primary" />
+                            </div>
+                            <CardTitle>Clases y Eventos</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Crea, edita y gestiona el horario de clases, talleres y alquileres.</p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button asChild variant="outline">
+                            <Link href="/admin/classes">Gestionar Clases</Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+                
+                 <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
+                            <div className="bg-primary/10 p-3 rounded-full">
+                                <Users className="h-6 w-6 text-primary" />
+                            </div>
+                            <CardTitle>Usuarios y Roles</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Administra los usuarios del sistema (profesores, socios) y sus permisos.</p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button asChild variant="outline">
+                            <Link href="/admin/users">Gestionar Usuarios</Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        </div>
+    );
+}
