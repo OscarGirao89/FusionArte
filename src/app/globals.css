@@ -65,7 +65,7 @@
   body {
     @apply bg-background text-foreground;
   }
-  .day_modifier_priority_high-day > div {
+   .day_modifier_priority_high-day > div {
       @apply rounded-full ring-2 ring-red-500/80;
   }
   .day_modifier_priority_medium-day > div {

@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
-import { format, parseISO, isSameDay }from 'date-fns';
+import { format, parseISO }from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -208,25 +208,25 @@ export default function NotesAndTasksPage() {
             if (task.dueDate) {
                 const dateStr = task.dueDate;
                 const priority = task.priority || 'low';
+                const priorityOrder = { high: 2, medium: 1, low: 0 };
 
-                if (!datesWithTasks[dateStr] || (priority === 'high') || (priority === 'medium' && datesWithTasks[dateStr] === 'low')) {
+                if (!datesWithTasks[dateStr] || priorityOrder[priority] > priorityOrder[datesWithTasks[dateStr]]) {
                     datesWithTasks[dateStr] = priority;
                 }
             }
         });
-
-        Object.entries(datesWithTasks).forEach(([dateStr, priority]) => {
-            const date = parseISO(dateStr);
-            modifiers[priority].push(date);
-        });
         
+        Object.entries(datesWithTasks).forEach(([dateStr, priority]) => {
+            modifiers[priority].push(parseISO(dateStr));
+        });
+
         return modifiers;
     }, [tasks]);
 
     const calendarModifierClassNames = {
-        high: "priority-high-day",
-        medium: "priority-medium-day",
-        low: "priority-low-day",
+        high: "day_modifier_priority_high-day",
+        medium: "day_modifier_priority_medium-day",
+        low: "day_modifier_priority_low-day",
     };
 
     return (
