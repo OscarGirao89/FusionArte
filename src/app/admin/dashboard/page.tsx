@@ -66,7 +66,7 @@ export default function AdminDashboardPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-muted-foreground">Administra los usuarios del sistema (profesores, socios) y sus perfiles.</p>
+                        <p className="text-muted-foreground">Administra los usuarios del sistema (profesores, socios) y sus roles.</p>
                     </CardContent>
                     <CardFooter>
                         <Button asChild variant="outline">
@@ -131,25 +131,6 @@ export default function AdminDashboardPage() {
                         </Button>
                         <Button asChild variant="outline" size="sm">
                             <Link href="/admin/levels">Niveles</Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-4">
-                            <div className="bg-primary/10 p-3 rounded-full">
-                                <ShieldCheck className="h-6 w-6 text-primary" />
-                            </div>
-                            <CardTitle>Roles y Permisos</CardTitle>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">Crea roles y asigna permisos de acceso a los usuarios de la plataforma.</p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button asChild variant="outline">
-                            <Link href="/admin/roles">Gestionar Roles</Link>
                         </Button>
                     </CardFooter>
                 </Card>
