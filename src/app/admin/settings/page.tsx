@@ -48,6 +48,10 @@ const settingsFormSchema = z.object({
   tiktokUrl: z.string().url("URL de TikTok inválida.").or(z.literal('')).optional(),
   openingHours: z.string().optional(),
   
+  // Email templates
+  registrationEmailMessage: z.string().optional(),
+  membershipEmailMessage: z.string().optional(),
+
   // About Us Page Content
   aboutUsTitle: z.string().min(1, "El título es obligatorio."),
   aboutUsStory: z.string().min(1, "La historia es obligatoria."),
@@ -197,6 +201,21 @@ export default function AdminSettingsPage() {
                             <FormItem><FormLabel>TikTok URL</FormLabel><FormControl><Input placeholder="https://tiktok.com/..." {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                     </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Plantillas de Email</CardTitle>
+                    <CardDescription>Personaliza los mensajes automáticos que se envían a los usuarios.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <FormField control={form.control} name="registrationEmailMessage" render={({ field }) => (
+                        <FormItem><FormLabel>Mensaje de Bienvenida (Registro)</FormLabel><FormControl><Textarea {...field} rows={5} /></FormControl><FormDescription>Este mensaje se enviará a los nuevos usuarios al registrarse. Usa `{{name}}` para insertar el nombre del usuario.</FormDescription><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="membershipEmailMessage" render={({ field }) => (
+                        <FormItem><FormLabel>Mensaje de Agradecimiento (Membresía)</FormLabel><FormControl><Textarea {...field} rows={5} /></FormControl><FormDescription>Este mensaje se incluirá en el email de confirmación de compra de membresía.</FormDescription><FormMessage /></FormItem>
+                    )} />
                 </CardContent>
             </Card>
 

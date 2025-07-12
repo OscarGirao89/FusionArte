@@ -25,6 +25,8 @@ const initialSettings: AcademySettings = {
   facebookUrl: "https://www.facebook.com",
   tiktokUrl: "https://www.tiktok.com",
   openingHours: "Lunes a Viernes: 10:00 - 22:00\nSábados: 10:00 - 14:00",
+  registrationEmailMessage: "¡Te damos la bienvenida a {{academyName}}! Estamos muy contentos de tenerte en nuestra comunidad. Explora nuestras clases y encuentra tu ritmo.",
+  membershipEmailMessage: "Gracias por unirte a nuestra comunidad. Estamos emocionados de verte en la pista de baile.",
   aboutUsTitle: "Nuestra Historia",
   aboutUsStory: "FusionArte nació de un sueño compartido: crear un espacio donde la pasión por el baile pudiera florecer sin límites, uniendo a personas de todos los niveles en una comunidad vibrante y acogedora.",
   aboutUsMission: "Ofrecer una enseñanza de la más alta calidad en un ambiente inclusivo y motivador, fomentando el crecimiento artístico y personal de cada alumno.",

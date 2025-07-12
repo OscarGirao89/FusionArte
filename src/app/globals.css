@@ -65,14 +65,23 @@
   body {
     @apply bg-background text-foreground;
   }
-   .day_modifier_priority_high-day > div {
-      @apply rounded-full ring-2 ring-red-500/80;
+   .day_modifier_priority_high {
+      @apply relative;
   }
-  .day_modifier_priority_medium-day > div {
-      @apply rounded-full ring-2 ring-yellow-500/80;
+  .day_modifier_priority_high > .rdp-day_button:after {
+      @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-500;
   }
-  .day_modifier_priority_low-day > div {
-      @apply rounded-full ring-2 ring-blue-500/80;
+  .day_modifier_priority_medium {
+      @apply relative;
+  }
+   .day_modifier_priority_medium > .rdp-day_button:after {
+      @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-yellow-500;
+  }
+  .day_modifier_priority_low {
+      @apply relative;
+  }
+  .day_modifier_priority_low > .rdp-day_button:after {
+      @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-500;
   }
 }
 

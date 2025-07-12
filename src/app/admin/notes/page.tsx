@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Calendar } from '@/components/ui/calendar';
-import { format, parseISO }from 'date-fns';
+import { format, parseISO, startOfDay }from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -201,32 +201,34 @@ export default function NotesAndTasksPage() {
     };
     
     const calendarModifiers = useMemo(() => {
-        const modifiers: { high: Date[], medium: Date[], low: Date[] } = { high: [], medium: [], low: [] };
+        const modifiers: { high?: Date[]; medium?: Date[]; low?: Date[] } = {};
         const datesWithTasks: Record<string, TaskPriority> = {};
+        const priorityOrder: Record<TaskPriority, number> = { high: 2, medium: 1, low: 0 };
 
         tasks.forEach(task => {
             if (task.dueDate) {
-                const dateStr = task.dueDate;
+                const dateStr = format(startOfDay(parseISO(task.dueDate)), 'yyyy-MM-dd');
                 const priority = task.priority || 'low';
-                const priorityOrder = { high: 2, medium: 1, low: 0 };
-
                 if (!datesWithTasks[dateStr] || priorityOrder[priority] > priorityOrder[datesWithTasks[dateStr]]) {
                     datesWithTasks[dateStr] = priority;
                 }
             }
         });
-        
+
         Object.entries(datesWithTasks).forEach(([dateStr, priority]) => {
-            modifiers[priority].push(parseISO(dateStr));
+            if (!modifiers[priority]) {
+                modifiers[priority] = [];
+            }
+            modifiers[priority]!.push(parseISO(dateStr));
         });
 
         return modifiers;
     }, [tasks]);
 
     const calendarModifierClassNames = {
-        high: "day_modifier_priority_high-day",
-        medium: "day_modifier_priority_medium-day",
-        low: "day_modifier_priority_low-day",
+        high: "day_modifier_priority_high",
+        medium: "day_modifier_priority_medium",
+        low: "day_modifier_priority_low",
     };
 
     return (

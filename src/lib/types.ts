@@ -241,6 +241,8 @@ export type AcademySettings = {
   facebookUrl?: string;
   tiktokUrl?: string;
   openingHours?: string;
+  registrationEmailMessage?: string;
+  membershipEmailMessage?: string;
   heroSlides: HeroSlide[];
   scheduleImages?: ScheduleImage[];
   

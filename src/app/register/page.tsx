@@ -29,6 +29,7 @@ import { LogoIcon } from "@/components/icons/logo-icon";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from '@/context/settings-context';
 import Image from 'next/image';
+import { sendEmail } from '@/ai/flows/send-email-flow';
 
 const registerFormSchema = z.object({
     name: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }),
@@ -57,7 +58,7 @@ export default function RegisterPage() {
         },
     });
 
-    const onSubmit = (data: RegisterFormValues) => {
+    const onSubmit = async (data: RegisterFormValues) => {
         // In a real app, this is where you'd call your registration API.
         // For this prototype, we'll just simulate success.
         console.log("Simulating registration for:", data.email);
@@ -65,6 +66,29 @@ export default function RegisterPage() {
         toast({
             title: "¡Registro Exitoso!",
             description: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
+        });
+
+        // Simulate sending a welcome email
+        const welcomeMessage = (settings.registrationEmailMessage || "¡Bienvenido/a a {{academyName}}! Estamos muy contentos de tenerte en nuestra comunidad. Explora nuestras clases y encuentra tu ritmo.")
+            .replace(/{{name}}/g, data.name)
+            .replace(/{{academyName}}/g, settings.academyName);
+
+        const emailBody = `
+            <h1>¡Bienvenido/a, ${data.name}!</h1>
+            <p>${welcomeMessage}</p>
+            <h3>Tus datos de registro:</h3>
+            <ul>
+                <li><b>Nombre:</b> ${data.name}</li>
+                <li><b>Email:</b> ${data.email}</li>
+            </ul>
+            <p>¡Nos vemos en la pista de baile!</p>
+        `;
+        
+        await sendEmail({
+          to: data.email,
+          bcc: settings.contactEmail,
+          subject: `Bienvenido/a a ${settings.academyName}`,
+          body: emailBody
         });
         
         router.push('/login');

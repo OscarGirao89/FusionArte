@@ -17,6 +17,10 @@ import { CustomPackModal } from '@/components/shared/CustomPackModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { LoginRequiredDialog } from '@/components/shared/login-required-dialog';
 import Link from 'next/link';
+import { useSettings } from '@/context/settings-context';
+import { sendEmail } from '@/ai/flows/send-email-flow';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const getPlanPriceDisplay = (plan: MembershipPlan) => {
   if (plan.accessType === 'unlimited' || plan.accessType === 'course_pass') {
@@ -80,7 +84,8 @@ function PlanCard({ plan, onPurchaseRequest }: { plan: MembershipPlan, onPurchas
 export default function MembershipsPage() {
   const publicPlans = membershipPlans.filter(p => p.visibility === 'public');
   const { toast } = useToast();
-  const { userRole, userId, isAuthenticated, addStudentPayment, updateStudentMembership } = useAuth();
+  const { userRole, userId, isAuthenticated, currentUser, addStudentPayment, updateStudentMembership } = useAuth();
+  const { settings } = useSettings();
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [isCustomPackOpen, setIsCustomPackOpen] = useState(false);
@@ -115,50 +120,75 @@ export default function MembershipsPage() {
     }
   };
 
-  const handleConfirmUnlimitedPurchase = () => {
-    if (!planToConfirm || userRole !== 'student' || !userId) return;
-
-    const student = userProfiles[userRole];
-    if (!student) return;
-
+  const processPurchase = async (planToPurchase: MembershipPlan, finalPrice: number, finalClassCount?: number) => {
+    if (!currentUser) return;
+    
     const newPayment: StudentPayment = {
         id: `inv-${Date.now()}`,
-        studentId: student.id,
-        planId: planToConfirm.id,
+        studentId: currentUser.id,
+        planId: planToPurchase.id,
         invoiceDate: new Date().toISOString(),
-        totalAmount: planToConfirm.price,
+        totalAmount: finalPrice,
         status: 'pending',
         amountPaid: 0,
-        amountDue: planToConfirm.price,
+        amountDue: finalPrice,
         lastUpdatedBy: 'Sistema',
         lastUpdatedDate: new Date().toISOString(),
     };
     addStudentPayment(newPayment);
 
     const membershipEndDate = new Date();
-    if (planToConfirm.durationUnit === 'months') {
-        membershipEndDate.setMonth(membershipEndDate.getMonth() + planToConfirm.durationValue);
-    } else if (planToConfirm.durationUnit === 'weeks') {
-        membershipEndDate.setDate(membershipEndDate.getDate() + planToConfirm.durationValue * 7);
+    if (planToPurchase.durationUnit === 'months') {
+        membershipEndDate.setMonth(membershipEndDate.getMonth() + planToPurchase.durationValue);
+    } else if (planToPurchase.durationUnit === 'weeks') {
+        membershipEndDate.setDate(membershipEndDate.getDate() + planToPurchase.durationValue * 7);
     } else { // days
-        membershipEndDate.setDate(membershipEndDate.getDate() + planToConfirm.durationValue);
+        membershipEndDate.setDate(membershipEndDate.getDate() + planToPurchase.durationValue);
     }
     
-    updateStudentMembership(student.id, {
-        planId: planToConfirm.id,
+    const newMembership = {
+        planId: planToPurchase.id,
         startDate: new Date().toISOString(),
         endDate: membershipEndDate.toISOString(),
-    });
-    
+        classesRemaining: finalClassCount,
+    };
+    updateStudentMembership(currentUser.id, newMembership);
+
     toast({
-        title: "Plan Adquirido",
-        description: "Tu factura ha sido creada. Revisa la sección 'Mi Perfil' para ver los detalles.",
+        title: "¡Membresía adquirida con éxito!",
+        description: "Se ha generado tu factura y te hemos enviado un email de confirmación.",
     });
 
-    setPlanToConfirm(null);
+    const emailBody = `
+      <h1>¡Gracias por tu compra, ${currentUser.name}!</h1>
+      <p>${settings.membershipEmailMessage || 'Gracias por unirte a nuestra comunidad. Estamos emocionados de verte en la pista de baile.'}</p>
+      <h2>Detalles de tu Membresía:</h2>
+      <ul>
+        <li><b>Plan:</b> ${planToPurchase.title}</li>
+        <li><b>Precio:</b> €${finalPrice.toFixed(2)}</li>
+        <li><b>Fecha de Inicio:</b> ${format(parseISO(newMembership.startDate), 'PPP', { locale: es })}</li>
+        <li><b>Fecha de Vencimiento:</b> ${format(parseISO(newMembership.endDate), 'PPP', { locale: es })}</li>
+        ${finalClassCount ? `<li><b>Clases Incluidas:</b> ${finalClassCount}</li>` : ''}
+      </ul>
+      <p>Puedes ver todos los detalles y gestionar tus pagos en tu perfil.</p>
+    `;
+
+    await sendEmail({
+      to: currentUser.email,
+      bcc: settings.contactEmail,
+      subject: `Confirmación de tu membresía en ${settings.academyName}`,
+      body: emailBody
+    });
+
     router.push('/profile');
   };
 
+  const handleConfirmUnlimitedPurchase = () => {
+    if (!planToConfirm) return;
+    processPurchase(planToConfirm, planToConfirm.price);
+    setPlanToConfirm(null);
+  };
+  
   const handleCustomPackTierSelected = (tier: PriceTier) => {
     if (!selectedPlan || selectedPlan.accessType !== 'custom_pack') return;
 
@@ -168,7 +198,7 @@ export default function MembershipsPage() {
     });
 
     setIsCustomPackOpen(false);
-    setIsSelectorOpen(true); // Open the class selector modal next
+    setIsSelectorOpen(true);
   };
   
   const handleConfirmSelection = (classIds: string[]) => {
@@ -177,7 +207,6 @@ export default function MembershipsPage() {
         return;
      }
 
-     const student = userProfiles[userRole!];
      let planToPurchase = selectedPlan;
      let finalPrice = selectedPlan.price;
      let finalClassCount: number | undefined;
@@ -194,46 +223,12 @@ export default function MembershipsPage() {
          return;
      }
 
-     const newPayment: StudentPayment = {
-        id: `inv-${Date.now()}`,
-        studentId: student.id,
-        planId: planToPurchase.id,
-        invoiceDate: new Date().toISOString(),
-        totalAmount: finalPrice,
-        status: 'pending',
-        amountPaid: 0,
-        amountDue: finalPrice,
-        lastUpdatedBy: 'Sistema',
-        lastUpdatedDate: new Date().toISOString(),
-    };
-    addStudentPayment(newPayment);
+    processPurchase(planToPurchase, finalPrice, finalClassCount);
 
-    const membershipEndDate = new Date();
-    if (planToPurchase.durationUnit === 'months') {
-      membershipEndDate.setMonth(membershipEndDate.getMonth() + planToPurchase.durationValue);
-    } else if (planToPurchase.durationUnit === 'weeks') {
-      membershipEndDate.setDate(membershipEndDate.getDate() + planToPurchase.durationValue * 7);
-    } else { // days
-      membershipEndDate.setDate(membershipEndDate.getDate() + planToPurchase.durationValue);
-    }
-    
-    updateStudentMembership(student.id, {
-        planId: planToPurchase.id,
-        startDate: new Date().toISOString(),
-        endDate: membershipEndDate.toISOString(),
-        classesRemaining: finalClassCount,
-    });
-    
     console.log(`Enrolling student ${userId} in classes:`, classIds);
-
     setIsSelectorOpen(false);
     setSelectedPlan(null);
     setCustomPackConfig(null);
-    toast({
-        title: "¡Bono adquirido con éxito!",
-        description: "Te has inscrito en las clases seleccionadas y se ha generado tu factura.",
-    });
-    router.push('/profile');
   };
 
   return (
