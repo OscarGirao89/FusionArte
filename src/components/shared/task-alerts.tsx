@@ -12,13 +12,13 @@ export function TaskAlerts() {
     const [currentAlertIndex, setCurrentAlertIndex] = useState(0);
 
     useEffect(() => {
-        // En una app real, esto podría ser una suscripción a notificaciones
-        // Aquí simulamos la carga de tareas y la comprobación de alertas pendientes
+        // In a real app, this would be a subscription to notifcations
+        // Here we simulate loading tasks and checking for pending alerts
         const now = new Date();
         const alertsToShow: TaskNote[] = [];
 
         taskNotes.forEach(task => {
-            // Intenta obtener el estado de la alerta desde localStorage
+            // Try to get the alert state from localStorage
             const isDismissed = localStorage.getItem(`alert_dismissed_${task.id}`) === 'true';
 
             if (task.alertDateTime && !task.alertDismissed && !isDismissed && isPast(parseISO(task.alertDateTime))) {
@@ -32,7 +32,7 @@ export function TaskAlerts() {
     }, []);
 
     const handleDismiss = () => {
-        // Avanza a la siguiente alerta o cierra el diálogo si no hay más
+        // Advances to the next alert or closes the dialog if there are no more
         if (currentAlertIndex < upcomingAlerts.length - 1) {
             setCurrentAlertIndex(prev => prev + 1);
         } else {
@@ -44,13 +44,13 @@ export function TaskAlerts() {
     const handleDoNotShowAgain = () => {
         const currentTask = upcomingAlerts[currentAlertIndex];
         if (currentTask) {
-            // Marca la alerta como descartada permanentemente (simulado con localStorage)
+            // Mark the alert as permanently dismissed (simulated with localStorage)
             try {
                 localStorage.setItem(`alert_dismissed_${currentTask.id}`, 'true');
             } catch (error) {
                 console.error("Could not access localStorage", error);
             }
-            // Esto también podría actualizar el estado en una base de datos
+            // This could also update the state in a database
             currentTask.alertDismissed = true; 
         }
         handleDismiss();
@@ -72,7 +72,7 @@ export function TaskAlerts() {
                         {currentAlert.dueDate && (
                             <span> que vence el <strong>{format(parseISO(currentAlert.dueDate), 'PPP', { locale: es })}</strong>.</span>
                         )}
-                        <p className="mt-2 text-sm">{currentAlert.description}</p>
+                        <div className="mt-2 text-sm">{currentAlert.description}</div>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
