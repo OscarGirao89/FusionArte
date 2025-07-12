@@ -1,9 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
-import { users as allUsers, membershipPlans, studentMemberships as allStudentMemberships, danceClasses } from '@/lib/data';
-import type { User, DanceClass, StudentMembership } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import type { User, DanceClass, StudentMembership, MembershipPlan } from '@/lib/types';
 import { format, isBefore, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-
+import { Skeleton } from '@/components/ui/skeleton';
 
 const studentEditFormSchema = z.object({
     id: z.number(),
@@ -54,18 +53,52 @@ type StudentEditFormValues = z.infer<typeof studentEditFormSchema>;
 
 
 export default function AdminStudentsPage() {
-    const [students, setStudents] = useState<User[]>(allUsers.filter(u => u.role === 'Estudiante'));
-    const [studentMemberships, setStudentMemberships] = useState<StudentMembership[]>(allStudentMemberships);
+    const [students, setStudents] = useState<User[]>([]);
+    const [studentMemberships, setStudentMemberships] = useState<StudentMembership[]>([]);
+    const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
+    const [danceClasses, setDanceClasses] = useState<DanceClass[]>([]);
+    const [users, setUsers] = useState<User[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
     const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const { toast } = useToast();
 
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const [usersRes, membershipsRes, plansRes, classesRes] = await Promise.all([
+                    fetch('/api/users'), fetch('/api/student-memberships'), 
+                    fetch('/api/memberships'), fetch('/api/classes')
+                ]);
+                
+                if (usersRes.ok) {
+                    const allUsers = await usersRes.json();
+                    setUsers(allUsers);
+                    setStudents(allUsers.filter((u: User) => u.role === 'Estudiante'));
+                }
+                if (membershipsRes.ok) setStudentMemberships(await membershipsRes.json());
+                if (plansRes.ok) setMembershipPlans(await plansRes.json());
+                if (classesRes.ok) setDanceClasses(await classesRes.json());
+                
+            } catch (error) {
+                console.error("Failed to fetch student data:", error);
+                toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, [toast]);
+
+
     const form = useForm<StudentEditFormValues>({
         resolver: zodResolver(studentEditFormSchema),
     });
     
-    const getTeacherNames = (ids: number[]) => allUsers.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
+    const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
 
     const watchedPlanId = form.watch('membershipPlanId');
     const selectedPlanDetails = membershipPlans.find(p => p.id === watchedPlanId);
@@ -255,6 +288,24 @@ export default function AdminStudentsPage() {
             });
         }
     };
+    
+    if (isLoading) {
+        return (
+            <div className="p-4 md:p-8 space-y-4">
+                <Skeleton className="h-10 w-1/3" />
+                <Card>
+                    <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
   return (
     <div className="p-4 md:p-8">
@@ -404,7 +455,7 @@ export default function AdminStudentsPage() {
                                                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                         </Button></FormControl>
                                                     </PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
-                                                        <CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/>
+                                                        <CalendarComponent mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus locale={es}/>
                                                     </PopoverContent></Popover><FormMessage />
                                                   </FormItem>
                                                 )} />
@@ -416,7 +467,7 @@ export default function AdminStudentsPage() {
                                                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                         </Button></FormControl>
                                                     </PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
-                                                        <CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/>
+                                                        <CalendarComponent mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus locale={es}/>
                                                     </PopoverContent></Popover><FormMessage />
                                                   </FormItem>
                                                 )} />

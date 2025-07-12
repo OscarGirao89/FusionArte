@@ -1,11 +1,10 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { roles as initialRoles } from '@/lib/data';
 import type { Role, Permission } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
@@ -21,6 +20,7 @@ import { MoreHorizontal, PlusCircle, Pencil, Trash2, ShieldCheck } from 'lucide-
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const roleFormSchema = z.object({
   id: z.string().optional(),
@@ -46,10 +46,32 @@ const availablePermissions: { id: Permission; label: string; description: string
 ];
 
 export default function AdminRolesPage() {
-  const [roles, setRoles] = useState<Role[]>(initialRoles);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+      const fetchRoles = async () => {
+          setIsLoading(true);
+          try {
+              const res = await fetch('/api/roles');
+              if (res.ok) {
+                  setRoles(await res.json());
+              } else {
+                  console.error("Failed to fetch roles");
+                  toast({ title: "Error", description: "No se pudieron cargar los roles.", variant: "destructive" });
+              }
+          } catch(e) {
+              console.error("Error fetching roles", e);
+              toast({ title: "Error", description: "No se pudieron cargar los roles.", variant: "destructive" });
+          } finally {
+              setIsLoading(false);
+          }
+      }
+      fetchRoles();
+  }, [toast]);
 
   const form = useForm<RoleFormValues>({
     resolver: zodResolver(roleFormSchema),
@@ -104,6 +126,27 @@ export default function AdminRolesPage() {
       description: `El rol ha sido eliminado exitosamente.`,
       variant: "destructive"
     });
+  }
+  
+  if (isLoading) {
+    return (
+        <div className="p-4 md:p-8 space-y-4">
+            <div className="flex justify-between items-center">
+                <Skeleton className="h-10 w-1/3" />
+                <Skeleton className="h-10 w-36" />
+            </div>
+            <Card>
+                <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
   }
 
   return (

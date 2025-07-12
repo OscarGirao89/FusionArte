@@ -1,12 +1,11 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { users as initialUsers } from '@/lib/data';
 import type { User } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 
@@ -26,6 +25,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { MoreVertical, UserPlus, Pencil, Trash2, ShieldCheck, Download, Printer } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const paymentDetailsSchema = z.discriminatedUnion("type", [
   z.object({
@@ -80,12 +80,32 @@ const roleVariant: { [key: string]: "default" | "secondary" | "destructive" } = 
 const userRoles: User['role'][] = ['Estudiante', 'Profesor', 'Administrador', 'Administrativo', 'Socio'];
 
 export default function AdminUsersPage() {
-    const [users, setUsers] = useState<User[]>(initialUsers);
+    const [users, setUsers] = useState<User[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const { toast } = useToast();
     const router = useRouter();
     const { userRole } = useAuth();
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            setIsLoading(true);
+            try {
+                const res = await fetch('/api/users');
+                if (res.ok) {
+                    setUsers(await res.json());
+                } else {
+                    toast({ title: "Error", description: "No se pudieron cargar los usuarios.", variant: "destructive" });
+                }
+            } catch (e) {
+                toast({ title: "Error", description: "No se pudieron cargar los usuarios.", variant: "destructive" });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchUsers();
+    }, [toast]);
     
     // Permission flags
     const canManageRoles = userRole === 'admin' || userRole === 'socio';
@@ -225,6 +245,27 @@ export default function AdminUsersPage() {
     const handlePrint = () => {
         window.print();
     };
+
+    if (isLoading) {
+        return (
+            <div className="p-4 md:p-8 space-y-4">
+                <div className="flex justify-between items-center">
+                    <Skeleton className="h-10 w-1/3" />
+                    <Skeleton className="h-10 w-48" />
+                </div>
+                <Card>
+                    <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                            <Skeleton className="h-16 w-full" />
+                            <Skeleton className="h-16 w-full" />
+                            <Skeleton className="h-16 w-full" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
   return (
     <div className="p-4 md:p-8">

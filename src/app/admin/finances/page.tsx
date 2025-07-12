@@ -11,31 +11,34 @@ import { useRouter } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
-import type { User, DanceClass, Transaction } from '@/lib/types';
+import type { User, DanceClass, Transaction, StudentPayment } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function AdminFinancesPage() {
-  const { userRole, userId, studentPayments } = useAuth();
+  const { userRole, userId } = useAuth();
   const router = useRouter();
 
   const [users, setUsers] = useState<User[]>([]);
   const [danceClasses, setDanceClasses] = useState<DanceClass[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [studentPayments, setStudentPayments] = useState<StudentPayment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [usersRes, classesRes, transRes] = await Promise.all([
+        const [usersRes, classesRes, transRes, paymentsRes] = await Promise.all([
           fetch('/api/users'),
           fetch('/api/classes'),
-          fetch('/api/transactions')
+          fetch('/api/transactions'),
+          fetch('/api/payments'),
         ]);
 
         if (usersRes.ok) setUsers(await usersRes.json());
         if (classesRes.ok) setDanceClasses(await classesRes.json());
         if (transRes.ok) setTransactions(await transRes.json());
+        if (paymentsRes.ok) setStudentPayments(await paymentsRes.json());
 
       } catch (error) {
         console.error("Error fetching finance data:", error);
