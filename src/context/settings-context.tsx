@@ -15,6 +15,7 @@ const initialSettings: AcademySettings = {
   academyName: "FusionArte",
   contactEmail: "contacto@fusionarte.com",
   phone: "+34 123 456 789",
+  whatsappPhone: "+34123456789",
   address: "Calle Falsa 123, Ciudad Danza, 45678",
   welcomeMessage: "¡Bienvenido a FusionArte! El lugar donde la pasión y el arte se encuentran.",
   enableNewSignups: true,

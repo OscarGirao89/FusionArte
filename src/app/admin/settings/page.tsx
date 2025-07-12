@@ -38,6 +38,7 @@ const settingsFormSchema = z.object({
   contactEmail: z.string().email("Introduce un email válido."),
   address: z.string().optional(),
   phone: z.string().optional(),
+  whatsappPhone: z.string().optional(),
   welcomeMessage: z.string().optional(),
   enableNewSignups: z.boolean(),
   maintenanceMode: z.boolean(),
@@ -176,6 +177,9 @@ export default function AdminSettingsPage() {
                             <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                     </div>
+                    <FormField control={form.control} name="whatsappPhone" render={({ field }) => (
+                        <FormItem><FormLabel>Teléfono para WhatsApp</FormLabel><FormControl><Input placeholder="+34600123456" {...field} /></FormControl><FormDescription>Introduce el número completo con el código de país para el enlace de WhatsApp.</FormDescription><FormMessage /></FormItem>
+                    )} />
                      <FormField control={form.control} name="address" render={({ field }) => (
                         <FormItem><FormLabel>Dirección</FormLabel><FormControl><Input placeholder="Calle, Ciudad, Código Postal" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />

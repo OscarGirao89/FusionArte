@@ -65,6 +65,19 @@
   body {
     @apply bg-background text-foreground;
   }
+  .day_modifier_priority_high:not(.day-selected)::after {
+      @apply bg-red-500;
+  }
+  .day_modifier_priority_medium:not(.day-selected)::after {
+      @apply bg-yellow-500;
+  }
+  .day_modifier_priority_low:not(.day-selected)::after {
+      @apply bg-blue-500;
+  }
+  .day_modifier_hasTasks::after {
+      content: '';
+      @apply absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full;
+  }
 }
 
 @media print {

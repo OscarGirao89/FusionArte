@@ -285,42 +285,45 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                     </Card>
                 </TabsContent>
                  <TabsContent value="shared" className="mt-6">
-                    <Tabs defaultValue={Object.keys(sharedClassesByPartner)[0]} className="w-full">
-                         <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-                             {Object.keys(sharedClassesByPartner).map(partnerName => (
-                                 <TabsTrigger key={partnerName} value={partnerName}>
-                                     Con {partnerName}
-                                 </TabsTrigger>
-                             ))}
-                         </TabsList>
-                         {Object.entries(sharedClassesByPartner).map(([partnerName, classes]) => (
-                            <TabsContent key={partnerName} value={partnerName} className="mt-4 space-y-6">
-                                <StudentPaymentsTable payments={sharedStudentsPaymentsByPartner[partnerName] || []} title={`Pagos de Alumnos (Clases con ${partnerName})`} description="Gestiona los pagos de los alumnos inscritos en estas clases compartidas."/>
-                                
-                                <Card>
-                                    <CardHeader>
-                                         <CardTitle>Desglose de Clases con {partnerName}</CardTitle>
-                                         <CardDescription>Total generado en estas clases: €{classes.reduce((acc, c: any) => acc + c.totalPay, 0).toFixed(2)}</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Table>
-                                             <TableHeader><TableRow><TableHead>Clase</TableHead><TableHead>Instancias</TableHead><TableHead className="text-right">Mi Ingreso</TableHead></TableRow></TableHeader>
-                                             <TableBody>
-                                                 {(classes as any[]).map((c: any) => (
-                                                     <TableRow key={c.classTemplate.id}>
-                                                         <TableCell><p className="font-medium">{c.classTemplate.name}</p><p className="text-xs text-muted-foreground capitalize">{c.classTemplate.day} {c.classTemplate.time}</p></TableCell>
-                                                         <TableCell>{c.instances.length}</TableCell>
-                                                         <TableCell className="text-right"><p className="font-mono font-semibold">€{c.totalPay.toFixed(2)}</p><p className="text-xs text-muted-foreground">{c.payDescription}</p></TableCell>
-                                                     </TableRow>
-                                                 ))}
-                                             </TableBody>
-                                         </Table>
-                                     </CardContent>
-                                </Card>
-                            </TabsContent>
-                         ))}
-                    </Tabs>
-                    {Object.keys(sharedClassesByPartner).length === 0 && <Card className="mt-4"><CardContent className="text-center text-muted-foreground py-8">No hay clases compartidas este mes.</CardContent></Card>}
+                     {Object.keys(sharedClassesByPartner).length > 0 ? (
+                        <Tabs defaultValue={Object.keys(sharedClassesByPartner)[0]} className="w-full">
+                            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+                                {Object.keys(sharedClassesByPartner).map(partnerName => (
+                                    <TabsTrigger key={partnerName} value={partnerName}>
+                                        Con {partnerName}
+                                    </TabsTrigger>
+                                ))}
+                            </TabsList>
+                            {Object.entries(sharedClassesByPartner).map(([partnerName, classes]) => (
+                                <TabsContent key={partnerName} value={partnerName} className="mt-4 space-y-6">
+                                    <StudentPaymentsTable payments={sharedStudentsPaymentsByPartner[partnerName] || []} title={`Pagos de Alumnos (Clases con ${partnerName})`} description="Gestiona los pagos de los alumnos inscritos en estas clases compartidas."/>
+                                    
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Desglose de Clases con {partnerName}</CardTitle>
+                                            <CardDescription>Total generado en estas clases: €{classes.reduce((acc, c: any) => acc + c.totalPay, 0).toFixed(2)}</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Table>
+                                                <TableHeader><TableRow><TableHead>Clase</TableHead><TableHead>Instancias</TableHead><TableHead className="text-right">Mi Ingreso</TableHead></TableRow></TableHeader>
+                                                <TableBody>
+                                                    {(classes as any[]).map((c: any) => (
+                                                        <TableRow key={c.classTemplate.id}>
+                                                            <TableCell><p className="font-medium">{c.classTemplate.name}</p><p className="text-xs text-muted-foreground capitalize">{c.classTemplate.day} {c.classTemplate.time}</p></TableCell>
+                                                            <TableCell>{c.instances.length}</TableCell>
+                                                            <TableCell className="text-right"><p className="font-mono font-semibold">€{c.totalPay.toFixed(2)}</p><p className="text-xs text-muted-foreground">{c.payDescription}</p></TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </CardContent>
+                                    </Card>
+                                </TabsContent>
+                            ))}
+                        </Tabs>
+                     ) : (
+                        <Card className="mt-4"><CardContent className="text-center text-muted-foreground py-8">No hay clases compartidas este mes.</CardContent></Card>
+                     )}
                 </TabsContent>
             </Tabs>
         )

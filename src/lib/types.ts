@@ -231,6 +231,7 @@ export type AcademySettings = {
   academyName: string;
   contactEmail: string;
   phone?: string;
+  whatsappPhone?: string;
   address?: string;
   welcomeMessage?: string;
   enableNewSignups: boolean;
