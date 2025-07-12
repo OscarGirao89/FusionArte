@@ -1,8 +1,11 @@
-import { prisma } from '@/lib/prisma';
+
+'use client';
+import { useState, useEffect } from 'react';
 import type { User } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function TeacherCard({ teacher }: { teacher: User }) {
     return (
@@ -30,9 +33,27 @@ function TeacherCard({ teacher }: { teacher: User }) {
     );
 }
 
-export default async function TeachersPage() {
-  const allUsers = await prisma.user.findMany();
-  const teachers = allUsers.filter(user => (user.role === 'Profesor' || user.role === 'Socio') && user.isVisibleToStudents);
+export default function TeachersPage() {
+  const [teachers, setTeachers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      try {
+        const response = await fetch('/api/users');
+        if (response.ok) {
+          const allUsers: User[] = await response.json();
+          const teacherUsers = allUsers.filter(user => (user.role === 'Profesor' || user.role === 'Socio') && user.isVisibleToStudents);
+          setTeachers(teacherUsers);
+        }
+      } catch (error) {
+        console.error("Failed to fetch teachers", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTeachers();
+  }, []);
     
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -44,9 +65,15 @@ export default async function TeachersPage() {
       </div>
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {teachers.map(teacher => (
-          <TeacherCard key={teacher.id} teacher={teacher} />
-        ))}
+        {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i}><CardContent className="p-0 space-y-4"><Skeleton className="h-96 w-full" /></CardContent></Card>
+            ))
+        ) : (
+            teachers.map(teacher => (
+                <TeacherCard key={teacher.id} teacher={teacher} />
+            ))
+        )}
       </div>
     </div>
   );
