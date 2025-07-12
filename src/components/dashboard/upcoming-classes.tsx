@@ -1,13 +1,25 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { danceClasses, users } from '@/lib/data';
+import type { DanceClass } from '@/lib/types';
+import { Badge } from '../ui/badge';
+import { Calendar } from 'lucide-react';
 
-export function UpcomingClasses() {
-  const upcoming = danceClasses.slice(0, 3);
+export function UpcomingClasses({ classes = [] }: { classes?: DanceClass[] }) {
+  const upcoming = classes.slice(0, 3);
   const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
   const getFirstTeacher = (ids: number[]) => users.find(u => ids.includes(u.id));
 
+  if (upcoming.length === 0) {
+    return (
+        <div className="text-center text-sm text-muted-foreground py-4">
+            <Calendar className="mx-auto h-8 w-8 mb-2" />
+            <p>No tienes clases próximas.</p>
+        </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {upcoming.map((c) => {
         const firstTeacher = getFirstTeacher(c.teacherIds);
         return (
@@ -17,10 +29,12 @@ export function UpcomingClasses() {
               <AvatarFallback>{firstTeacher?.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="ml-4 space-y-1">
-              <p className="text-sm font-medium leading-none">{c.name} - {c.levelId}</p>
-              <p className="text-sm text-muted-foreground">{c.day} a las {c.time} con {getTeacherNames(c.teacherIds)}</p>
+              <p className="text-sm font-medium leading-none">{c.name}</p>
+              <p className="text-sm text-muted-foreground">{c.day} a las {c.time}</p>
             </div>
-            <div className="ml-auto font-medium text-sm">{c.room}</div>
+            <div className="ml-auto text-sm text-right">
+                <Badge variant="outline" className="font-normal">{c.levelId}</Badge>
+            </div>
           </div>
         )
       })}

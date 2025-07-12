@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { useAuth } from "@/context/auth-context";
-import { membershipPlans } from '@/lib/data';
-import type { StudentPayment } from "@/lib/types";
+import { membershipPlans, danceClasses as allDanceClasses } from '@/lib/data';
+import type { StudentPayment, DanceClass } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, parseISO, isBefore } from 'date-fns';
@@ -67,6 +67,11 @@ export default function ProfilePage() {
     const payment = currentUser ? studentPayments.find(p => p.studentId === currentUser.id && p.planId === membership?.planId) : null;
     const isMembershipActive = membership ? isBefore(new Date(), parseISO(membership.endDate)) : false;
     
+    const myUpcomingClasses = useMemo(() => {
+        if (!currentUser || !isMembershipActive) return [];
+        return allDanceClasses.filter(c => c.enrolledStudentIds.includes(currentUser.id));
+    }, [currentUser, isMembershipActive]);
+
     const popularStylesData = [
         { name: 'Salsa', total: 420 },
         { name: 'Bachata', total: 510 },
@@ -153,15 +158,9 @@ export default function ProfilePage() {
     if (userRole === 'student') {
         return (
             <div className="p-4 md:p-8 space-y-8">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight font-headline">Panel de Estudiante</h1>
-                        <p className="text-lg text-muted-foreground">Bienvenido/a de nuevo, {currentUser.name.split(' ')[0]}.</p>
-                    </div>
-                    <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
-                        {isEditing ? <Save className="mr-2 h-4 w-4" /> : <Pencil className="mr-2 h-4 w-4" />}
-                        {isEditing ? 'Guardar' : 'Editar'}
-                    </Button>
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight font-headline">Panel de Estudiante</h1>
+                    <p className="text-lg text-muted-foreground">Bienvenido/a de nuevo, {currentUser.name.split(' ')[0]}.</p>
                 </div>
                 
                 <Tabs defaultValue="details" className="w-full">
@@ -197,8 +196,10 @@ export default function ProfilePage() {
                                 </CardContent>
                             </Card>
                             <Card className="col-span-1 md:col-span-2 lg:col-span-1">
-                                <CardHeader><CardTitle className="text-sm font-medium">Próximas Clases</CardTitle></CardHeader>
-                                <CardContent><UpcomingClasses /></CardContent>
+                                <CardHeader><CardTitle className="text-sm font-medium">Mis Próximas Clases</CardTitle></CardHeader>
+                                <CardContent>
+                                    <UpcomingClasses classes={myUpcomingClasses} />
+                                </CardContent>
                             </Card>
                         </div>
                          <Card>
@@ -214,31 +215,42 @@ export default function ProfilePage() {
                             <form id="profile-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                 <div className="lg:col-span-1">
                                     <Card>
-                                        <CardHeader className="items-center text-center">
-                                            <Avatar className={cn("h-24 w-24 mb-4", isEditing && "cursor-pointer hover:opacity-80 transition-opacity")} onClick={handleAvatarClick}>
-                                                <AvatarImage src={watchedAvatar} alt={currentUser.name}/>
-                                                <AvatarFallback>{currentUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                                            </Avatar>
-                                            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/png, image/jpeg, image/gif" />
-                                            <CardTitle className="font-headline">{form.getValues('name')}</CardTitle>
-                                            <CardDescription>{form.getValues('email')}</CardDescription>
+                                        <CardHeader>
+                                            <div className="flex w-full items-start justify-between">
+                                                <CardTitle className="font-headline text-xl">Mis Datos</CardTitle>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditing(!isEditing)}>
+                                                    {isEditing ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                                                    <span className="sr-only">{isEditing ? 'Guardar' : 'Editar'}</span>
+                                                </Button>
+                                            </div>
                                         </CardHeader>
-                                        <CardContent className="text-sm text-muted-foreground space-y-2">
-                                            <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Miembro desde {format(parseISO(currentUser.joined), 'MMMM yyyy', {locale: es})}</div>
-                                            {isEditing ? (
-                                                <div className="space-y-4 pt-4">
-                                                    <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                                    <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                                    <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Móvil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                                </div>
-                                            ) : (
-                                                <>
-                                                {currentUser.mobile && <div className="flex items-center gap-2"><User className="h-4 w-4" /> {currentUser.mobile}</div>}
-                                                {currentUser.dob && <div className="flex items-center gap-2"><User className="h-4 w-4" /> {format(parseISO(currentUser.dob), 'd MMMM, yyyy', {locale: es})}</div>}
-                                                </>
-                                            )}
+                                        <CardContent>
+                                            <div className="flex flex-col items-center text-center -mt-4 mb-6">
+                                                <Avatar className={cn("h-24 w-24 mb-4", isEditing && "cursor-pointer hover:opacity-80 transition-opacity")} onClick={handleAvatarClick}>
+                                                    <AvatarImage src={watchedAvatar} alt={currentUser.name}/>
+                                                    <AvatarFallback>{currentUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                                </Avatar>
+                                                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/png, image/jpeg, image/gif" />
+                                            </div>
+                                            <div className="text-sm text-muted-foreground space-y-2">
+                                                <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Miembro desde {format(parseISO(currentUser.joined), 'MMMM yyyy', {locale: es})}</div>
+                                                {isEditing ? (
+                                                    <div className="space-y-4 pt-4">
+                                                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Móvil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                    <div><p className="font-medium text-foreground">{form.getValues('name')}</p></div>
+                                                    <div><p className="font-medium text-foreground">{form.getValues('email')}</p></div>
+                                                    {currentUser.mobile && <div className="flex items-center gap-2"><p className="font-medium text-foreground">{currentUser.mobile}</p></div>}
+                                                    {currentUser.dob && <div className="flex items-center gap-2">{format(parseISO(currentUser.dob), 'd MMMM, yyyy', {locale: es})}</div>}
+                                                    </>
+                                                )}
+                                            </div>
                                         </CardContent>
-                                        {isEditing && ( <CardContent><Button type="submit" form="profile-edit-form" className="w-full">Guardar Cambios</Button></CardContent> )}
+                                        {isEditing && ( <CardFooter><Button type="submit" form="profile-edit-form" className="w-full">Guardar Cambios</Button></CardFooter> )}
                                     </Card>
                                 </div>
                                 <div className="lg:col-span-2">
@@ -285,16 +297,21 @@ export default function ProfilePage() {
         <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold tracking-tight font-headline">Mi Perfil</h1>
-                <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
-                    {isEditing ? <Save className="mr-2 h-4 w-4" /> : <Pencil className="mr-2 h-4 w-4" />}
-                    {isEditing ? 'Guardar Cambios' : 'Editar Perfil'}
-                </Button>
             </div>
             <Form {...form}>
                 <form id="profile-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <Card>
-                        <CardHeader className="items-center text-center">
-                            <div className="relative">
+                        <CardHeader>
+                            <div className="flex w-full items-start justify-between">
+                                <CardTitle className="font-headline">Mis Datos</CardTitle>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditing(!isEditing)}>
+                                    {isEditing ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                                    <span className="sr-only">{isEditing ? 'Guardar' : 'Editar'}</span>
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="items-center text-center">
+                            <div className="relative inline-block">
                                 <Avatar className={cn("h-24 w-24 mb-4", isEditing && "cursor-pointer hover:opacity-80 transition-opacity")} onClick={handleAvatarClick}>
                                     <AvatarImage src={watchedAvatar} alt={currentUser.name}/>
                                     <AvatarFallback>{currentUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
@@ -306,24 +323,24 @@ export default function ProfilePage() {
                                 )}
                             </div>
                             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/png, image/jpeg, image/gif" />
-                            <CardTitle className="font-headline">{form.getValues('name')}</CardTitle>
-                            <CardDescription>{currentUser.role}</CardDescription>
-                        </CardHeader>
+                            <h2 className="text-xl font-bold font-headline">{form.getValues('name')}</h2>
+                            <p className="text-sm text-muted-foreground">{currentUser.role}</p>
 
-                        {isEditing ? (
-                            <CardContent className="space-y-4">
-                                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Móvil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            </CardContent>
-                        ) : (
-                            <CardContent className="text-sm grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div><p className="font-medium text-muted-foreground">Nombre</p><p className="text-foreground">{currentUser.name}</p></div>
-                                <div><p className="font-medium text-muted-foreground">Email</p><p className="text-foreground">{currentUser.email}</p></div>
-                                <div><p className="font-medium text-muted-foreground">Móvil</p><p className="text-foreground">{currentUser.mobile || 'No especificado'}</p></div>
-                                <div><p className="font-medium text-muted-foreground">Miembro desde</p><p className="text-foreground">{format(parseISO(currentUser.joined), 'd MMMM, yyyy', {locale: es})}</p></div>
-                            </CardContent>
-                        )}
+                            {isEditing ? (
+                                <div className="space-y-4 pt-6 text-left">
+                                    <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Móvil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                </div>
+                            ) : (
+                                <div className="text-sm grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 text-left">
+                                    <div><p className="font-medium text-muted-foreground">Nombre</p><p className="text-foreground">{currentUser.name}</p></div>
+                                    <div><p className="font-medium text-muted-foreground">Email</p><p className="text-foreground">{currentUser.email}</p></div>
+                                    <div><p className="font-medium text-muted-foreground">Móvil</p><p className="text-foreground">{currentUser.mobile || 'No especificado'}</p></div>
+                                    <div><p className="font-medium text-muted-foreground">Miembro desde</p><p className="text-foreground">{format(parseISO(currentUser.joined), 'd MMMM, yyyy', {locale: es})}</p></div>
+                                </div>
+                            )}
+                        </CardContent>
                         
                         {isEditing && (
                             <CardFooter>
