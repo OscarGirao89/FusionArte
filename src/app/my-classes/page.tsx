@@ -12,7 +12,7 @@ import { useAuth } from '@/context/auth-context';
 import { useAttendance } from '@/context/attendance-context';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { parse, addMinutes, subMinutes, isWithinInterval as isWithinTimeInterval, isPast, format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, parseISO, startOfWeek, endOfWeek } from 'date-fns';
-import { es } from "date-fns/locale";
+import { es } from 'date-fns/locale';
 import type { DanceClass, ClassInstance } from '@/lib/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -48,17 +48,16 @@ export default function MyClassesPage() {
   const completedClassesCount = useMemo(() => {
     return myClassInstancesForMonth.filter(c => c.status === 'completed').length;
   }, [myClassInstancesForMonth]);
-
-  const upcomingClasses = myClassInstancesForMonth.filter(c => c.status === 'scheduled' && !isPast(parseISO(`${c.date}T${c.time}`))).slice(0, 3);
   
   const displayedClasses = useMemo(() => {
+    const sortedInstances = [...myClassInstancesForMonth].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     if (showAllMonth) {
-        return myClassInstancesForMonth;
+        return sortedInstances;
     }
     const today = new Date();
     const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // Lunes
     const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 });
-    return myClassInstancesForMonth.filter(c => {
+    return sortedInstances.filter(c => {
         const classDate = parseISO(c.date);
         return isWithinTimeInterval(classDate, { start: startOfThisWeek, end: endOfThisWeek });
     });
@@ -126,61 +125,15 @@ export default function MyClassesPage() {
         <div className="grid gap-6 mt-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Resumen Mensual</CardTitle>
-                    <CardDescription>
-                        Tienes un total de <span className="font-bold text-primary">{myClassInstancesForMonth.length}</span> clases asignadas este mes.
-                        Has completado <span className="font-bold text-primary">{completedClassesCount}</span> clases hasta ahora.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <h3 className="text-lg font-semibold mb-4 font-headline">Próximas Clases Destacadas</h3>
-                    {upcomingClasses.length > 0 ? (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {upcomingClasses.map(c => (
-                                <Card key={c.instanceId} className="flex flex-col">
-                                    <CardHeader>
-                                        <CardTitle className="text-xl">{c.name}</CardTitle>
-                                        <Badge variant="secondary" className="w-fit">{c.levelId}</Badge>
-                                    </CardHeader>
-                                    <CardContent className="flex-grow text-sm space-y-2 text-muted-foreground">
-                                        <p className="flex items-center gap-2"><Calendar className="h-4 w-4" /> {format(parseISO(c.date), "EEEE, dd 'de' MMMM", { locale: es })} - {c.time}</p>
-                                        <p className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {c.room}</p>
-                                        <p className="flex items-center gap-2"><Clock className="h-4 w-4" /> {c.duration}</p>
-                                    </CardContent>
-                                    <CardFooter>
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <div className="w-full">
-                                                        <Button variant="outline" className="w-full" disabled={!isWithinAttendanceWindow(c.date, c.time, c.duration)} onClick={() => router.push(`/my-classes/${c.id}/attendance?date=${c.date}`)}>
-                                                            <Users className="mr-2 h-4 w-4" /> Pasar Lista
-                                                        </Button>
-                                                    </div>
-                                                </TooltipTrigger>
-                                                {!isWithinAttendanceWindow(c.date, c.time, c.duration) && (
-                                                    <TooltipContent>
-                                                        <p>La toma de asistencia se habilita 30 min antes y hasta 30 min después de la clase.</p>
-                                                    </TooltipContent>
-                                                )}
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    </CardFooter>
-                                </Card>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">No tienes clases programadas próximamente.</p>
-                    )}
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start sm:items-center justify-between flex-col sm:flex-row gap-2">
                         <div>
                             <CardTitle>Listado de Clases</CardTitle>
                             <CardDescription>
                                 {showAllMonth ? 'Mostrando todas las clases del mes.' : 'Mostrando las clases de la semana actual.'}
+                                 <span className="block mt-1">
+                                    Tienes <span className="font-bold text-primary">{myClassInstancesForMonth.length}</span> clases este mes,
+                                    has completado <span className="font-bold text-primary">{completedClassesCount}</span>.
+                                </span>
                             </CardDescription>
                         </div>
                         <Button variant="outline" onClick={() => setShowAllMonth(prev => !prev)}>
@@ -246,9 +199,22 @@ export default function MyClassesPage() {
                                             ) : canConfirm ? (
                                                 <Button variant="default" size="sm" onClick={() => handleConfirmClass(c.id, c.date)}><CheckCircle className="mr-2 h-4 w-4" /> Confirmar Clase</Button>
                                             ) : (
-                                                <Button variant={canTakeAttendance ? 'default' : 'secondary'} size="sm" onClick={() => router.push(`/my-classes/${c.id}/attendance?date=${c.date}`)} disabled={!canTakeAttendance}>
-                                                    <BookCheck className="mr-2 h-4 w-4" /> Pasar Lista
-                                                </Button>
+                                                <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <div className="w-full">
+                                                        <Button variant={canTakeAttendance ? 'default' : 'secondary'} size="sm" onClick={() => router.push(`/my-classes/${c.id}/attendance?date=${c.date}`)} disabled={!canTakeAttendance}>
+                                                            <BookCheck className="mr-2 h-4 w-4" /> Pasar Lista
+                                                        </Button>
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    {!canTakeAttendance && (
+                                                        <TooltipContent>
+                                                            <p>Se habilita 30 min antes y hasta 30 min después de la clase.</p>
+                                                        </TooltipContent>
+                                                    )}
+                                                </Tooltip>
+                                                </TooltipProvider>
                                             )}
                                         </div>
                                     </li>
