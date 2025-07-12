@@ -194,6 +194,8 @@ export type Role = {
 };
 
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
+export type TaskPriority = 'low' | 'medium' | 'high';
+
 
 export type TaskNote = {
     id: string;
@@ -201,6 +203,7 @@ export type TaskNote = {
     description?: string;
     status: TaskStatus;
     category: string;
+    priority?: TaskPriority;
     assigneeIds?: number[];
     createdAt: string; // ISO Date String
     dueDate?: string; // YYYY-MM-DD

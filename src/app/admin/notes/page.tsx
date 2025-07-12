@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import type { TaskNote, TaskStatus } from '@/lib/types';
+import type { TaskNote, TaskStatus, TaskPriority } from '@/lib/types';
 import { taskNotes as initialTaskNotes, users as allUsers } from '@/lib/data';
 import { z } from "zod"
 import { useForm } from 'react-hook-form';
@@ -32,6 +32,7 @@ const taskNoteSchema = z.object({
   title: z.string().min(1, "El título es obligatorio."),
   description: z.string().optional(),
   status: z.enum(['todo', 'in_progress', 'done']),
+  priority: z.enum(['low', 'medium', 'high']).default('medium'),
   category: z.string().min(1, "La categoría es obligatoria."),
   assigneeIds: z.array(z.number()).default([]),
   dueDate: z.date().optional().nullable(),
@@ -48,11 +49,18 @@ const statusMap: Record<TaskStatus, { label: string; icon: React.ReactNode; colo
   done: { label: 'Finalizado', icon: <CheckCircle className="h-4 w-4" />, color: 'text-green-500' },
 };
 
+const priorityMap: Record<TaskPriority, { label: string; badgeClass: string; borderClass: string }> = {
+    low: { label: 'Baja', badgeClass: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200', borderClass: 'border-l-4 border-blue-500' },
+    medium: { label: 'Media', badgeClass: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200', borderClass: 'border-l-4 border-yellow-500' },
+    high: { label: 'Alta', badgeClass: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200', borderClass: 'border-l-4 border-red-500' },
+};
+
 function TaskCard({ task, onEdit, onDelete, onStatusChange }: { task: TaskNote; onEdit: (task: TaskNote) => void; onDelete: (taskId: string) => void; onStatusChange: (taskId: string, status: TaskStatus) => void; }) {
   const assignees = allUsers.filter(u => task.assigneeIds?.includes(u.id));
-  
+  const priorityInfo = task.priority ? priorityMap[task.priority] : priorityMap.medium;
+
   return (
-    <Card className="mb-4">
+    <Card className={cn("mb-4", priorityInfo.borderClass)}>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
             <CardTitle className="text-base font-bold pr-2">{task.title}</CardTitle>
@@ -85,6 +93,7 @@ function TaskCard({ task, onEdit, onDelete, onStatusChange }: { task: TaskNote; 
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground pt-1">
             <Badge variant="outline">{task.category}</Badge>
+            {task.priority && <Badge className={cn("border-none", priorityInfo.badgeClass)}>{priorityInfo.label}</Badge>}
             {task.dueDate && <Badge variant="secondary" className="flex items-center gap-1"><CalendarIcon className="h-3 w-3" /> Vence: {format(parseISO(task.dueDate), 'PPP', { locale: es })}</Badge>}
         </div>
       </CardHeader>
@@ -123,7 +132,7 @@ export default function NotesAndTasksPage() {
 
     const form = useForm<TaskNoteFormValues>({
         resolver: zodResolver(taskNoteSchema),
-        defaultValues: { status: 'todo', assigneeIds: [] }
+        defaultValues: { status: 'todo', assigneeIds: [], priority: 'medium' }
     });
     
     const managementUsers = allUsers.filter(u => u.role === 'Socio' || u.role === 'Administrador' || u.role === 'Administrativo');
@@ -134,6 +143,7 @@ export default function NotesAndTasksPage() {
             form.reset({
                 ...task,
                 assigneeIds: task.assigneeIds || [],
+                priority: task.priority || 'medium',
                 dueDate: task.dueDate ? parseISO(task.dueDate) : null,
                 alertDate: task.alertDateTime ? parseISO(task.alertDateTime) : null,
                 alertTime: task.alertDateTime ? format(parseISO(task.alertDateTime), 'HH:mm') : undefined,
@@ -143,6 +153,7 @@ export default function NotesAndTasksPage() {
                 title: '',
                 description: '',
                 status: 'todo',
+                priority: 'medium',
                 category: 'General',
                 assigneeIds: [],
                 dueDate: null,
@@ -157,6 +168,7 @@ export default function NotesAndTasksPage() {
             id: editingTask?.id || `task-${Date.now()}`,
             createdAt: editingTask?.createdAt || new Date().toISOString(),
             ...data,
+            priority: data.priority,
             dueDate: data.dueDate ? data.dueDate.toISOString().split('T')[0] : undefined,
             alertDateTime: data.alertDate && data.alertTime
                 ? `${format(data.alertDate, 'yyyy-MM-dd')}T${data.alertTime}:00`
@@ -268,6 +280,19 @@ export default function NotesAndTasksPage() {
                                   </FormItem>
                                 )} />
                             </div>
+                            
+                            <FormField control={form.control} name="priority" render={({ field }) => (
+                                <FormItem><FormLabel>Prioridad</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="low">Baja</SelectItem>
+                                        <SelectItem value="medium">Media</SelectItem>
+                                        <SelectItem value="high">Alta</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage /></FormItem>
+                            )} />
 
                             <div className="p-4 border rounded-md space-y-3">
                                 <h4 className="font-semibold flex items-center gap-2"><Bell className="h-4 w-4"/> Configurar Alerta</h4>

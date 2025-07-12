@@ -278,10 +278,10 @@ export const roles: Role[] = [
   ];
 
 export const taskNotes: TaskNote[] = [
-    { id: 'task-1', title: 'Organizar fiesta de verano', description: 'Buscar catering, DJ y decorar el estudio.', status: 'in_progress', category: 'Evento', assigneeIds: [5], createdAt: '2024-07-01T10:00:00Z', dueDate: '2024-08-15' },
-    { id: 'task-2', title: 'Comprar botellas de agua', description: 'Comprar 2 packs de 24 botellas para la nevera.', status: 'todo', category: 'Compras', createdAt: '2024-07-10T11:00:00Z', dueDate: '2024-07-12', alertDateTime: '2024-07-11T09:00:00Z' },
-    { id: 'task-3', title: 'Reparar espejo del Estudio 2', description: 'El espejo tiene una grieta en la esquina inferior derecha.', status: 'done', category: 'Mantenimiento', assigneeIds: [2], createdAt: '2024-06-25T15:00:00Z' },
-    { id: 'task-4', title: 'Planificar taller de Halloween', description: 'Definir estilo, fecha y profesores para el taller de octubre.', status: 'todo', category: 'Evento', assigneeIds: [6, 2], createdAt: '2024-07-05T12:00:00Z', dueDate: '2024-09-01' },
-    { id: 'task-5', title: 'Llamar al técnico del aire acondicionado', description: 'El aire del Estudio 1 no enfría lo suficiente.', status: 'in_progress', category: 'Mantenimiento', assigneeIds: [2], createdAt: '2024-07-08T18:00:00Z' },
-    { id: 'task-6', title: 'Pagar factura de la luz', description: 'Factura de julio, vence el día 20.', status: 'todo', category: 'Admin', createdAt: '2024-07-15T09:00:00Z', dueDate: '2024-07-20', alertDateTime: '2024-07-19T10:00:00Z' }
+    { id: 'task-1', title: 'Organizar fiesta de verano', description: 'Buscar catering, DJ y decorar el estudio.', status: 'in_progress', category: 'Evento', assigneeIds: [5], createdAt: '2024-07-01T10:00:00Z', dueDate: '2024-08-15', priority: 'high' },
+    { id: 'task-2', title: 'Comprar botellas de agua', description: 'Comprar 2 packs de 24 botellas para la nevera.', status: 'todo', category: 'Compras', createdAt: '2024-07-10T11:00:00Z', dueDate: '2024-07-12', alertDateTime: '2024-07-11T09:00:00Z', priority: 'medium' },
+    { id: 'task-3', title: 'Reparar espejo del Estudio 2', description: 'El espejo tiene una grieta en la esquina inferior derecha.', status: 'done', category: 'Mantenimiento', assigneeIds: [2], createdAt: '2024-06-25T15:00:00Z', priority: 'high' },
+    { id: 'task-4', title: 'Planificar taller de Halloween', description: 'Definir estilo, fecha y profesores para el taller de octubre.', status: 'todo', category: 'Evento', assigneeIds: [6, 2], createdAt: '2024-07-05T12:00:00Z', dueDate: '2024-09-01', priority: 'low' },
+    { id: 'task-5', title: 'Llamar al técnico del aire acondicionado', description: 'El aire del Estudio 1 no enfría lo suficiente.', status: 'in_progress', category: 'Mantenimiento', assigneeIds: [2], createdAt: '2024-07-08T18:00:00Z', priority: 'medium' },
+    { id: 'task-6', title: 'Pagar factura de la luz', description: 'Factura de julio, vence el día 20.', status: 'todo', category: 'Admin', createdAt: '2024-07-15T09:00:00Z', dueDate: '2024-07-20', alertDateTime: '2024-07-19T10:00:00Z', priority: 'high' }
 ];
