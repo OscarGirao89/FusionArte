@@ -9,25 +9,29 @@ import { useSettings } from '@/context/settings-context';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useEffect, useState } from 'react';
 import type { User } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function HomePage() {
   const [featuredTeachers, setFeaturedTeachers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { settings } = useSettings();
 
   useEffect(() => {
     const fetchTeachers = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch('/api/users');
         if (!response.ok) {
-          // Don't throw an error, just log it. This allows the page to render
-          // even if the database isn't connected yet.
+          // Silently fail if DB is not ready
           return;
         }
         const users: User[] = await response.json();
         const teachers = users.filter(u => (u.role === 'Profesor' || u.role === 'Socio') && u.isVisibleToStudents).slice(0, 3);
         setFeaturedTeachers(teachers);
       } catch (error) {
-        // Also ignore network errors during setup
+        console.error("Failed to fetch teachers for homepage:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -156,24 +160,28 @@ export default function HomePage() {
              <p className="text-lg text-muted-foreground mt-2">Conoce a algunos de los talentos que te guiarán.</p>
           </div>
            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {featuredTeachers.map(teacher => (
-               <Card key={teacher.id} className="overflow-hidden text-center group">
-                  <div className="relative h-64 w-full">
-                    <Image
-                      src={teacher.avatar || "https://placehold.co/400x400.png"}
-                      alt={`Foto de ${teacher.name}`}
-                      layout="fill"
-                      objectFit="cover"
-                      className="transition-transform duration-300 group-hover:scale-105"
-                      data-ai-hint="portrait professional"
-                    />
-                  </div>
-                  <CardContent className="p-6">
-                      <h3 className="font-headline text-xl font-bold">{teacher.name}</h3>
-                      <p className="text-sm text-primary font-semibold">{teacher.specialties?.join(', ')}</p>
-                  </CardContent>
-               </Card>
-            ))}
+            {isLoading ? (
+                Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-96 w-full" />)
+            ) : (
+                featuredTeachers.map(teacher => (
+                   <Card key={teacher.id} className="overflow-hidden text-center group">
+                      <div className="relative h-64 w-full">
+                        <Image
+                          src={teacher.avatar || "https://placehold.co/400x400.png"}
+                          alt={`Foto de ${teacher.name}`}
+                          layout="fill"
+                          objectFit="cover"
+                          className="transition-transform duration-300 group-hover:scale-105"
+                          data-ai-hint="portrait professional"
+                        />
+                      </div>
+                      <CardContent className="p-6">
+                          <h3 className="font-headline text-xl font-bold">{teacher.name}</h3>
+                          <p className="text-sm text-primary font-semibold">{teacher.specialties?.join(', ')}</p>
+                      </CardContent>
+                   </Card>
+                ))
+            )}
           </div>
           <div className="text-center mt-12">
               <Button asChild size="lg" variant="outline">

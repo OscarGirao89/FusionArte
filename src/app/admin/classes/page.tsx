@@ -1,14 +1,13 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { danceClasses as initialClasses, users, danceStyles, danceLevels } from '@/lib/data';
-import type { DanceClass, ClassType } from '@/lib/types';
-import { format } from "date-fns"
+import type { DanceClass, ClassType, User, DanceStyle, DanceLevel } from '@/lib/types';
+import { format, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
 
 import { Button } from '@/components/ui/button';
@@ -30,6 +29,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const classFormSchema = z.object({
   id: z.string().optional(),
@@ -44,7 +44,6 @@ const classFormSchema = z.object({
 
   // Fields for recurring
   day: z.string().optional(),
-  recurrenceMonths: z.coerce.number().optional(),
   
   // Fields for one-time events
   date: z.date().optional(),
@@ -72,10 +71,10 @@ const classFormSchema = z.object({
 }, { message: "Estilo, nivel, profesor y capacidad son obligatorios.", path: ["styleId"] })
 .refine(data => {
     if (data.type === 'recurring') {
-        return !!data.day && data.recurrenceMonths !== undefined && data.recurrenceMonths > 0;
+        return !!data.day;
     }
     return true;
-}, { message: "El día y la duración en meses son obligatorios.", path: ["day"] })
+}, { message: "El día es obligatorio para clases recurrentes.", path: ["day"] })
 .refine(data => {
     if (['one-time', 'workshop', 'rental'].includes(data.type)) {
         return !!data.date;
@@ -107,7 +106,12 @@ const eventTypeLabels: Record<ClassType, string> = {
 };
 
 export default function AdminClassesPage() {
-  const [classes, setClasses] = useState<DanceClass[]>(initialClasses);
+  const [classes, setClasses] = useState<DanceClass[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [danceStyles, setDanceStyles] = useState<DanceStyle[]>([]);
+  const [danceLevels, setDanceLevels] = useState<DanceLevel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<DanceClass | null>(null);
   const [classToCancel, setClassToCancel] = useState<DanceClass | null>(null);
@@ -116,6 +120,32 @@ export default function AdminClassesPage() {
 
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [classesRes, usersRes, stylesRes, levelsRes] = await Promise.all([
+                fetch('/api/classes'),
+                fetch('/api/users'),
+                fetch('/api/styles'),
+                fetch('/api/levels'),
+            ]);
+            
+            if (classesRes.ok) setClasses(await classesRes.json());
+            if (usersRes.ok) setUsers(await usersRes.json());
+            if (stylesRes.ok) setDanceStyles(await stylesRes.json());
+            if (levelsRes.ok) setDanceLevels(await levelsRes.json());
+        } catch (error) {
+            console.error("Failed to fetch initial data for classes page", error);
+            toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchData();
+  }, [toast]);
+
 
   const teachers = users.filter(u => u.role === 'Profesor' || u.role === 'Socio');
 
@@ -127,7 +157,6 @@ export default function AdminClassesPage() {
       time: '19:00',
       duration: '60 min',
       capacity: 20,
-      recurrenceMonths: 1,
       date: new Date(),
       enrolledStudentIds: [],
       teacherIds: [],
@@ -149,9 +178,8 @@ export default function AdminClassesPage() {
     if (danceClass) {
       form.reset({
         ...danceClass,
-        date: danceClass.date ? new Date(danceClass.date) : new Date(),
+        date: danceClass.date ? parseISO(danceClass.date) : new Date(),
         capacity: danceClass.capacity || undefined,
-        recurrenceMonths: danceClass.recurrenceMonths || 1,
         rentalContact: danceClass.rentalContact,
         rentalPrice: danceClass.rentalPrice || undefined,
         workshopPaymentValue: danceClass.workshopPaymentValue || undefined,
@@ -164,7 +192,6 @@ export default function AdminClassesPage() {
         time: '19:00',
         duration: '60 min',
         capacity: 20,
-        recurrenceMonths: 1,
         date: new Date(),
         enrolledStudentIds: [],
         teacherIds: [],
@@ -180,122 +207,96 @@ export default function AdminClassesPage() {
     setClassToCancel(danceClass);
   };
 
-  const onSubmit = (data: ClassFormValues) => {
-    // Basic overlap check (simulation)
+  const onSubmit = async (data: ClassFormValues) => {
     const isOverlapping = classes.some(c => {
         if (editingClass && c.id === editingClass.id) return false;
         if (c.room !== data.room) return false;
-        
-        const cDate = c.date ? format(new Date(c.date), 'yyyy-MM-dd') : null;
+        const cDate = c.date ? format(parseISO(c.date), 'yyyy-MM-dd') : null;
         const dataDate = data.date ? format(data.date, 'yyyy-MM-dd') : null;
-
         const dateMatch = (c.type !== 'recurring' && data.type !== 'recurring' && cDate && dataDate && cDate === dataDate);
         const dayMatch = (c.type === 'recurring' && data.type === 'recurring' && c.day === data.day);
-
-        if ((dateMatch || dayMatch) && c.time === data.time) {
-            return true;
-        }
-        return false;
+        return (dateMatch || dayMatch) && c.time === data.time;
     });
 
     if (isOverlapping) {
-        toast({
-            title: "Conflicto de Horario",
-            description: "La sala ya está reservada en ese día y hora. Por favor, elige otro horario.",
-            variant: "destructive"
-        });
+        toast({ title: "Conflicto de Horario", description: "La sala ya está reservada.", variant: "destructive" });
         return;
     }
     
-    let finalData: DanceClass = {
-        id: editingClass?.id || `clase-${Date.now()}`,
+    let finalData: Omit<DanceClass, 'id'> & { id?: string } = {
         status: 'scheduled',
         styleId: '',
         levelId: '',
         ...data,
-        date: data.date ? format(data.date, 'yyyy-MM-dd') : undefined,
+        date: data.date ? data.date.toISOString() : undefined,
     };
 
     if (data.type === 'rental') {
         finalData = {
-            ...finalData,
-            name: data.name,
-            rentalContact: data.rentalContact,
-            teacherIds: [],
-            styleId: 'practica',
-            levelId: 'todos',
-            capacity: 0,
+            ...finalData, name: data.name, rentalContact: data.rentalContact, teacherIds: [], styleId: 'practica',
+            levelId: 'todos', capacity: 0,
         }
     } else {
-        finalData.teacherIds = data.teacherIds!;
-        finalData.styleId = data.styleId!;
-        finalData.levelId = data.levelId!;
-        finalData.capacity = data.capacity!;
+        finalData.teacherIds = data.teacherIds!; finalData.styleId = data.styleId!;
+        finalData.levelId = data.levelId!; finalData.capacity = data.capacity!;
     }
     
-    toast({
-      title: `Evento ${editingClass ? 'actualizado' : 'creado'}`,
-      description: `El evento "${data.name}" ha sido guardado.`,
-    });
-    
-    if (editingClass) {
-      setClasses(classes.map(c => c.id === editingClass.id ? finalData : c));
-    } else {
-      setClasses([...classes, finalData]);
-    }
+    const url = editingClass ? `/api/classes/${editingClass.id}` : '/api/classes';
+    const method = editingClass ? 'PUT' : 'POST';
 
-    if(finalData.type === 'rental' && !editingClass) {
-        console.log(`Creating rental, a transaction for ${finalData.rentalPrice} should be added to finances.`);
-    }
+    try {
+        const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(finalData) });
+        if (!response.ok) throw new Error(`Failed to ${method} class`);
+        const savedClass = await response.json();
 
-    setIsDialogOpen(false);
-    setEditingClass(null);
+        if (editingClass) {
+          setClasses(classes.map(c => c.id === editingClass.id ? savedClass : c));
+        } else {
+          setClasses([...classes, savedClass]);
+        }
+        toast({ title: `Evento ${editingClass ? 'actualizado' : 'creado'}`, description: `El evento "${data.name}" ha sido guardado.` });
+    } catch (error) {
+        toast({ title: "Error", description: "No se pudo guardar el evento.", variant: "destructive" });
+    } finally {
+        setIsDialogOpen(false); setEditingClass(null);
+    }
   };
   
-  const handleDelete = (classId: string) => {
-    setClasses(classes.filter(c => c.id !== classId));
-    toast({
-      title: "Evento eliminado",
-      description: `El evento ha sido eliminado exitosamente.`,
-      variant: "destructive"
-    });
+  const handleDelete = async (classId: string) => {
+    try {
+        const response = await fetch(`/api/classes/${classId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error("Failed to delete");
+        setClasses(classes.filter(c => c.id !== classId));
+        toast({ title: "Evento eliminado", variant: "destructive" });
+    } catch(e) {
+        toast({ title: "Error", description: "No se pudo eliminar el evento.", variant: "destructive" });
+    }
   }
   
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (!classToCancel) return;
-
-    setClasses(classes.map(c => 
-        c.id === classToCancel.id 
-        ? { ...c, status: cancelReason, isCancelledAndHidden: hideOnSchedule } 
-        : c
-    ));
-    
-    toast({
-        title: "Clase cancelada",
-        description: `La clase "${classToCancel.name}" ha sido cancelada.`
-    });
-    
-    setClassToCancel(null);
+    try {
+        const updatedClass = { ...classToCancel, status: cancelReason, isCancelledAndHidden: hideOnSchedule };
+        const response = await fetch(`/api/classes/${classToCancel.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedClass) });
+        if (!response.ok) throw new Error("Failed to cancel");
+        setClasses(classes.map(c => c.id === classToCancel.id ? updatedClass : c));
+        toast({ title: "Clase cancelada" });
+    } catch(e) {
+        toast({ title: "Error", description: "No se pudo cancelar la clase.", variant: "destructive" });
+    } finally {
+        setClassToCancel(null);
+    }
   }
-
 
   const handleExportCSV = () => {
     const headers = ["ID", "Evento", "Tipo", "Profesor/Responsable", "Dia/Fecha", "Hora", "Sala"];
     const csvRows = [headers.join(',')];
-    
     classes.forEach(danceClass => {
-      const row = [
-        danceClass.id,
-        `"${danceClass.name}"`,
-        `"${eventTypeLabels[danceClass.type]}"`,
-        `"${danceClass.type === 'rental' ? danceClass.rentalContact : getTeacherNames(danceClass.teacherIds)}"`,
-        danceClass.type === 'recurring' ? (danceClass.day || 'N/A') : (danceClass.date || 'N/A'),
-        danceClass.time,
-        danceClass.room
-      ].map(field => (typeof field === 'string' ? field.replace(/"/g, '""') : field)).join(',');
+      const row = [ danceClass.id, `"${danceClass.name}"`, `"${eventTypeLabels[danceClass.type]}"`, `"${danceClass.type === 'rental' ? danceClass.rentalContact : getTeacherNames(danceClass.teacherIds)}"`,
+        danceClass.type === 'recurring' ? (danceClass.day || 'N/A') : (danceClass.date ? format(parseISO(danceClass.date), 'yyyy-MM-dd') : 'N/A'),
+        danceClass.time, danceClass.room ].map(field => (typeof field === 'string' ? field.replace(/"/g, '""') : field)).join(',');
       csvRows.push(row);
     });
-    
     const csvString = csvRows.join('\n');
     const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -308,10 +309,28 @@ export default function AdminClassesPage() {
     document.body.removeChild(link);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
+  if (isLoading) {
+    return (
+        <div className="p-4 md:p-8 space-y-4">
+            <div className="flex justify-between items-center">
+                <Skeleton className="h-10 w-1/3" />
+                <Skeleton className="h-10 w-48" />
+            </div>
+            <Card>
+                <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8">
@@ -376,7 +395,7 @@ export default function AdminClassesPage() {
                     <TableCell className="hidden md:table-cell">
                         <div className="flex items-center gap-2">
                            {danceClass.type === 'recurring' ? <Calendar className="h-4 w-4" /> : <CalendarIcon className="h-4 w-4" />}
-                           {danceClass.type === 'recurring' ? `${danceClass.day}, ${danceClass.time}` : `${danceClass.date ? format(new Date(danceClass.date), "PPP", { locale: es }) : 'N/A'}, ${danceClass.time}`}
+                           {danceClass.type === 'recurring' ? `${danceClass.day}, ${danceClass.time}` : `${danceClass.date ? format(parseISO(danceClass.date), "PPP", { locale: es }) : 'N/A'}, ${danceClass.time}`}
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground text-xs">
                            {danceClass.type === 'rental' ? <Building className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
@@ -396,7 +415,7 @@ export default function AdminClassesPage() {
                             <Pencil className="mr-2 h-4 w-4" /> Editar
                           </DropdownMenuItem>
                           {danceClass.type !== 'rental' && (
-                          <DropdownMenuItem onClick={() => router.push(`/admin/classes/${danceClass.id}/attendance`)}>
+                          <DropdownMenuItem onClick={() => router.push(`/admin/classes/${danceClass.id}/attendance?date=${format(new Date(), 'yyyy-MM-dd')}`)}>
                             <ClipboardCheck className="mr-2 h-4 w-4" /> Tomar Asistencia
                           </DropdownMenuItem>
                           )}
@@ -523,21 +542,12 @@ export default function AdminClassesPage() {
                 )}
                 
                 {eventType === 'recurring' && (
-                    <>
-                        <FormField control={form.control} name="day" render={({ field }) => (
-                          <FormItem><FormLabel>Día de la semana</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un día" /></SelectTrigger></FormControl>
-                            <SelectContent>{availableDays.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}</SelectContent>
-                          </Select><FormMessage /></FormItem>
-                        )} />
-                        <FormField control={form.control} name="recurrenceMonths" render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Duración (meses)</FormLabel>
-                            <FormControl><Input type="number" min="1" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )} />
-                    </>
+                    <FormField control={form.control} name="day" render={({ field }) => (
+                        <FormItem><FormLabel>Día de la semana</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un día" /></SelectTrigger></FormControl>
+                        <SelectContent>{availableDays.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}</SelectContent>
+                        </Select><FormMessage /></FormItem>
+                    )} />
                 )}
 
                 {['one-time', 'workshop', 'rental'].includes(eventType) && (

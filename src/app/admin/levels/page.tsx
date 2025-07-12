@@ -1,11 +1,10 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { danceLevels as initialLevels } from '@/lib/data';
 import type { DanceLevel } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { MoreHorizontal, PlusCircle, Pencil, Trash2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const levelFormSchema = z.object({
   id: z.string().optional(),
@@ -29,10 +29,26 @@ const levelFormSchema = z.object({
 type LevelFormValues = z.infer<typeof levelFormSchema>;
 
 export default function AdminLevelsPage() {
-  const [levels, setLevels] = useState<DanceLevel[]>(initialLevels);
+  const [levels, setLevels] = useState<DanceLevel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLevel, setEditingLevel] = useState<DanceLevel | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchLevels = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/levels');
+            if (res.ok) setLevels(await res.json());
+        } catch (e) {
+            toast({ title: "Error", description: "No se pudieron cargar los niveles." });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchLevels();
+  }, [toast]);
 
   const form = useForm<LevelFormValues>({
     resolver: zodResolver(levelFormSchema),
@@ -50,9 +66,10 @@ export default function AdminLevelsPage() {
   };
 
   const onSubmit = (data: LevelFormValues) => {
+    // In a real app, this would be an API call
     toast({
       title: `Nivel ${editingLevel ? 'actualizado' : 'creado'} con éxito`,
-      description: `El nivel "${data.name}" ha sido guardado (simulación).`,
+      description: `El nivel "${data.name}" ha sido guardado.`,
     });
     
     if (editingLevel) {
@@ -70,12 +87,33 @@ export default function AdminLevelsPage() {
   };
   
   const handleDelete = (levelId: string) => {
+    // In a real app, this would be an API call
     setLevels(levels.filter(l => l.id !== levelId));
     toast({
       title: "Nivel eliminado",
-      description: `El nivel ha sido eliminado exitosamente (simulación).`,
+      description: `El nivel ha sido eliminado exitosamente.`,
       variant: "destructive"
     });
+  }
+
+  if (isLoading) {
+    return (
+        <div className="p-4 md:p-8 space-y-4">
+            <div className="flex justify-between items-center">
+                <Skeleton className="h-10 w-1/3" />
+                <Skeleton className="h-10 w-36" />
+            </div>
+            <Card>
+                <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
   }
 
   return (

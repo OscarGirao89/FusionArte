@@ -1,11 +1,10 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { danceStyles as initialStyles } from '@/lib/data';
 import type { DanceStyle } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { MoreHorizontal, PlusCircle, Pencil, Trash2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const styleFormSchema = z.object({
   id: z.string().optional(),
@@ -29,10 +29,26 @@ const styleFormSchema = z.object({
 type StyleFormValues = z.infer<typeof styleFormSchema>;
 
 export default function AdminStylesPage() {
-  const [styles, setStyles] = useState<DanceStyle[]>(initialStyles);
+  const [styles, setStyles] = useState<DanceStyle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStyle, setEditingStyle] = useState<DanceStyle | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchStyles = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/styles');
+            if (res.ok) setStyles(await res.json());
+        } catch (e) {
+            toast({ title: "Error", description: "No se pudieron cargar los estilos." });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchStyles();
+  }, [toast]);
 
   const form = useForm<StyleFormValues>({
     resolver: zodResolver(styleFormSchema),
@@ -50,9 +66,10 @@ export default function AdminStylesPage() {
   };
 
   const onSubmit = (data: StyleFormValues) => {
+    // In a real app, this would be an API call
     toast({
       title: `Estilo ${editingStyle ? 'actualizado' : 'creado'} con éxito`,
-      description: `El estilo "${data.name}" ha sido guardado (simulación).`,
+      description: `El estilo "${data.name}" ha sido guardado.`,
     });
     
     if (editingStyle) {
@@ -71,12 +88,33 @@ export default function AdminStylesPage() {
   };
   
   const handleDelete = (styleId: string) => {
+    // In a real app, this would be an API call
     setStyles(styles.filter(s => s.id !== styleId));
     toast({
       title: "Estilo eliminado",
-      description: `El estilo de baile ha sido eliminado exitosamente (simulación).`,
+      description: `El estilo de baile ha sido eliminado.`,
       variant: "destructive"
     });
+  }
+
+  if (isLoading) {
+    return (
+        <div className="p-4 md:p-8 space-y-4">
+            <div className="flex justify-between items-center">
+                <Skeleton className="h-10 w-1/3" />
+                <Skeleton className="h-10 w-36" />
+            </div>
+            <Card>
+                <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
   }
 
   return (

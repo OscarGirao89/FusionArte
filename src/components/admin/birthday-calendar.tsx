@@ -1,7 +1,7 @@
 
 'use client';
 
-import { users } from '@/lib/data';
+import { useState, useEffect } from 'react';
 import type { User } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,6 +10,22 @@ import { format, getMonth, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export function BirthdayCalendar() {
+    const [users, setUsers] = useState<User[]>([]);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const res = await fetch('/api/users');
+                if (res.ok) {
+                    setUsers(await res.json());
+                }
+            } catch (error) {
+                console.error("Failed to fetch users for birthday calendar", error);
+            }
+        };
+        fetchUsers();
+    }, []);
+
     const students = users.filter(u => u.role === 'Estudiante' && u.dob);
     const currentMonth = getMonth(new Date());
 

@@ -1,11 +1,10 @@
 
 'use client';
-import { useState } from 'react';
-import type { MembershipPlan, PriceTier } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import type { MembershipPlan, PriceTier, DanceStyle } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Ticket } from 'lucide-react';
-import { danceStyles } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '../ui/card';
 
@@ -17,12 +16,26 @@ type CustomPackModalProps = {
 };
 
 export function CustomPackModal({ plan, isOpen, onClose, onConfirm }: CustomPackModalProps) {
+    const [allStyles, setAllStyles] = useState<DanceStyle[]>([]);
+    const [selectedTier, setSelectedTier] = useState<PriceTier | null>(null);
+
+    useEffect(() => {
+        const fetchStyles = async () => {
+            try {
+                const res = await fetch('/api/styles');
+                if(res.ok) setAllStyles(await res.json());
+            } catch(e) {
+                console.error("Failed to fetch styles for custom pack modal");
+            }
+        };
+        fetchStyles();
+    }, []);
+
     if (plan.accessType !== 'custom_pack') {
         return null;
     }
 
-    const [selectedTier, setSelectedTier] = useState<PriceTier | null>(null);
-    const allowedStyleNames = plan.allowedClasses.map(styleId => danceStyles.find(s => s.id === styleId)?.name || styleId).join(', ');
+    const allowedStyleNames = (plan.allowedClasses || []).map(styleId => allStyles.find(s => s.id === styleId)?.name || styleId).join(', ');
 
     const handleConfirm = () => {
         if (selectedTier) {
@@ -36,13 +49,13 @@ export function CustomPackModal({ plan, isOpen, onClose, onConfirm }: CustomPack
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 font-headline"><Ticket className="h-6 w-6" /> Personaliza tu Bono "{plan.title}"</DialogTitle>
                     <DialogDescription>
-                        Elige una de las opciones disponibles para continuar. {allowedStyleNames && `Válido para: ${allowedStyleNames}.`}
+                        Elige una de las opciones disponibles. {allowedStyleNames && `Válido para: ${allowedStyleNames}.`}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="py-6 space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {plan.priceTiers.map(tier => (
+                        {plan.priceTiersJson?.map(tier => (
                             <Card 
                                 key={tier.classCount}
                                 className={cn("cursor-pointer transition-all hover:shadow-lg", selectedTier?.classCount === tier.classCount && "border-primary ring-2 ring-primary")}

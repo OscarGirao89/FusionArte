@@ -35,6 +35,8 @@ export const AttendanceProvider = ({ children }: { children: ReactNode }) => {
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, ClassAttendanceRecord>>({});
 
   const generateInstancesForTeacher = useCallback((teacherId: number, start: Date, end: Date, allClasses: DanceClass[]) => {
+    if (!allClasses || allClasses.length === 0) return;
+    
     const teacherClasses = allClasses.filter(c => c.teacherIds.includes(teacherId));
     
     const newInstances: ClassInstance[] = [];
@@ -82,7 +84,7 @@ export const AttendanceProvider = ({ children }: { children: ReactNode }) => {
     setAttendanceRecords(prev => ({
         ...prev,
         [instanceId]: {
-            ...prev[instanceId],
+            ...(prev[instanceId] || { studentStatus: [] }),
             classId,
             date,
             status: 'completed',

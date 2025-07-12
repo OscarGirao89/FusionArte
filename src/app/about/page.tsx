@@ -1,15 +1,35 @@
 
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { users } from '@/lib/data';
+import type { User } from '@/lib/types';
 import { Heart, Lightbulb, Users } from 'lucide-react';
 import { useSettings } from '@/context/settings-context';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AboutPage() {
     const { settings } = useSettings();
-    const founders = React.useMemo(() => users.filter(u => u.isPartner && u.isVisibleToStudents), []);
+    const [founders, setFounders] = useState<User[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchFounders = async () => {
+            try {
+                const response = await fetch('/api/users');
+                if (response.ok) {
+                    const allUsers: User[] = await response.json();
+                    const founderUsers = allUsers.filter(u => u.isPartner && u.isVisibleToStudents);
+                    setFounders(founderUsers);
+                }
+            } catch (error) {
+                console.error("Failed to fetch founders", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchFounders();
+    }, []);
 
     return (
         <div className="bg-background">
@@ -69,25 +89,31 @@ export default function AboutPage() {
                         <p className="text-lg text-muted-foreground mt-2">{settings.aboutUsTeamDescription}</p>
                     </div>
                     <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 justify-center">
-                        {founders.map(teacher => (
-                        <Card key={teacher.id} className="overflow-hidden text-center group">
-                            <div className="relative h-72 w-full">
-                                <Image
-                                    src={teacher.avatar}
-                                    alt={`Foto de ${teacher.name}`}
-                                    layout="fill"
-                                    objectFit="cover"
-                                    className="transition-transform duration-300 group-hover:scale-105"
-                                    data-ai-hint="portrait professional"
-                                />
-                            </div>
-                            <CardContent className="p-6">
-                                <h3 className="font-headline text-xl font-bold">{teacher.name}</h3>
-                                <p className="text-sm text-primary font-semibold">{teacher.specialties?.join(', ')}</p>
-                                <p className="text-sm text-muted-foreground mt-2">{teacher.bio}</p>
-                            </CardContent>
-                        </Card>
-                        ))}
+                        {isLoading ? (
+                            Array.from({ length: 2 }).map((_, i) => (
+                                <Card key={i}><CardContent className="p-6 space-y-4"><Skeleton className="h-72 w-full" /><Skeleton className="h-6 w-1/2" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-3/4" /></CardContent></Card>
+                            ))
+                        ) : (
+                            founders.map(teacher => (
+                            <Card key={teacher.id} className="overflow-hidden text-center group">
+                                <div className="relative h-72 w-full">
+                                    <Image
+                                        src={teacher.avatar}
+                                        alt={`Foto de ${teacher.name}`}
+                                        layout="fill"
+                                        objectFit="cover"
+                                        className="transition-transform duration-300 group-hover:scale-105"
+                                        data-ai-hint="portrait professional"
+                                    />
+                                </div>
+                                <CardContent className="p-6">
+                                    <h3 className="font-headline text-xl font-bold">{teacher.name}</h3>
+                                    <p className="text-sm text-primary font-semibold">{teacher.specialties?.join(', ')}</p>
+                                    <p className="text-sm text-muted-foreground mt-2">{teacher.bio}</p>
+                                </CardContent>
+                            </Card>
+                            ))
+                        )}
                     </div>
                 </div>
             </section>

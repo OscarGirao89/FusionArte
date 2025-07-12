@@ -1,7 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
-import { danceClasses, users } from '@/lib/data';
+import { useState, useEffect } from 'react';
 import { useAttendance } from '@/context/attendance-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,6 +13,7 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import type { UserRole } from '@/context/auth-context';
+import type { DanceClass, User } from '@/lib/types';
 
 type AttendanceSheetProps = {
   classId: string;
@@ -24,18 +25,50 @@ export function AttendanceSheet({ classId, date, userRole }: AttendanceSheetProp
   const router = useRouter();
   const { toast } = useToast();
   const { recordAttendance, getAttendanceForClass } = useAttendance();
-  
-  const danceClass = danceClasses.find((c) => c.id === classId);
-  const enrolledStudents = users.filter((u) => danceClass?.enrolledStudentIds.includes(u.id));
+  const [danceClass, setDanceClass] = useState<DanceClass | null>(null);
+  const [enrolledStudents, setEnrolledStudents] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [classRes, usersRes] = await Promise.all([
+                fetch('/api/classes'), // Inefficient, should be /api/classes/[id] if it existed
+                fetch('/api/users')
+            ]);
+            if (classRes.ok && usersRes.ok) {
+                const allClasses: DanceClass[] = await classRes.json();
+                const allUsers: User[] = await usersRes.json();
+                const targetClass = allClasses.find(c => c.id === classId);
+                if(targetClass) {
+                    setDanceClass(targetClass);
+                    setEnrolledStudents(allUsers.filter(u => targetClass.enrolledStudentIds.includes(u.id)));
+                }
+            }
+        } catch(e) {
+            toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchData();
+  }, [classId, toast]);
 
   const initialAttendance = getAttendanceForClass(classId, date);
-  const [attendance, setAttendance] = useState<Record<number, boolean>>(() => {
-    if (initialAttendance && initialAttendance.studentStatus) {
-       return Object.fromEntries(initialAttendance.studentStatus.map(s => [s.studentId, s.present]));
-    }
-    // Default to all present if no record exists
-    return enrolledStudents.reduce((acc, student) => ({ ...acc, [student.id]: true }), {});
-  });
+  const [attendance, setAttendance] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+      if (initialAttendance && initialAttendance.studentStatus) {
+         setAttendance(Object.fromEntries(initialAttendance.studentStatus.map(s => [s.studentId, s.present])));
+      } else {
+         setAttendance(enrolledStudents.reduce((acc, student) => ({ ...acc, [student.id]: true }), {}));
+      }
+  }, [initialAttendance, enrolledStudents]);
+
+  if (isLoading) {
+      return <div>Cargando...</div>
+  }
 
   if (!danceClass) {
     return (
@@ -75,7 +108,7 @@ export function AttendanceSheet({ classId, date, userRole }: AttendanceSheetProp
     <div className="p-4 md:p-8">
       <Button variant="ghost" onClick={() => router.push(backUrl)} className="mb-4">
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Volver al listado de clases
+        Volver al listado
       </Button>
 
       <Card>
@@ -94,7 +127,7 @@ export function AttendanceSheet({ classId, date, userRole }: AttendanceSheetProp
         </CardHeader>
         <CardContent>
           <p className="mb-4 text-sm text-muted-foreground">
-            Marca la casilla para los alumnos que asistieron a la clase.
+            Marca la casilla para los alumnos que asistieron.
           </p>
           <div className="border rounded-md">
             <Table>
@@ -119,6 +152,9 @@ export function AttendanceSheet({ classId, date, userRole }: AttendanceSheetProp
                     <TableCell className="hidden md:table-cell">{student.email}</TableCell>
                   </TableRow>
                 ))}
+                 {enrolledStudents.length === 0 && (
+                    <TableRow><TableCell colSpan={3} className="h-24 text-center">No hay alumnos inscritos.</TableCell></TableRow>
+                 )}
               </TableBody>
             </Table>
           </div>

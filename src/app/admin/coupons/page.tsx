@@ -1,13 +1,11 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { coupons as initialCoupons } from '@/lib/coupons-data';
-import { membershipPlans, danceClasses } from '@/lib/data';
-import type { Coupon } from '@/lib/types';
+import type { Coupon, MembershipPlan, DanceClass } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -26,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { MoreHorizontal, PlusCircle, Pencil, Trash2, TicketPercent } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const couponFormSchema = z.object({
   id: z.string().optional(),
@@ -55,10 +54,35 @@ const couponFormSchema = z.object({
 type CouponFormValues = z.infer<typeof couponFormSchema>;
 
 export default function AdminCouponsPage() {
-  const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
+  const [danceClasses, setDanceClasses] = useState<DanceClass[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [couponsRes, plansRes, classesRes] = await Promise.all([
+                fetch('/api/coupons'),
+                fetch('/api/memberships'),
+                fetch('/api/classes'),
+            ]);
+            if (couponsRes.ok) setCoupons(await couponsRes.json());
+            if (plansRes.ok) setMembershipPlans(await plansRes.json());
+            if (classesRes.ok) setDanceClasses(await classesRes.json());
+        } catch (error) {
+            console.error("Failed to fetch coupon data", error);
+            toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchData();
+  }, [toast]);
 
   const form = useForm<CouponFormValues>({
     resolver: zodResolver(couponFormSchema),
@@ -92,19 +116,22 @@ export default function AdminCouponsPage() {
     setIsDialogOpen(true);
   };
 
-  const onSubmit = (data: CouponFormValues) => {
-    toast({
-      title: `Cupón ${editingCoupon ? 'actualizado' : 'creado'} con éxito`,
-      description: `El cupón "${data.code}" ha sido guardado.`,
-    });
-    
+  const onSubmit = async (data: CouponFormValues) => {
     const couponToSave: Coupon = {
         ...data,
         id: editingCoupon?.id || `coupon-${Date.now()}`,
-        specificPlanIds: data.applicableTo === 'specific_memberships' ? data.specificPlanIds : undefined,
-        specificClassIds: data.applicableTo === 'specific_classes' ? data.specificClassIds : undefined,
+        specificPlanIds: data.applicableTo === 'specific_memberships' ? data.specificPlanIds : [],
+        specificClassIds: data.applicableTo === 'specific_classes' ? data.specificClassIds : [],
     };
+    
+    // In a real app, this would be an API call
+    console.log("Saving coupon:", couponToSave);
 
+    toast({
+      title: `Cupón ${editingCoupon ? 'actualizado' : 'creado'} con éxito`,
+      description: `El cupón "${couponToSave.code}" ha sido guardado.`,
+    });
+    
     if (editingCoupon) {
       setCoupons(coupons.map(c => c.id === editingCoupon.id ? couponToSave : c));
     } else {
@@ -131,6 +158,27 @@ export default function AdminCouponsPage() {
           case 'all_classes': return 'Todas las clases';
           case 'specific_classes': return `Clases específicas (${coupon.specificClassIds?.length || 0})`;
       }
+  }
+
+  if (isLoading) {
+    return (
+        <div className="p-4 md:p-8 space-y-4">
+            <div className="flex justify-between items-center">
+                <Skeleton className="h-10 w-1/3" />
+                <Skeleton className="h-10 w-36" />
+            </div>
+            <Card>
+                <CardHeader><Skeleton className="h-8 w-1/4" /></CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
   }
 
   return (

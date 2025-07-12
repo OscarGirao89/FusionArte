@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, MoreHorizontal, Edit, Trash2, Tag, User, Circle, CheckCircle, Clock, Calendar as CalendarDaysIcon, Users as UsersIcon, Bell } from 'lucide-react';
@@ -12,8 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import type { TaskNote, TaskStatus, TaskPriority } from '@/lib/types';
-import { taskNotes as initialTaskNotes, users as allUsers } from '@/lib/data';
+import type { TaskNote, TaskStatus, TaskPriority, User } from '@/lib/types';
 import { z } from "zod"
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,6 +26,7 @@ import { format, parseISO }from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const taskNoteSchema = z.object({
   id: z.string().optional(),
@@ -56,7 +56,7 @@ const priorityMap: Record<TaskPriority, { label: string; badgeClass: string; bor
     high: { label: 'Alta', badgeClass: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200', borderClass: 'border-l-4 border-red-500', dotClass: 'bg-red-500' },
 };
 
-function TaskCard({ task, onEdit, onDelete, onStatusChange }: { task: TaskNote; onEdit: (task: TaskNote) => void; onDelete: (taskId: string) => void; onStatusChange: (taskId: string, status: TaskStatus) => void; }) {
+function TaskCard({ task, onEdit, onDelete, onStatusChange, allUsers }: { task: TaskNote; onEdit: (task: TaskNote) => void; onDelete: (taskId: string) => void; onStatusChange: (taskId: string, status: TaskStatus) => void; allUsers: User[] }) {
   const assignees = allUsers.filter(u => task.assigneeIds?.includes(u.id));
   const priorityInfo = task.priority ? priorityMap[task.priority] : priorityMap.medium;
 
@@ -126,10 +126,31 @@ function TaskCard({ task, onEdit, onDelete, onStatusChange }: { task: TaskNote; 
 }
 
 export default function NotesAndTasksPage() {
-    const [tasks, setTasks] = useState<TaskNote[]>(initialTaskNotes);
+    const [tasks, setTasks] = useState<TaskNote[]>([]);
+    const [allUsers, setAllUsers] = useState<User[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<TaskNote | null>(null);
     const { toast } = useToast();
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const [tasksRes, usersRes] = await Promise.all([
+                    fetch('/api/notes'),
+                    fetch('/api/users'),
+                ]);
+                if (tasksRes.ok) setTasks(await tasksRes.json());
+                if (usersRes.ok) setAllUsers(await usersRes.json());
+            } catch (error) {
+                toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, [toast]);
 
     const form = useForm<TaskNoteFormValues>({
         resolver: zodResolver(taskNoteSchema),
@@ -151,46 +172,39 @@ export default function NotesAndTasksPage() {
             });
         } else {
             form.reset({
-                title: '',
-                description: '',
-                status: 'todo',
-                priority: 'medium',
-                category: 'General',
-                assigneeIds: [],
-                dueDate: null,
-                alertDate: null,
+                title: '', description: '', status: 'todo', priority: 'medium', category: 'General',
+                assigneeIds: [], dueDate: null, alertDate: null,
             });
         }
         setIsDialogOpen(true);
     };
 
-    const onSubmit = (data: TaskNoteFormValues) => {
-        const dataToSave: TaskNote = {
-            id: editingTask?.id || `task-${Date.now()}`,
-            createdAt: editingTask?.createdAt || new Date().toISOString(),
+    const onSubmit = async (data: TaskNoteFormValues) => {
+        const dataToSave = {
             ...data,
-            priority: data.priority,
-            dueDate: data.dueDate ? data.dueDate.toISOString().split('T')[0] : undefined,
-            alertDateTime: data.alertDate && data.alertTime
-                ? `${format(data.alertDate, 'yyyy-MM-dd')}T${data.alertTime}:00`
-                : undefined,
+            dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+            alertDateTime: data.alertDate && data.alertTime ? `${format(data.alertDate, 'yyyy-MM-dd')}T${data.alertTime}:00` : undefined,
         };
-
+        
+        // Simulating API call for now
         if (editingTask) {
-            setTasks(tasks.map(t => t.id === editingTask.id ? dataToSave : t));
+            setTasks(tasks.map(t => t.id === editingTask.id ? { ...t, ...dataToSave } as TaskNote : t));
         } else {
-            setTasks([...tasks, dataToSave]);
+            const newTask: TaskNote = { ...dataToSave, id: `task-${Date.now()}`, createdAt: new Date().toISOString() };
+            setTasks([...tasks, newTask]);
         }
-        toast({ title: `Tarea ${editingTask ? 'actualizada' : 'creada'}`, description: `La tarea "${data.title}" ha sido guardada.` });
+        toast({ title: `Tarea ${editingTask ? 'actualizada' : 'creada'}` });
         setIsDialogOpen(false);
     };
     
     const handleDelete = (taskId: string) => {
+        // Simulating API call
         setTasks(tasks.filter(t => t.id !== taskId));
         toast({ title: "Tarea eliminada", variant: "destructive" });
     }
 
     const handleStatusChange = (taskId: string, status: TaskStatus) => {
+        // Simulating API call
         setTasks(tasks.map(t => t.id === taskId ? { ...t, status } : t));
     };
 
@@ -200,6 +214,19 @@ export default function NotesAndTasksPage() {
         done: tasks.filter(t => t.status === 'done'),
     };
     
+    if (isLoading) {
+        return (
+            <div className="p-4 md:p-8 space-y-4">
+                 <div className="flex justify-between items-center"><Skeleton className="h-10 w-1/3" /><Skeleton className="h-10 w-36" /></div>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Skeleton className="h-[60vh] w-full" />
+                    <Skeleton className="h-[60vh] w-full" />
+                    <Skeleton className="h-[60vh] w-full" />
+                 </div>
+            </div>
+        )
+    }
+
     return (
         <div className="p-4 md:p-8">
             <div className="flex items-center justify-between mb-8">
@@ -213,7 +240,7 @@ export default function NotesAndTasksPage() {
                         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">{icon} {label} ({columns[statusKey as TaskStatus].length})</h2>
                         <div className="space-y-4 h-[60vh] overflow-y-auto pr-2">
                             {columns[statusKey as TaskStatus].map(task => (
-                                <TaskCard key={task.id} task={task} onEdit={handleOpenDialog} onDelete={handleDelete} onStatusChange={handleStatusChange} />
+                                <TaskCard key={task.id} task={task} onEdit={handleOpenDialog} onDelete={handleDelete} onStatusChange={handleStatusChange} allUsers={allUsers}/>
                             ))}
                              {columns[statusKey as TaskStatus].length === 0 && (
                                 <div className="text-center text-sm text-muted-foreground py-10">No hay tareas en esta columna.</div>

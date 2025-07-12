@@ -1,13 +1,12 @@
 
 'use client';
 import { useState, useMemo, useEffect, memo } from 'react';
-import type { MembershipPlan, DanceClass } from '@/lib/types';
+import type { MembershipPlan, DanceClass, User } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { danceClasses as allClasses, users } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO, getDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isBefore, isAfter, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -15,6 +14,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, Users, Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 type SelectedClass = {
     classId: string;
@@ -43,11 +43,7 @@ const DayContent = memo(function DayContent({ date, displayMonth, isSelected, on
 
     return (
         <button 
-            className={cn(
-                "p-2 h-24 w-full flex flex-col items-start cursor-pointer transition-colors relative text-left", 
-                isSelected && 'bg-primary/10',
-                'hover:bg-muted/50'
-            )}
+            className={cn("p-2 h-24 w-full flex flex-col items-start cursor-pointer transition-colors relative text-left", isSelected && 'bg-primary/10', 'hover:bg-muted/50')}
             onClick={() => onClick(date)}
             disabled={classesOnDay.length === 0}
         >
@@ -68,6 +64,25 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
     const [selectedClasses, setSelectedClasses] = useState<SelectedClass[]>([]);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+    const [allClasses, setAllClasses] = useState<DanceClass[]>([]);
+    const [allUsers, setAllUsers] = useState<User[]>([]);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [classesRes, usersRes] = await Promise.all([
+                    fetch('/api/classes'),
+                    fetch('/api/users'),
+                ]);
+                if(classesRes.ok) setAllClasses(await classesRes.json());
+                if(usersRes.ok) setAllUsers(await usersRes.json());
+            } catch(e) {
+                toast({title: "Error", description: "No se pudieron cargar los datos de las clases."})
+            }
+        }
+        fetchData();
+    }, [toast]);
 
     useEffect(() => {
         if (isOpen) {
@@ -91,33 +106,25 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
 
     const classOccurrencesByDate = useMemo(() => {
         if (plan.accessType === 'unlimited') return {};
-
         let eligibleClasses: DanceClass[] = [];
-
         if (plan.allowedClasses && plan.allowedClasses.length > 0) {
             eligibleClasses = allClasses.filter(c => plan.allowedClasses.includes(c.id));
         } else {
             eligibleClasses = allClasses;
         }
-
         const visibleClasses = eligibleClasses.filter(c => c.type !== 'rental' && !c.isCancelledAndHidden);
-
         const occurrences: Record<string, DanceClass[]> = {};
         const interval = { start: new Date(), end: membershipEndDate };
-
         eachDayOfInterval(interval).forEach(day => {
             const dayOfWeekName = daysOfWeekMap[getDay(day)];
             const dateStr = format(day, 'yyyy-MM-dd');
-            
             if (isBefore(day, new Date()) && !isSameDay(day, new Date())) return;
-
             visibleClasses.filter(c => c.type === 'recurring').forEach(c => {
                 if (c.day === dayOfWeekName) {
                     if (!occurrences[dateStr]) occurrences[dateStr] = [];
                     occurrences[dateStr].push(c);
                 }
             });
-
             visibleClasses.filter(c => c.type === 'one-time' || c.type === 'workshop').forEach(c => {
                  if (c.date && isSameDay(parseISO(c.date), day)) {
                     if (!occurrences[dateStr]) occurrences[dateStr] = [];
@@ -125,9 +132,8 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
                 }
             });
         });
-
         return occurrences;
-    }, [plan, membershipEndDate]);
+    }, [plan, membershipEndDate, allClasses]);
     
     const selectedDayClasses = selectedDate ? classOccurrencesByDate[format(selectedDate, 'yyyy-MM-dd')] || [] : [];
 
@@ -141,15 +147,13 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
 
     const handleSelectClass = (classId: string, date: Date) => {
         const dateStr = format(date, 'yyyy-MM-dd');
-        const classIdentifier = { classId, date: dateStr };
-        
         setSelectedClasses(prev => {
             const isSelected = prev.some(sc => sc.classId === classId && sc.date === dateStr);
             if (isSelected) {
                 return prev.filter(sc => !(sc.classId === classId && sc.date === dateStr));
             }
             if (prev.length < classCount) {
-                return [...prev, classIdentifier];
+                return [...prev, { classId, date: dateStr }];
             }
             return prev;
         });
@@ -165,7 +169,7 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2"><CalendarIcon className="h-6 w-6" /> Selecciona tus Clases para "{plan.title}"</DialogTitle>
                     <DialogDescription>
-                        Puedes elegir {classCount} {classCount > 1 ? 'clases' : 'clase'} antes del {format(membershipEndDate, 'PPP', {locale: es})}. 
+                        Puedes elegir {classCount} {classCount > 1 ? 'clases' : 'clase'}. 
                         <Badge variant="secondary" className="ml-2">
                            {classesLeftToSelect > 0 ? `${classesLeftToSelect} restante(s)` : '¡Listo!'}
                         </Badge>
@@ -183,38 +187,14 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <Calendar
-                                        month={currentMonth}
-                                        onMonthChange={setCurrentMonth}
-                                        selected={selectedDate}
-                                        onSelect={setSelectedDate}
-                                        locale={es}
+                                        month={currentMonth} onMonthChange={setCurrentMonth} selected={selectedDate} onSelect={setSelectedDate} locale={es}
                                         disabled={(date) => isBefore(date, subMonths(new Date(), 1)) || isAfter(date, membershipEndDate)}
-                                        components={{ 
-                                            Day: ({ date, displayMonth }) => (
-                                                <DayContent 
-                                                    date={date} 
-                                                    displayMonth={displayMonth} 
-                                                    isSelected={selectedDate ? isSameDay(date, selectedDate) : false}
-                                                    onClick={setSelectedDate}
-                                                    classesOnDay={classOccurrencesByDate[format(date, 'yyyy-MM-dd')] || []}
-                                                />
-                                            )
-                                        }}
-                                        classNames={{
-                                            table: "w-full border-collapse",
-                                            head_row: "flex border-b",
-                                            head_cell: "text-muted-foreground w-full text-center p-2 font-normal text-sm",
-                                            row: "flex w-full mt-0 border-b",
-                                            cell: "w-full text-center text-sm p-0 relative border-r last:border-r-0",
-                                            day: "w-full h-full",
-                                            day_disabled: "text-muted-foreground opacity-50 bg-muted/20 cursor-not-allowed",
-                                            day_hidden: "invisible",
-                                        }}
+                                        components={{ Day: ({ date, displayMonth }) => (<DayContent date={date} displayMonth={displayMonth} isSelected={selectedDate ? isSameDay(date, selectedDate) : false} onClick={setSelectedDate} classesOnDay={classOccurrencesByDate[format(date, 'yyyy-MM-dd')] || []} />) }}
+                                        classNames={{ table: "w-full border-collapse", head_row: "flex border-b", head_cell: "text-muted-foreground w-full text-center p-2 font-normal text-sm", row: "flex w-full mt-0 border-b", cell: "w-full text-center text-sm p-0 relative border-r last:border-r-0", day: "w-full h-full", day_disabled: "text-muted-foreground opacity-50 bg-muted/20 cursor-not-allowed", day_hidden: "invisible", }}
                                     />
                                 </CardContent>
                             </Card>
                         </div>
-
                         <div className="lg:col-span-1">
                             <h3 className="font-semibold mb-3 text-lg font-headline">Clases del {selectedDate ? format(selectedDate, 'PPP', {locale: es}) : '...'}</h3>
                              <ScrollArea className="h-[60vh] pr-4">
@@ -224,17 +204,10 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
                                         const dateStr = format(selectedDate!, 'yyyy-MM-dd');
                                         const isSelected = selectedClasses.some(sc => sc.classId === c.id && sc.date === dateStr);
                                         const isDisabled = !isSelected && selectedClasses.length >= classCount;
-                                        const teacherNames = users.filter(u => c.teacherIds.includes(u.id)).map(t => t.name).join(', ');
-
+                                        const teacherNames = allUsers.filter(u => c.teacherIds.includes(u.id)).map(t => t.name).join(', ');
                                         return (
                                             <div key={`${c.id}-${dateStr}`} className={cn("flex items-start space-x-3 rounded-md border p-3", isDisabled && "opacity-50 cursor-not-allowed", isSelected && "bg-primary/10 border-primary/50")}>
-                                                <Checkbox 
-                                                    id={`${c.id}-${dateStr}`}
-                                                    checked={isSelected}
-                                                    onCheckedChange={() => handleSelectClass(c.id, selectedDate!)}
-                                                    disabled={isDisabled}
-                                                    className="mt-1"
-                                                />
+                                                <Checkbox id={`${c.id}-${dateStr}`} checked={isSelected} onCheckedChange={() => handleSelectClass(c.id, selectedDate!)} disabled={isDisabled} className="mt-1" />
                                                 <Label htmlFor={`${c.id}-${dateStr}`} className={cn("flex flex-col w-full", !isDisabled && "cursor-pointer")}>
                                                     <span className="font-semibold">{c.name}</span>
                                                     <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> {c.time} - {teacherNames}</span>
@@ -247,7 +220,7 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
                                     </div>
                                 ) : (
                                     <div className="flex items-center justify-center min-h-96 text-center text-muted-foreground">
-                                        <p>No hay clases programadas para este día, o selecciona un día para verlas.</p>
+                                        <p>No hay clases programadas para este día.</p>
                                     </div>
                                 )}
                              </ScrollArea>

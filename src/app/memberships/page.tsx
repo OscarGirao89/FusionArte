@@ -1,9 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { membershipPlans } from '@/lib/data';
 import type { MembershipPlan, StudentPayment, PriceTier } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,6 @@ import { Check, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { userProfiles } from '@/components/layout/main-nav';
 import { ClassSelectorModal } from '@/components/shared/ClassSelectorModal';
 import { CustomPackModal } from '@/components/shared/CustomPackModal';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -21,6 +19,7 @@ import { useSettings } from '@/context/settings-context';
 import { sendEmail } from '@/ai/flows/send-email-flow';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const getPlanPriceDisplay = (plan: MembershipPlan) => {
   if (plan.accessType === 'unlimited' || plan.accessType === 'course_pass') {
@@ -55,8 +54,8 @@ function PlanCard({ plan, onPurchaseRequest }: { plan: MembershipPlan, onPurchas
       <CardHeader className="text-center">
         <CardTitle className="font-headline text-2xl">{plan.title}</CardTitle>
         <CardDescription>
-          {plan.accessType === 'custom_pack' 
-            ? <span className="text-4xl font-bold text-foreground">Desde €{plan.priceTiers[0].price}</span>
+          {plan.accessType === 'custom_pack' && plan.priceTiersJson && plan.priceTiersJson.length > 0
+            ? <span className="text-4xl font-bold text-foreground">Desde €{plan.priceTiersJson[0].price}</span>
             : <span className="text-4xl font-bold text-foreground">€{plan.price}</span>
           }
           <span className="text-muted-foreground">{getPlanPriceDisplay(plan)}</span>
@@ -82,7 +81,8 @@ function PlanCard({ plan, onPurchaseRequest }: { plan: MembershipPlan, onPurchas
 }
 
 export default function MembershipsPage() {
-  const publicPlans = membershipPlans.filter(p => p.visibility === 'public');
+  const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { userRole, userId, isAuthenticated, currentUser, addStudentPayment, updateStudentMembership } = useAuth();
   const { settings } = useSettings();
@@ -94,6 +94,24 @@ export default function MembershipsPage() {
   const [customPackConfig, setCustomPackConfig] = useState<{classCount: number; totalPrice: number;} | null>(null);
   const router = useRouter();
 
+  useEffect(() => {
+    const fetchPlans = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/memberships');
+            if (res.ok) {
+                const plansData: MembershipPlan[] = await res.json();
+                setMembershipPlans(plansData.filter(p => p.visibility === 'public'));
+            }
+        } catch(e) {
+            toast({ title: "Error", description: "No se pudieron cargar los planes." });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchPlans();
+  }, [toast]);
+
 
   const handlePurchaseRequest = (plan: MembershipPlan) => {
     if (!isAuthenticated) {
@@ -101,11 +119,7 @@ export default function MembershipsPage() {
         return;
     }
     if (userRole !== 'student') {
-        toast({
-            title: "Acción no permitida",
-            description: "Solo los estudiantes pueden adquirir membresías.",
-            variant: "destructive",
-        });
+        toast({ title: "Acción no permitida", description: "Solo los estudiantes pueden adquirir membresías.", variant: "destructive" });
         return;
     }
     
@@ -123,37 +137,9 @@ export default function MembershipsPage() {
   const processPurchase = async (planToPurchase: MembershipPlan, finalPrice: number, finalClassCount?: number) => {
     if (!currentUser) return;
     
-    const newPayment: StudentPayment = {
-        id: `inv-${Date.now()}`,
-        studentId: currentUser.id,
-        planId: planToPurchase.id,
-        invoiceDate: new Date().toISOString(),
-        totalAmount: finalPrice,
-        status: 'pending',
-        amountPaid: 0,
-        amountDue: finalPrice,
-        lastUpdatedBy: 'Sistema',
-        lastUpdatedDate: new Date().toISOString(),
-    };
-    addStudentPayment(newPayment);
-
-    const membershipEndDate = new Date();
-    if (planToPurchase.durationUnit === 'months') {
-        membershipEndDate.setMonth(membershipEndDate.getMonth() + planToPurchase.durationValue);
-    } else if (planToPurchase.durationUnit === 'weeks') {
-        membershipEndDate.setDate(membershipEndDate.getDate() + planToPurchase.durationValue * 7);
-    } else { // days
-        membershipEndDate.setDate(membershipEndDate.getDate() + planToPurchase.durationValue);
-    }
+    // In a real app, this would be an API call
+    console.log(`Processing purchase for user ${currentUser.id}`, { planToPurchase, finalPrice, finalClassCount });
     
-    const newMembership = {
-        planId: planToPurchase.id,
-        startDate: new Date().toISOString(),
-        endDate: membershipEndDate.toISOString(),
-        classesRemaining: finalClassCount,
-    };
-    updateStudentMembership(currentUser.id, newMembership);
-
     toast({
         title: "¡Membresía adquirida con éxito!",
         description: "Se ha generado tu factura y te hemos enviado un email de confirmación.",
@@ -166,18 +152,14 @@ export default function MembershipsPage() {
       <ul>
         <li><b>Plan:</b> ${planToPurchase.title}</li>
         <li><b>Precio:</b> €${finalPrice.toFixed(2)}</li>
-        <li><b>Fecha de Inicio:</b> ${format(parseISO(newMembership.startDate), 'PPP', { locale: es })}</li>
-        <li><b>Fecha de Vencimiento:</b> ${format(parseISO(newMembership.endDate), 'PPP', { locale: es })}</li>
         ${finalClassCount ? `<li><b>Clases Incluidas:</b> ${finalClassCount}</li>` : ''}
       </ul>
       <p>Puedes ver todos los detalles y gestionar tus pagos en tu perfil.</p>
     `;
 
     await sendEmail({
-      to: currentUser.email,
-      bcc: settings.contactEmail,
-      subject: `Confirmación de tu membresía en ${settings.academyName}`,
-      body: emailBody
+      to: currentUser.email, bcc: settings.contactEmail,
+      subject: `Confirmación de tu membresía en ${settings.academyName}`, body: emailBody
     });
 
     router.push('/profile');
@@ -192,11 +174,7 @@ export default function MembershipsPage() {
   const handleCustomPackTierSelected = (tier: PriceTier) => {
     if (!selectedPlan || selectedPlan.accessType !== 'custom_pack') return;
 
-    setCustomPackConfig({
-        classCount: tier.classCount,
-        totalPrice: tier.price,
-    });
-
+    setCustomPackConfig({ classCount: tier.classCount, totalPrice: tier.price });
     setIsCustomPackOpen(false);
     setIsSelectorOpen(true);
   };
@@ -224,12 +202,12 @@ export default function MembershipsPage() {
      }
 
     processPurchase(planToPurchase, finalPrice, finalClassCount);
-
-    console.log(`Enrolling student ${userId} in classes:`, classIds);
     setIsSelectorOpen(false);
     setSelectedPlan(null);
     setCustomPackConfig(null);
   };
+  
+  const coursePassPlan = membershipPlans.find(p => p.id === 'course-salsa-1');
 
   return (
     <>
@@ -241,40 +219,42 @@ export default function MembershipsPage() {
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
-          {publicPlans.map(plan => (
-            <PlanCard key={plan.id} plan={plan} onPurchaseRequest={handlePurchaseRequest}/>
-          ))}
-          <Card className="flex flex-col border-dashed border-primary">
-            <CardHeader className="text-center">
-                <CardTitle className="font-headline text-2xl">Pase Mensual por Curso</CardTitle>
-                <CardDescription>
-                    <span className="text-muted-foreground">Suscríbete a tu clase favorita mensualmente.</span>
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow">
-                <ul className="space-y-3">
-                    <li className="flex items-start">
-                        <Check className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" />
-                        <span className="text-sm text-muted-foreground">Elige una clase recurrente del horario.</span>
-                    </li>
-                    <li className="flex items-start">
-                        <Check className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" />
-                        <span className="text-sm text-muted-foreground">Acceso al plan mensual general "Ilimitado".</span>
-                    </li>
-                    <li className="flex items-start">
-                        <Check className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" />
-                        <span className="text-sm text-muted-foreground">Cancela cuando quieras (simulado).</span>
-                    </li>
-                </ul>
-            </CardContent>
-            <CardFooter>
-                <Button className="w-full" asChild>
-                    <Link href="/schedule">Elegir Clase y Suscribir</Link>
-                </Button>
-            </CardFooter>
-          </Card>
-        </div>
+        {isLoading ? (
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
+                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[450px] w-full" />)}
+            </div>
+        ) : (
+            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
+              {membershipPlans.map(plan => (
+                <PlanCard key={plan.id} plan={plan} onPurchaseRequest={handlePurchaseRequest}/>
+              ))}
+              {coursePassPlan && (
+                  <Card className="flex flex-col border-dashed border-primary">
+                    <CardHeader className="text-center">
+                        <CardTitle className="font-headline text-2xl">{coursePassPlan.title}</CardTitle>
+                        <CardDescription>
+                            <span className="text-muted-foreground">{coursePassPlan.description}</span>
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                        <ul className="space-y-3">
+                            {coursePassPlan.features.map((feature, i) => (
+                                <li key={i} className="flex items-start">
+                                    <Check className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" />
+                                    <span className="text-sm text-muted-foreground">{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                    <CardFooter>
+                        <Button className="w-full" asChild>
+                            <Link href="/schedule">Elegir Clase y Suscribir</Link>
+                        </Button>
+                    </CardFooter>
+                  </Card>
+              )}
+            </div>
+        )}
       </div>
       
       <LoginRequiredDialog isOpen={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen} />

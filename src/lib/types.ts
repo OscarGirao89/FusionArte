@@ -1,5 +1,4 @@
 
-
 export type DanceStyle = {
   id: string;
   name: string;
@@ -21,8 +20,8 @@ export type Coupon = {
   usageLimit?: number;
   status: 'active' | 'inactive';
   applicableTo: 'all_memberships' | 'specific_memberships' | 'all_classes' | 'specific_classes';
-  specificPlanIds?: string[];
-  specificClassIds?: string[];
+  specificPlanIds: string[];
+  specificClassIds: string[];
 };
 
 type MembershipPlanBase = {
@@ -35,6 +34,7 @@ type MembershipPlanBase = {
   durationUnit: 'days' | 'weeks' | 'months';
   durationValue: number;
   visibility: 'public' | 'unlisted';
+  allowedClasses: string[];
 };
 
 type UnlimitedPlan = MembershipPlanBase & {
@@ -44,18 +44,15 @@ type UnlimitedPlan = MembershipPlanBase & {
 type ClassPackPlan = MembershipPlanBase & {
   accessType: 'class_pack';
   classCount: number;
-  allowedClasses: string[];
 };
 
 type TrialClassPlan = MembershipPlanBase & {
   accessType: 'trial_class';
   classCount: number;
-  allowedClasses: string[];
 };
 
 type CoursePassPlan = MembershipPlanBase & {
   accessType: 'course_pass';
-  allowedClasses: string[];
 };
 
 export type PriceTier = {
@@ -63,10 +60,9 @@ export type PriceTier = {
   price: number;
 };
 
-type CustomPackPlan = MembershipPlanBase & {
+type CustomPackPlan = Omit<MembershipPlanBase, 'price'> & {
   accessType: 'custom_pack';
-  priceTiers: PriceTier[];
-  allowedClasses: string[];
+  priceTiersJson: PriceTier[];
 };
 
 export type MembershipPlan = UnlimitedPlan | ClassPackPlan | TrialClassPlan | CoursePassPlan | CustomPackPlan;
@@ -89,12 +85,9 @@ export type DanceClass = {
   enrolledStudentIds: number[];
   cancellationPolicyHours?: number;
   
-  // Fields for specific types, now less reliant on a single status
-  recurrenceMonths?: number; // For 'recurring'
   date?: string; // "YYYY-MM-DD" for 'one-time', 'workshop', 'rental'
   
-  // These were for the old status system and might be deprecated or used differently
-  status: 'scheduled' | 'completed' | 'cancelled-low-attendance' | 'cancelled-teacher'; // Now represents the template's default status
+  status: 'scheduled' | 'completed' | 'cancelled-low-attendance' | 'cancelled-teacher'; 
   isCancelledAndHidden?: boolean;
   isVisibleToStudents?: boolean;
   rentalContact?: string;

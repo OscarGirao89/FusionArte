@@ -2,7 +2,6 @@
 'use client';
 
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { danceClasses, users } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, Users, BookCheck, Eye, CheckCircle, ArrowDown, ArrowUp } from 'lucide-react';
@@ -11,13 +10,14 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { useAttendance } from '@/context/attendance-context';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { parse, addMinutes, subMinutes, isWithinInterval as isWithinTimeInterval, isPast, format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, parseISO, startOfWeek, endOfWeek } from 'date-fns';
+import { parse, addMinutes, subMinutes, isWithinInterval, isPast, format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, parseISO, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { DanceClass, ClassInstance } from '@/lib/types';
+import type { DanceClass, ClassInstance, User } from '@/lib/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const daysOfWeekMap = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
@@ -25,20 +25,42 @@ export default function MyClassesPage() {
   const router = useRouter();
   const { currentUser } = useAuth();
   const { toast } = useToast();
-  const currentUserId = currentUser?.id;
   const { classInstances, generateInstancesForTeacher, confirmClass } = useAttendance();
   const [showAllMonth, setShowAllMonth] = useState(false);
-
   const [viewingClass, setViewingClass] = useState<ClassInstance | null>(null);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [allClasses, setAllClasses] = useState<DanceClass[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
+  const currentUserId = currentUser?.id;
+
   useEffect(() => {
-    if (currentUserId) {
+      const fetchData = async () => {
+          setIsLoading(true);
+          try {
+              const [usersRes, classesRes] = await Promise.all([
+                  fetch('/api/users'),
+                  fetch('/api/classes')
+              ]);
+              if(usersRes.ok) setAllUsers(await usersRes.json());
+              if(classesRes.ok) setAllClasses(await classesRes.json());
+          } catch(e) {
+              toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
+          } finally {
+              setIsLoading(false);
+          }
+      };
+      fetchData();
+  }, [toast]);
+
+  useEffect(() => {
+    if (currentUserId && !isLoading) {
         const today = new Date();
         const start = startOfMonth(today);
         const end = endOfMonth(today);
-        generateInstancesForTeacher(currentUserId, start, end);
+        generateInstancesForTeacher(currentUserId, start, end, allClasses);
     }
-  }, [currentUserId, generateInstancesForTeacher]);
+  }, [currentUserId, generateInstancesForTeacher, isLoading, allClasses]);
 
   const myClassInstancesForMonth = useMemo(() => {
     if (!currentUserId) return [];
@@ -59,14 +81,14 @@ export default function MyClassesPage() {
     const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 });
     return sortedInstances.filter(c => {
         const classDate = parseISO(c.date);
-        return isWithinTimeInterval(classDate, { start: startOfThisWeek, end: endOfThisWeek });
+        return isWithinInterval(classDate, { start: startOfThisWeek, end: endOfThisWeek });
     });
   }, [myClassInstancesForMonth, showAllMonth]);
 
   const enrolledStudentsForViewingClass = useMemo(() => {
       if (!viewingClass) return [];
-      return users.filter(u => viewingClass.enrolledStudentIds.includes(u.id));
-  }, [viewingClass]);
+      return allUsers.filter(u => viewingClass.enrolledStudentIds.includes(u.id));
+  }, [viewingClass, allUsers]);
   
   const handleViewStudents = (classInstance: ClassInstance) => {
     setViewingClass(classInstance);
@@ -79,21 +101,16 @@ export default function MyClassesPage() {
       description: "La clase ha sido marcada como impartida.",
     });
   }, [confirmClass, toast]);
-
-  if (!currentUser) return <div>Cargando...</div>;
   
   const isWithinAttendanceWindow = (date: string, time: string, duration: string): boolean => {
       try {
           const classDateTime = parse(`${date} ${time}`, 'yyyy-MM-dd HH:mm', new Date());
           if (isNaN(classDateTime.getTime())) return false;
-
           const durationInMinutes = parseInt(duration.replace(' min', ''));
           if (isNaN(durationInMinutes)) return false;
-
           const attendanceStart = subMinutes(classDateTime, 30);
           const attendanceEnd = addMinutes(classDateTime, durationInMinutes + 30);
-          
-          return isWithinTimeInterval(new Date(), { start: attendanceStart, end: attendanceEnd });
+          return isWithinInterval(new Date(), { start: attendanceStart, end: attendanceEnd });
       } catch (error) {
           console.error("Error calculating attendance window:", error);
           return false;
@@ -104,10 +121,8 @@ export default function MyClassesPage() {
       try {
           const classDateTime = parse(`${date} ${time}`, 'yyyy-MM-dd HH:mm', new Date());
           if (isNaN(classDateTime.getTime())) return false;
-          
           const durationInMinutes = parseInt(duration.replace(' min', ''));
           if (isNaN(durationInMinutes)) return false;
-
           const classEnd = addMinutes(classDateTime, durationInMinutes);
           return isPast(classEnd);
       } catch(error) {
@@ -115,6 +130,21 @@ export default function MyClassesPage() {
           return false;
       }
   };
+
+  if (isLoading || !currentUser) {
+    return (
+        <div className="p-4 md:p-8 space-y-6">
+            <Skeleton className="h-10 w-64" />
+            <Card>
+                <CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader>
+                <CardContent className="space-y-4">
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8">

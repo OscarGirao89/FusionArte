@@ -1,13 +1,12 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { danceClasses, users } from '@/lib/data';
-import type { DanceClass } from '@/lib/types';
+import type { DanceClass, User } from '@/lib/types';
 import { Badge } from '../ui/badge';
 import { Calendar } from 'lucide-react';
 
-export function UpcomingClasses({ classes = [] }: { classes?: DanceClass[] }) {
+export function UpcomingClasses({ classes = [], allUsers = [] }: { classes?: DanceClass[], allUsers?: User[] }) {
   const upcoming = classes.slice(0, 3);
-  const getTeacherNames = (ids: number[]) => users.filter(u => ids.includes(u.id)).map(t => t.name).join(', ');
-  const getFirstTeacher = (ids: number[]) => users.find(u => ids.includes(u.id));
+  const getFirstTeacher = (ids: number[]) => allUsers.find(u => ids.includes(u.id));
 
   if (upcoming.length === 0) {
     return (

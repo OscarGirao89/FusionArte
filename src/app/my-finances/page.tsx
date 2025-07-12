@@ -3,11 +3,19 @@
 
 import { useAuth } from '@/context/auth-context';
 import { TeacherPayroll } from '@/components/admin/teacher-payroll';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MyFinancesPage() {
   const { currentUser } = useAuth();
   
-  if (!currentUser) return <div>Cargando...</div>;
+  if (!currentUser) {
+    return (
+        <div className="p-4 md:p-8 space-y-8">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-80 w-full" />
+        </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8">
