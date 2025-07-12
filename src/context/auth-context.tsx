@@ -34,7 +34,7 @@ const publicPaths = ['/login', '/', '/about', '/schedule', '/memberships', '/tea
 
 // Define protected routes and their required roles
 const protectedRoutes: { path: string; roles: UserRole[] }[] = [
-  { path: '/admin', roles: ['admin', 'socio', 'administrativo'] },
+  { path: '/admin/dashboard', roles: ['admin', 'socio', 'administrativo'] },
   { path: '/my-classes', roles: ['teacher', 'socio'] },
   { path: '/my-finances', roles: ['teacher', 'socio'] },
   { path: '/profile', roles: ['student', 'teacher', 'admin', 'administrativo', 'socio'] },
@@ -42,7 +42,7 @@ const protectedRoutes: { path: string; roles: UserRole[] }[] = [
   { path: '/admin/payments', roles: ['admin', 'socio', 'administrativo']},
   { path: '/admin/settings', roles: ['admin', 'socio']},
   { path: '/admin/roles', roles: ['admin', 'socio']},
-  { path: '/admin/users', roles: ['admin', 'socio']},
+  { path: '/admin/users', roles: ['admin', 'socio', 'administrativo']},
   { path: '/admin/students', roles: ['admin', 'socio', 'administrativo']},
   { path: '/admin/classes', roles: ['admin', 'socio', 'administrativo']},
   { path: '/admin/memberships', roles: ['admin', 'socio', 'administrativo']},
@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
          if (role === 'student') {
             router.push('/profile');
-          } else if (role === 'teacher' || role === 'socio') {
+          } else if (role === 'teacher') {
             router.push('/my-classes');
           } else {
             router.push('/admin/dashboard'); // Redirect all management roles to the dashboard
