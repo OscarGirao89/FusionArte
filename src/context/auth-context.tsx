@@ -145,7 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('redirectPath');
 
       // The useEffect will handle the redirection after the state is updated
-      if (redirectPath) {
+      if (redirectPath && redirectPath !== '/login') {
         router.push(redirectPath);
       } else {
          if (role === 'student') {

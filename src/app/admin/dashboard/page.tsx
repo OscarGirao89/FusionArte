@@ -8,8 +8,11 @@ import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 
 export default function AdminDashboardPage() {
-    const { currentUser } = useAuth();
+    const { currentUser, userRole } = useAuth();
     
+    const canViewFinances = userRole === 'admin' || userRole === 'socio';
+    const canViewSettings = userRole === 'admin' || userRole === 'socio';
+
     return (
         <div className="p-4 md:p-8">
             <div className="mb-8">
@@ -93,25 +96,49 @@ export default function AdminDashboardPage() {
                         </Button>
                     </CardFooter>
                 </Card>
-
-                 <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-4">
-                            <div className="bg-primary/10 p-3 rounded-full">
-                                <Banknote className="h-6 w-6 text-primary" />
+                
+                 {userRole === 'administrativo' && (
+                     <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-4">
+                                <div className="bg-primary/10 p-3 rounded-full">
+                                    <Banknote className="h-6 w-6 text-primary" />
+                                </div>
+                                <CardTitle>Pagos de Alumnos</CardTitle>
                             </div>
-                            <CardTitle>Finanzas</CardTitle>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">Supervisa los ingresos, egresos, pagos y nóminas de la academia.</p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button asChild variant="outline">
-                            <Link href="/admin/finances">Gestionar Finanzas</Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground">Supervisa y gestiona las facturas y pagos de los estudiantes.</p>
+                        </CardContent>
+                        <CardFooter>
+                            <Button asChild variant="outline">
+                                <Link href="/admin/payments">Gestionar Pagos</Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                 )}
+
+                 {canViewFinances && (
+                     <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-4">
+                                <div className="bg-primary/10 p-3 rounded-full">
+                                    <Banknote className="h-6 w-6 text-primary" />
+                                </div>
+                                <CardTitle>Finanzas</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground">Supervisa los ingresos, egresos, pagos y nóminas de la academia.</p>
+                        </CardContent>
+                        <CardFooter>
+                            <Button asChild variant="outline">
+                                <Link href="/admin/finances">Gestionar Finanzas</Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                 )}
+
 
                 <Card>
                     <CardHeader>
@@ -134,25 +161,27 @@ export default function AdminDashboardPage() {
                         </Button>
                     </CardFooter>
                 </Card>
-
-                 <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-4">
-                            <div className="bg-primary/10 p-3 rounded-full">
-                                <Settings className="h-6 w-6 text-primary" />
+                
+                 {canViewSettings && (
+                     <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-4">
+                                <div className="bg-primary/10 p-3 rounded-full">
+                                    <Settings className="h-6 w-6 text-primary" />
+                                </div>
+                                <CardTitle>Configuración General</CardTitle>
                             </div>
-                            <CardTitle>Configuración General</CardTitle>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">Personaliza los ajustes, el contenido y la apariencia de la aplicación.</p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button asChild variant="outline">
-                            <Link href="/admin/settings">Gestionar Configuración</Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground">Personaliza los ajustes, el contenido y la apariencia de la aplicación.</p>
+                        </CardContent>
+                        <CardFooter>
+                            <Button asChild variant="outline">
+                                <Link href="/admin/settings">Gestionar Configuración</Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                 )}
             </div>
         </div>
     );
