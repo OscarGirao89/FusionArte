@@ -1,5 +1,6 @@
 
 'use client';
+import React from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { users } from '@/lib/data';
@@ -8,7 +9,7 @@ import { useSettings } from '@/context/settings-context';
 
 export default function AboutPage() {
     const { settings } = useSettings();
-    const founders = users.filter(u => u.isPartner && u.isVisibleToStudents);
+    const founders = React.useMemo(() => users.filter(u => u.isPartner && u.isVisibleToStudents), []);
 
     return (
         <div className="bg-background">

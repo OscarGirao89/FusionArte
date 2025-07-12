@@ -24,7 +24,7 @@ export default function HomePage() {
       >
         <CarouselContent>
           {settings.heroSlides.map((slide, index) => (
-            <CarouselItem key={index}>
+            <CarouselItem key={slide.id || index}>
               <section className="relative w-full" style={{ minHeight: 'calc(100vh - 80px)' }}>
                 <div className="container mx-auto h-full px-4">
                   <div className="relative grid md:grid-cols-2 items-center h-full" style={{ minHeight: 'calc(100vh - 80px)' }}>
@@ -33,10 +33,10 @@ export default function HomePage() {
                          style={{ clipPath: 'ellipse(60% 75% at 20% 50%)'}} />
 
                     <div className="relative z-10 py-16 md:py-0">
-                      <p className="font-semibold text-primary uppercase tracking-widest">
+                      <p className="font-semibold text-accent uppercase tracking-widest">
                         {slide.heroSubtitle}
                       </p>
-                      <h1 className="mt-2 text-4xl sm:text-5xl lg:text-7xl font-extrabold font-sans text-gray-900 dark:text-white leading-tight">
+                      <h1 className="mt-2 text-4xl sm:text-5xl lg:text-7xl font-extrabold font-headline text-gray-900 dark:text-white leading-tight">
                         {slide.heroTitle}
                       </h1>
                       <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-lg">
@@ -169,7 +169,7 @@ export default function HomePage() {
             <p className="text-lg mt-2 max-w-2xl mx-auto">
                 Tu aventura en el mundo del baile está a solo un clic de distancia. ¡Te esperamos en la pista!
             </p>
-            <Button asChild size="lg" variant="secondary" className="mt-8">
+            <Button asChild size="lg" variant="secondary" className="mt-8 bg-accent text-accent-foreground hover:bg-accent/90">
               <Link href="/memberships">Ver Planes y Membresías</Link>
             </Button>
          </div>

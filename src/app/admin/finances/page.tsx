@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { TeacherPayroll } from '@/components/admin/teacher-payroll';
 import { IncomeExpenseLedger } from '@/components/admin/income-expense-ledger';
@@ -17,24 +17,26 @@ import Link from 'next/link';
 export default function AdminFinancesPage() {
   const { userRole, userId, studentPayments } = useAuth();
   const router = useRouter();
-  const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
+  
+  const partners = useMemo(() => users.filter(u => u.isPartner), []);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string>(partners.length > 0 ? String(partners[0].id) : '');
+  
+  const totals = useMemo(() => {
+    const studentIncome = studentPayments.filter(p => p.status === 'paid').reduce((acc, p) => acc + p.amountPaid, 0);
+    const otherIncome = extraTransactions.filter(t => t.type === 'ingreso').reduce((acc, t) => acc + t.amount, 0);
+    const rentalIncome = danceClasses.filter(c => c.type === 'rental' && c.rentalPrice).reduce((acc, c) => acc + (c.rentalPrice || 0), 0);
+    const totalIncome = studentIncome + otherIncome + rentalIncome;
 
-  const partners = users.filter(u => u.isPartner);
-  if (partners.length > 0 && !selectedPartnerId) {
-      setSelectedPartnerId(String(partners[0].id));
-  }
-
-  const studentIncome = studentPayments.filter(p => p.status === 'paid').reduce((acc, p) => acc + p.amountPaid, 0);
-  const otherIncome = extraTransactions.filter(t => t.type === 'ingreso').reduce((acc, t) => acc + t.amount, 0);
-  const rentalIncome = danceClasses.filter(c => c.type === 'rental' && c.rentalPrice).reduce((acc, c) => acc + (c.rentalPrice || 0), 0);
-  const totalIncome = studentIncome + otherIncome + rentalIncome;
-
-  const totalExpenses = extraTransactions.filter(t => t.type === 'egreso').reduce((acc, t) => acc + t.amount, 0);
-  const netBalance = totalIncome - totalExpenses;
+    const totalExpenses = extraTransactions.filter(t => t.type === 'egreso').reduce((acc, t) => acc + t.amount, 0);
+    const netBalance = totalIncome - totalExpenses;
+    
+    return { totalIncome, totalExpenses, netBalance };
+  }, [studentPayments]);
+  
 
   const AdminView = () => (
      <Tabs defaultValue="studio" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 md:grid-cols-2">
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 lg:w-fit">
             <TabsTrigger value="studio">Finanzas del Estudio</TabsTrigger>
             <TabsTrigger value="partners">Finanzas de Socios</TabsTrigger>
         </TabsList>
@@ -42,15 +44,15 @@ export default function AdminFinancesPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ingresos Totales (Estudio)</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                    <CardContent><div className="text-2xl font-bold text-green-600">€{totalIncome.toFixed(2)}</div><p className="text-xs text-muted-foreground">Membresías, alquileres y otros</p></CardContent>
+                    <CardContent><div className="text-2xl font-bold text-green-600">€{totals.totalIncome.toFixed(2)}</div><p className="text-xs text-muted-foreground">Membresías, alquileres y otros</p></CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Egresos Operativos</CardTitle><TrendingDown className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                    <CardContent><div className="text-2xl font-bold text-red-600">€{totalExpenses.toFixed(2)}</div><p className="text-xs text-muted-foreground">Gastos, suministros, etc.</p></CardContent>
+                    <CardContent><div className="text-2xl font-bold text-red-600">€{totals.totalExpenses.toFixed(2)}</div><p className="text-xs text-muted-foreground">Gastos, suministros, etc.</p></CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Balance Neto (Estudio)</CardTitle><Scale className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                    <CardContent><div className={`text-2xl font-bold ${netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>€{netBalance.toFixed(2)}</div><p className="text-xs text-muted-foreground">Ingresos - Egresos</p></CardContent>
+                    <CardContent><div className={`text-2xl font-bold ${totals.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>€{totals.netBalance.toFixed(2)}</div><p className="text-xs text-muted-foreground">Ingresos - Egresos</p></CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Nóminas (No Socios)</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader>
@@ -112,9 +114,11 @@ export default function AdminFinancesPage() {
   );
 
   const PartnerView = () => {
+    if (!userId) return null;
+
     return (
     <Tabs defaultValue="studio" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 md:grid-cols-2">
+        <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 lg:w-fit">
             <TabsTrigger value="studio">Finanzas del Estudio</TabsTrigger>
             <TabsTrigger value="personal">Mis Finanzas</TabsTrigger>
         </TabsList>
@@ -122,15 +126,15 @@ export default function AdminFinancesPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ingresos Totales (Estudio)</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                    <CardContent><div className="text-2xl font-bold text-green-600">€{totalIncome.toFixed(2)}</div></CardContent>
+                    <CardContent><div className="text-2xl font-bold text-green-600">€{totals.totalIncome.toFixed(2)}</div></CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Egresos Operativos</CardTitle><TrendingDown className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                    <CardContent><div className="text-2xl font-bold text-red-600">€{totalExpenses.toFixed(2)}</div></CardContent>
+                    <CardContent><div className="text-2xl font-bold text-red-600">€{totals.totalExpenses.toFixed(2)}</div></CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Balance Neto (Estudio)</CardTitle><Scale className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                    <CardContent><div className={`text-2xl font-bold ${netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>€{netBalance.toFixed(2)}</div></CardContent>
+                    <CardContent><div className={`text-2xl font-bold ${totals.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>€{totals.netBalance.toFixed(2)}</div></CardContent>
                 </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Nóminas (No Socios)</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader>
@@ -159,7 +163,7 @@ export default function AdminFinancesPage() {
       <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Panel de Finanzas</h1>
       </div>
-        {userRole === 'admin' && <AdminView />}
+        {(userRole === 'admin' || userRole === 'administrativo') && <AdminView />}
         {userRole === 'socio' && <PartnerView />}
     </div>
   );
