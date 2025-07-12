@@ -54,16 +54,15 @@ function NavLinks({ items, className }: { items: { href: string, label: string }
     return (
         <nav className={cn("hidden md:flex items-center gap-4", className)}>
             {items.map((link) => (
-                <SheetClose asChild key={link.href}>
-                    <Link
-                      href={link.href}
-                      className={cn('text-sm font-medium transition-colors hover:text-primary',
-                        pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href)) ? 'text-primary' : 'text-muted-foreground'
-                      )}
-                    >
-                      {link.label}
-                    </Link>
-                </SheetClose>
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn('text-sm font-medium transition-colors hover:text-primary',
+                    pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href)) ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                >
+                  {link.label}
+                </Link>
             ))}
         </nav>
     );
@@ -142,7 +141,7 @@ function MobileNav({ mainNav, managementNav }: { mainNav: { href: string, label:
             </SheetTrigger>
             <SheetContent side="right">
                 <SheetHeader>
-                    <SheetTitle className="text-left">Navegación</SheetTitle>
+                    <SheetTitle>Navegación</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-4 mt-8">
                     {navToShow.map((link) => (
