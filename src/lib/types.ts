@@ -1,6 +1,5 @@
 
 
-
 export type DanceStyle = {
   id: string;
   name: string;
@@ -169,6 +168,7 @@ export type StudentPayment = {
     status: 'paid' | 'pending' | 'deposit';
     amountPaid: number;
     amountDue: number;
+    notes?: string;
     lastUpdatedBy?: string;
     lastUpdatedDate?: string; // ISO 8601
 }

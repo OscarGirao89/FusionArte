@@ -176,6 +176,9 @@ export default function ProfilePage() {
             printWindow.document.write(`<tr><td><strong>Monto Pagado:</strong></td><td>€${payment.amountPaid.toFixed(2)}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Monto Pendiente:</strong></td><td>€${payment.amountDue.toFixed(2)}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Estado:</strong></td><td class="status status-${payment.status}">${paymentStatusLabels[payment.status]}</td></tr>`);
+            if (payment.notes) {
+                printWindow.document.write(`<tr><td><strong>Notas:</strong></td><td>${payment.notes}</td></tr>`);
+            }
             printWindow.document.write(`<tr><td><strong>Fecha de Inicio:</strong></td><td>${format(parseISO(membership.startDate), 'PPP', { locale: es })}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Vencimiento:</strong></td><td>${format(parseISO(membership.endDate), 'PPP', { locale: es })}</td></tr>`);
             if (plan.accessType === 'class_pack') {
@@ -364,6 +367,7 @@ export default function ProfilePage() {
                                                         <div><p className="font-medium">Total Pagado</p><p className="text-muted-foreground">€{payment.amountPaid.toFixed(2)}</p></div>
                                                         {payment.amountDue > 0 && (<div><p className="font-medium text-destructive">Saldo Pendiente</p><p className="text-destructive font-bold">€{payment.amountDue.toFixed(2)}</p></div>)}
                                                     </div>
+                                                    {payment.notes && <div className="text-sm pt-4 border-t"><p className="font-medium">Notas</p><p className="text-muted-foreground whitespace-pre-wrap">{payment.notes}</p></div>}
                                                 </div>
                                             ) : (
                                                 <div className="text-center py-8"><p className="text-muted-foreground">No tienes una membresía activa en este momento.</p><Button className="mt-4" onClick={() => router.push('/memberships')}>Ver Planes</Button></div>

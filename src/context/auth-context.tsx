@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
          if (role === 'student') {
             router.push('/profile');
-          } else if (role === 'teacher' || role === 'socio') {
+          } else if (role === 'teacher') {
             router.push('/my-classes');
           } else {
             router.push('/admin/dashboard'); // Redirect all management roles to the dashboard

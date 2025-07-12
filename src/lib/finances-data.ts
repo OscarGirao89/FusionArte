@@ -31,7 +31,8 @@ export const studentPayments: StudentPayment[] = [
         amountPaid: 99,
         amountDue: 0,
         lastUpdatedBy: 'Admin FusionArte',
-        lastUpdatedDate: '2024-07-01T10:00:00Z'
+        lastUpdatedDate: '2024-07-01T10:00:00Z',
+        notes: 'Pago completo online.',
     },
     {
         id: 'inv-002',
@@ -43,7 +44,8 @@ export const studentPayments: StudentPayment[] = [
         amountPaid: 60,
         amountDue: 60,
         lastUpdatedBy: 'Laura Martinez',
-        lastUpdatedDate: '2024-07-03T11:30:00Z'
+        lastUpdatedDate: '2024-07-03T11:30:00Z',
+        notes: 'Pagará el resto la próxima semana.',
     },
     {
         id: 'inv-003',
@@ -65,7 +67,8 @@ export const studentPayments: StudentPayment[] = [
         amountPaid: 120,
         amountDue: 0,
         lastUpdatedBy: 'Admin FusionArte',
-        lastUpdatedDate: '2024-06-01T15:00:00Z'
+        lastUpdatedDate: '2024-06-01T15:00:00Z',
+        notes: 'Pago en efectivo en recepción.',
     },
     {
         id: 'inv-005',
@@ -108,6 +111,7 @@ export const studentPayments: StudentPayment[] = [
         status: 'pending',
         amountPaid: 0,
         amountDue: 120,
+        notes: 'Solicitó pagar por Bizum.'
     },
     {
         id: 'inv-009',
