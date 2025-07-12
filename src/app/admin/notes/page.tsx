@@ -26,6 +26,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, parseISO }from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 const taskNoteSchema = z.object({
   id: z.string().optional(),
