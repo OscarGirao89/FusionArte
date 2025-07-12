@@ -1,5 +1,4 @@
-
-import { users } from '@/lib/data';
+import { prisma } from '@/lib/prisma';
 import type { User } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,8 +30,9 @@ function TeacherCard({ teacher }: { teacher: User }) {
     );
 }
 
-export default function TeachersPage() {
-  const teachers = users.filter(user => (user.role === 'Profesor' || user.role === 'Socio') && user.isVisibleToStudents);
+export default async function TeachersPage() {
+  const allUsers = await prisma.user.findMany();
+  const teachers = allUsers.filter(user => (user.role === 'Profesor' || user.role === 'Socio') && user.isVisibleToStudents);
     
   return (
     <div className="container mx-auto p-4 md:p-8">
