@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { danceClasses } from '@/lib/data';
 import type { ClassInstance } from '@/lib/types';
-import { format, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
+import { format, eachDayOfInterval, getDay, isSameDay, parseISO } from 'date-fns';
 
 type StudentAttendanceStatus = {
   studentId: number;
