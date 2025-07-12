@@ -189,6 +189,12 @@ export type HeroSlide = {
   heroImageUrl?: string;
 };
 
+export type ScheduleImage = {
+  id?: string;
+  url: string;
+  alt?: string;
+};
+
 export type AcademySettings = {
   academyName: string;
   contactEmail: string;
@@ -203,6 +209,7 @@ export type AcademySettings = {
   tiktokUrl?: string;
   openingHours?: string;
   heroSlides: HeroSlide[];
+  scheduleImages?: ScheduleImage[];
   
   // About Us Page Content
   aboutUsTitle: string;

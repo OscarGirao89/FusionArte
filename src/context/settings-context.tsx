@@ -51,6 +51,7 @@ const initialSettings: AcademySettings = {
       heroImageUrl: "https://placehold.co/800x1200.png",
     }
   ],
+  scheduleImages: [],
 };
 
 

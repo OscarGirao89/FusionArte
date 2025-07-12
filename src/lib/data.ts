@@ -186,7 +186,7 @@ export const danceClasses: DanceClass[] = [
     { id: 'clase-3', name: 'M-Zouk', type: 'recurring', styleId: 'm-zouk', levelId: 'principiante', teacherIds: [2], day: 'Lunes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 25, recurrenceMonths: 6, status: 'completed', enrolledStudentIds: [3], cancellationPolicyHours: 24 },
     
     // Martes
-    { id: 'clase-4', name: 'Elongación', type: 'recurring', styleId: 'elongacion', levelId: 'todos', teacherIds: [6], day: 'Martes', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 15, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [8, 9, 14], cancellationPolicyHours: 24 },
+    { id: 'clase-4', name: 'Elongación', type: 'recurring', styleId: 'elongacion', levelId: 'todos', teacherIds: [6], day: 'Martes', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 15, recurrenceMonths: 3, status: 'completed', enrolledStudentIds: [8, 9, 14], cancellationPolicyHours: 24 },
     { id: 'clase-5', name: 'Bachata', type: 'recurring', styleId: 'bachata', levelId: 'principiante', teacherIds: [5], day: 'Martes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 20, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [1, 3], cancellationPolicyHours: 24 },
     { id: 'clase-6', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'principiante', teacherIds: [2], day: 'Martes', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 18, recurrenceMonths: 3, status: 'cancelled-low-attendance', enrolledStudentIds: [9], cancellationPolicyHours: 24 },
     
@@ -196,7 +196,7 @@ export const danceClasses: DanceClass[] = [
     { id: 'clase-9', name: 'Taller de Salsa On2', type: 'workshop', styleId: 'salsa', levelId: 'avanzado', teacherIds: [2], time: '21:00', room: 'Estudio 1', duration: '90 min', capacity: 20, date: '2024-08-30', status: 'scheduled', enrolledStudentIds: [1, 9], workshopPaymentType: 'percentage', workshopPaymentValue: 50, day: 'Miércoles' },
 
     // Jueves
-    { id: 'clase-10', name: 'Gimnasia Rítmica', type: 'recurring', styleId: 'gimnasia-ritmica', levelId: 'principiante', teacherIds: [6], day: 'Jueves', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 20, recurrenceMonths: 4, status: 'completed', enrolledStudentIds: [1, 3, 8], cancellationPolicyHours: 24 },
+    { id: 'clase-10', name: 'Gimnasia Rítmica', type: 'recurring', styleId: 'gimnasia-ritmica', levelId: 'principiante', teacherIds: [6], day: 'Jueves', time: '19:00', room: 'Estudio 2', duration: '60 min', capacity: 20, recurrenceMonths: 4, status: 'scheduled', enrolledStudentIds: [1, 3, 8], cancellationPolicyHours: 24 },
     { id: 'clase-11', name: 'M-Zouk (Compartida O+J)', type: 'recurring', styleId: 'm-zouk', levelId: 'intermedio', teacherIds: [2, 6], day: 'Jueves', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 16, recurrenceMonths: 3, status: 'scheduled', enrolledStudentIds: [13, 14], cancellationPolicyHours: 24 },
     { id: 'clase-12', name: 'Salsa', type: 'recurring', styleId: 'salsa', levelId: 'intermedio', teacherIds: [5], day: 'Jueves', time: '21:00', room: 'Estudio 1', duration: '60 min', capacity: 15, recurrenceMonths: 4, status: 'cancelled-teacher', enrolledStudentIds: [1, 3], cancellationPolicyHours: 24 },
     

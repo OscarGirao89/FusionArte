@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Clock, User, Award, Users, CalendarDays, MapPin, Building, Calendar as CalendarIcon } from 'lucide-react';
+import { Clock, User, Award, Users, CalendarDays, MapPin, Building, Calendar as CalendarIcon, Image as ImageIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO, getDay, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -20,6 +20,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { LoginRequiredDialog } from '@/components/shared/login-required-dialog';
+import { useSettings } from '@/context/settings-context';
+import NextImage from 'next/image';
+
 
 const daysOfWeekMap = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
@@ -187,6 +190,7 @@ export default function SchedulePage() {
   const { userRole, isAuthenticated, addStudentPayment, userId, updateStudentMembership } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const { settings } = useSettings();
   
   const styles = ['Todos', ...allStyles.map(s => s.name)];
   const levels = ['Todos', ...allLevels.map(l => l.name)];
@@ -392,6 +396,34 @@ export default function SchedulePage() {
                 </Card>
             </TabsContent>
         </Tabs>
+        
+        {settings.scheduleImages && settings.scheduleImages.length > 0 && (
+            <section className="mt-12">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 font-headline">
+                            <ImageIcon className="h-6 w-6 text-primary" />
+                            Horarios en Imagen
+                        </CardTitle>
+                        <CardDescription>Resumen visual de nuestros horarios semanales.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {settings.scheduleImages.map(image => (
+                            <div key={image.id || image.url} className="overflow-hidden rounded-lg border">
+                                <NextImage
+                                    src={image.url}
+                                    alt={image.alt || 'Horario de la academia'}
+                                    width={600}
+                                    height={400}
+                                    className="w-full h-auto object-contain"
+                                    data-ai-hint="schedule timetable"
+                                />
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            </section>
+        )}
     </div>
   );
 }

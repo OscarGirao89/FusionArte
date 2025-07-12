@@ -27,6 +27,12 @@ const heroSlideSchema = z.object({
   heroImageUrl: z.string().optional(),
 });
 
+const scheduleImageSchema = z.object({
+    id: z.string().optional(),
+    url: z.string().min(1, "La URL de la imagen no puede estar vacía."),
+    alt: z.string().optional(),
+});
+
 const settingsFormSchema = z.object({
   academyName: z.string().min(1, "El nombre de la academia es obligatorio."),
   contactEmail: z.string().email("Introduce un email válido."),
@@ -51,6 +57,7 @@ const settingsFormSchema = z.object({
   aboutUsTeamDescription: z.string().min(1, "La descripción del equipo es obligatoria."),
 
   heroSlides: z.array(heroSlideSchema).min(1, "Debe haber al menos una diapositiva."),
+  scheduleImages: z.array(scheduleImageSchema).optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
@@ -61,17 +68,23 @@ export default function AdminSettingsPage() {
 
     const form = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsFormSchema),
-        defaultValues: settings,
+        defaultValues: { ...settings, scheduleImages: settings.scheduleImages || [] },
         mode: "onChange",
     });
 
-    const { fields, append, remove } = useFieldArray({
+    const { fields: heroFields, append: appendHero, remove: removeHero } = useFieldArray({
         control: form.control,
         name: "heroSlides",
     });
 
+    const { fields: scheduleImageFields, append: appendScheduleImage, remove: removeScheduleImage } = useFieldArray({
+        control: form.control,
+        name: "scheduleImages",
+    });
+
+
     useEffect(() => {
-        form.reset(settings);
+        form.reset({ ...settings, scheduleImages: settings.scheduleImages || [] });
     }, [settings, form]);
     
     const watchedLogo = form.watch('logoUrl');
@@ -241,15 +254,15 @@ export default function AdminSettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                    <div className="space-y-4">
-                    {fields.map((field, index) => {
+                    {heroFields.map((field, index) => {
                        const heroImageInputRef = React.createRef<HTMLInputElement>();
                        const watchedHeroImage = form.watch(`heroSlides.${index}.heroImageUrl`);
                        return (
                         <div key={field.id} className="p-4 border rounded-lg space-y-4 relative">
                             <div className="flex justify-between items-center">
                                 <h4 className="font-semibold">Diapositiva {index + 1}</h4>
-                                {fields.length > 1 && (
-                                <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => remove(index)}>
+                                {heroFields.length > 1 && (
+                                <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => removeHero(index)}>
                                     <Trash2 className="h-4 w-4"/>
                                 </Button>
                                 )}
@@ -289,12 +302,67 @@ export default function AdminSettingsPage() {
                         variant="outline"
                         size="sm"
                         className="mt-2"
-                        onClick={() => append({ heroTitle: "Nuevo Título", heroButtonText: "Saber Más", heroButtonLink: "/", heroImageUrl: "https://placehold.co/800x1200.png"})}
+                        onClick={() => appendHero({ heroTitle: "Nuevo Título", heroButtonText: "Saber Más", heroButtonLink: "/", heroImageUrl: "https://placehold.co/800x1200.png"})}
                     >
                         <PlusCircle className="mr-2" />
                         Añadir Diapositiva
                     </Button>
                      <FormMessage>{form.formState.errors.heroSlides?.message}</FormMessage>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Imágenes de Horarios</CardTitle>
+                    <CardDescription>Sube imágenes de tus horarios para mostrarlas en la página de "Clases y Horarios". Puedes subir hasta 3.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                        {scheduleImageFields.map((field, index) => {
+                            const imageInputRef = React.createRef<HTMLInputElement>();
+                            const watchedImage = form.watch(`scheduleImages.${index}.url`);
+                            return (
+                                <div key={field.id} className="p-4 border rounded-lg space-y-4 relative">
+                                    <div className="flex justify-between items-center">
+                                        <h4 className="font-semibold">Imagen de Horario {index + 1}</h4>
+                                        <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => removeScheduleImage(index)}>
+                                            <Trash2 className="h-4 w-4"/>
+                                        </Button>
+                                    </div>
+                                    <FormField
+                                        control={form.control}
+                                        name={`scheduleImages.${index}.url`}
+                                        render={() => (
+                                            <FormItem>
+                                                <FormLabel className="sr-only">URL de la Imagen</FormLabel>
+                                                <FormControl>
+                                                    <div className="flex items-center gap-4">
+                                                        <Image src={watchedImage || "https://placehold.co/600x400.png"} alt={form.getValues(`scheduleImages.${index}.alt`) || `Horario ${index + 1}`} width={200} height={150} className="object-contain border rounded-md" />
+                                                        <Button type="button" variant="outline" onClick={() => handleImageClick(imageInputRef)}>Cambiar Imagen</Button>
+                                                        <input type="file" ref={imageInputRef} onChange={(e) => handleFileChange(e, `scheduleImages.${index}.url`)} className="hidden" accept="image/png, image/jpeg, image/gif" />
+                                                    </div>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField control={form.control} name={`scheduleImages.${index}.alt`} render={({ field }) => (<FormItem><FormLabel>Texto Alternativo (Alt)</FormLabel><FormControl><Input {...field} placeholder="Ej: Horario de Clases de Salsa y Bachata" /></FormControl><FormMessage /></FormItem> )} />
+                                </div>
+                            )
+                        })}
+                    </div>
+                    {scheduleImageFields.length < 3 && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="mt-2"
+                            onClick={() => appendScheduleImage({ url: "https://placehold.co/600x400.png", alt: "" })}
+                        >
+                            <PlusCircle className="mr-2" />
+                            Añadir Imagen de Horario
+                        </Button>
+                    )}
                 </CardContent>
             </Card>
             
