@@ -63,15 +63,15 @@ export default function AdminFinancesPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <Card className="lg:col-span-1">
                     <CardHeader>
-                        <CardTitle>Pagos de Alumnos</CardTitle>
-                        <CardDescription>Gestiona las facturas y los pagos de las membresías.</CardDescription>
+                        <CardTitle>Pagos de Alumnos (Estudio)</CardTitle>
+                        <CardDescription>Gestiona facturas y pagos de membresías no asociadas a socios.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-muted-foreground">Revisa facturas pendientes, registra pagos y crea nuevas facturas para los estudiantes.</p>
+                        <p className="text-sm text-muted-foreground">Revisa facturas pendientes, registra pagos y crea nuevas facturas para los estudiantes de la academia.</p>
                     </CardContent>
                     <CardFooter>
                         <Button asChild>
-                            <Link href="/admin/payments">Gestionar Pagos de Alumnos</Link>
+                            <Link href="/admin/payments">Gestionar Pagos</Link>
                         </Button>
                     </CardFooter>
                 </Card>

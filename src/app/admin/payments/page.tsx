@@ -49,8 +49,9 @@ export default function AdminPaymentsPage() {
   const canCreate = userRole === 'admin' || userRole === 'administrativo' || userRole === 'socio';
 
   const students = users.filter(u => u.role === 'Estudiante');
-  const partners = useMemo(() => users.filter(u => u.isPartner), []);
+  
   const partnerClassIds = useMemo(() => {
+    const partners = users.filter(u => u.isPartner);
     const ids = new Set<string>();
     danceClasses.forEach(c => {
       if (c.teacherIds.some(tid => partners.some(p => p.id === tid))) {
@@ -58,27 +59,28 @@ export default function AdminPaymentsPage() {
       }
     });
     return ids;
-  }, [partners]);
+  }, []);
 
-  // Filter payments to only show those NOT related to partner classes
   const payments = useMemo(() => {
-    // A payment is a studio payment if the plan it's for allows access
-    // to at least one class that is NOT a partner class.
-    // This is an approximation. A more complex system might tag plans themselves.
     return allPayments.filter(p => {
-        const plan = membershipPlans.find(mp => mp.id === p.planId);
-        if (!plan) return true; // Default to showing if plan not found
+      const plan = membershipPlans.find(mp => mp.id === p.planId);
+      if (!plan) return true;
 
-        if (plan.accessType === 'unlimited') return true; // Assume unlimited is a general studio plan for now
-        
-        if (plan.allowedClasses && plan.allowedClasses.length > 0) {
-            // If any allowed class is NOT a partner class, it's a studio payment
-            return plan.allowedClasses.some(classId => !partnerClassIds.has(classId));
-        }
+      // If a plan gives access to ANY non-partner class, it's a studio payment.
+      if (plan.accessType === 'unlimited') return true; 
 
-        // If no classes are specified, it might apply to all. This is ambiguous.
-        // We'll assume for now if no classes are specified, it's a general plan.
+      if (plan.allowedClasses && plan.allowedClasses.length > 0) {
+        return plan.allowedClasses.some(classId => !partnerClassIds.has(classId));
+      }
+      
+      // If a pack allows access to ALL classes (allowedClasses is empty), 
+      // we consider it a general studio income.
+      if (!plan.allowedClasses || plan.allowedClasses.length === 0) {
         return true;
+      }
+      
+      // If all allowed classes are partner classes, it's NOT a studio payment.
+      return false;
     });
   }, [allPayments, partnerClassIds]);
 
@@ -161,13 +163,19 @@ export default function AdminPaymentsPage() {
       addStudentPayment(newPayment);
 
       const membershipEndDate = new Date();
-      membershipEndDate.setMonth(membershipEndDate.getMonth() + plan.durationValue);
+      if (plan.durationUnit === 'months') {
+          membershipEndDate.setMonth(membershipEndDate.getMonth() + plan.durationValue);
+      } else if (plan.durationUnit === 'weeks') {
+          membershipEndDate.setDate(membershipEndDate.getDate() + plan.durationValue * 7);
+      } else {
+          membershipEndDate.setDate(membershipEndDate.getDate() + plan.durationValue);
+      }
       
       updateStudentMembership(student.id, {
           planId: plan.id,
           startDate: new Date().toISOString(),
           endDate: membershipEndDate.toISOString(),
-          classesRemaining: plan.accessType === 'class_pack' ? plan.classCount : undefined,
+          classesRemaining: (plan.accessType === 'class_pack' || plan.accessType === 'trial_class') ? plan.classCount : undefined,
       });
 
       toast({ title: "Factura creada", description: `Se ha creado una factura para ${student.name}.` });
