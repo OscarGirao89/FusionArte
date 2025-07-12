@@ -5,13 +5,13 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import { danceClasses, users } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, Users, BookCheck, Eye, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, BookCheck, Eye, CheckCircle, ArrowDown, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { useAttendance } from '@/context/attendance-context';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { parse, addMinutes, subMinutes, isWithinInterval, isPast, format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, parseISO } from 'date-fns';
+import { parse, addMinutes, subMinutes, isWithinInterval as isWithinTimeInterval, isPast, format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, parseISO, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from "date-fns/locale";
 import type { DanceClass, ClassInstance } from '@/lib/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -26,13 +26,13 @@ export default function MyClassesPage() {
   const { currentUser } = useAuth();
   const { toast } = useToast();
   const currentUserId = currentUser?.id;
-  const { classInstances, generateInstancesForTeacher, confirmClass, getAttendanceForClass } = useAttendance();
+  const { classInstances, generateInstancesForTeacher, confirmClass } = useAttendance();
+  const [showAllMonth, setShowAllMonth] = useState(false);
 
   const [viewingClass, setViewingClass] = useState<ClassInstance | null>(null);
   
   useEffect(() => {
     if (currentUserId) {
-        // Generate instances for the current month when the component mounts or user changes
         const today = new Date();
         const start = startOfMonth(today);
         const end = endOfMonth(today);
@@ -40,17 +40,30 @@ export default function MyClassesPage() {
     }
   }, [currentUserId, generateInstancesForTeacher]);
 
-  const myClassInstances = useMemo(() => {
+  const myClassInstancesForMonth = useMemo(() => {
     if (!currentUserId) return [];
     return classInstances.filter(c => c.teacherIds.includes(currentUserId));
   }, [currentUserId, classInstances]);
   
   const completedClassesCount = useMemo(() => {
-    return myClassInstances.filter(c => c.status === 'completed').length;
-  }, [myClassInstances]);
+    return myClassInstancesForMonth.filter(c => c.status === 'completed').length;
+  }, [myClassInstancesForMonth]);
 
-  const upcomingClasses = myClassInstances.filter(c => c.status === 'scheduled').slice(0, 3);
+  const upcomingClasses = myClassInstancesForMonth.filter(c => c.status === 'scheduled' && !isPast(parseISO(`${c.date}T${c.time}`))).slice(0, 3);
   
+  const displayedClasses = useMemo(() => {
+    if (showAllMonth) {
+        return myClassInstancesForMonth;
+    }
+    const today = new Date();
+    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // Lunes
+    const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 });
+    return myClassInstancesForMonth.filter(c => {
+        const classDate = parseISO(c.date);
+        return isWithinTimeInterval(classDate, { start: startOfThisWeek, end: endOfThisWeek });
+    });
+  }, [myClassInstancesForMonth, showAllMonth]);
+
   const enrolledStudentsForViewingClass = useMemo(() => {
       if (!viewingClass) return [];
       return users.filter(u => viewingClass.enrolledStudentIds.includes(u.id));
@@ -81,7 +94,7 @@ export default function MyClassesPage() {
           const attendanceStart = subMinutes(classDateTime, 30);
           const attendanceEnd = addMinutes(classDateTime, durationInMinutes + 30);
           
-          return isWithinInterval(new Date(), { start: attendanceStart, end: attendanceEnd });
+          return isWithinTimeInterval(new Date(), { start: attendanceStart, end: attendanceEnd });
       } catch (error) {
           console.error("Error calculating attendance window:", error);
           return false;
@@ -115,7 +128,7 @@ export default function MyClassesPage() {
                 <CardHeader>
                     <CardTitle>Resumen Mensual</CardTitle>
                     <CardDescription>
-                        Tienes un total de <span className="font-bold text-primary">{myClassInstances.length}</span> clases asignadas este mes.
+                        Tienes un total de <span className="font-bold text-primary">{myClassInstancesForMonth.length}</span> clases asignadas este mes.
                         Has completado <span className="font-bold text-primary">{completedClassesCount}</span> clases hasta ahora.
                     </CardDescription>
                 </CardHeader>
@@ -163,13 +176,23 @@ export default function MyClassesPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Listado Completo de tus Clases (Este Mes)</CardTitle>
-                    <CardDescription>Aquí puedes ver y gestionar todas las clases que impartes.</CardDescription>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Listado de Clases</CardTitle>
+                            <CardDescription>
+                                {showAllMonth ? 'Mostrando todas las clases del mes.' : 'Mostrando las clases de la semana actual.'}
+                            </CardDescription>
+                        </div>
+                        <Button variant="outline" onClick={() => setShowAllMonth(prev => !prev)}>
+                            {showAllMonth ? <ArrowUp className="mr-2 h-4 w-4" /> : <ArrowDown className="mr-2 h-4 w-4" />}
+                            {showAllMonth ? 'Ver solo esta semana' : 'Ver todo el mes'}
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    {myClassInstances.length > 0 ? (
+                    {displayedClasses.length > 0 ? (
                         <ul className="space-y-4">
-                            {myClassInstances.map(c => {
+                            {displayedClasses.map(c => {
                                 const canTakeAttendance = isWithinAttendanceWindow(c.date, c.time, c.duration);
                                 const hasFinished = isClassPastTime(c.date, c.time, c.duration);
                                 const canConfirm = hasFinished && c.status === 'scheduled';
@@ -233,7 +256,7 @@ export default function MyClassesPage() {
                             })}
                         </ul>
                     ) : (
-                        <p className="text-sm text-muted-foreground text-center py-8">No tienes ninguna clase asignada para este mes.</p>
+                        <p className="text-sm text-muted-foreground text-center py-8">No tienes ninguna clase asignada en el periodo seleccionado.</p>
                     )}
                 </CardContent>
             </Card>
