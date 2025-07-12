@@ -8,7 +8,7 @@ import { LogoIcon } from '@/components/icons/logo-icon';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from '@/components/ui/dropdown-menu';
-import { Settings, BookMarked, User, LogOut, CreditCard, Calendar, Users, ClipboardList, Banknote, GraduationCap, HandCoins, LayoutDashboard, Ticket } from 'lucide-react';
+import { Settings, BookMarked, User, LogOut, CreditCard, Calendar, Users, ClipboardList, Banknote, GraduationCap, HandCoins, LayoutDashboard, Ticket, ShieldCheck, Palette, Signal } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { useSettings } from '@/context/settings-context';
@@ -29,8 +29,8 @@ const adminManagementNav = [
     { href: '/admin/students', label: 'Alumnos', icon: GraduationCap },
     { href: '/admin/classes', label: 'Clases', icon: ClipboardList },
     { href: '/admin/memberships', label: 'Membresías', icon: CreditCard },
-    { href: '/admin/coupons', label: 'Cupones', icon: Ticket },
     { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
+    { href: '/admin/roles', label: 'Roles y Permisos', icon: ShieldCheck },
     { href: '/admin/settings', label: 'Configuración', icon: Settings },
 ];
 
@@ -79,7 +79,6 @@ function UserMenu() {
                  {canManage && (
                     <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuLabel>Gestión</DropdownMenuLabel>
                          <DropdownMenuGroup>
                             {adminManagementNav.map((item) => (
                                 <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>

@@ -214,10 +214,6 @@ export default function AdminUsersPage() {
         <div className="flex items-center justify-between mb-8 flex-wrap gap-2 no-print">
             <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Usuarios</h1>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => router.push('/admin/roles')}>
-                    <ShieldCheck className="mr-2 h-4 w-4" />
-                    Gestionar Roles
-                </Button>
                 <Button onClick={() => handleOpenDialog()}>
                     <UserPlus className="mr-2 h-4 w-4" />
                     Añadir Usuario

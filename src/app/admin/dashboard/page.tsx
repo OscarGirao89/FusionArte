@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, GraduationCap, Users, Banknote, CreditCard, Settings } from "lucide-react";
+import { ClipboardList, GraduationCap, Users, Banknote, CreditCard, Settings, ShieldCheck, Palette, Signal } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 
@@ -62,11 +62,11 @@ export default function AdminDashboardPage() {
                             <div className="bg-primary/10 p-3 rounded-full">
                                 <Users className="h-6 w-6 text-primary" />
                             </div>
-                            <CardTitle>Usuarios y Roles</CardTitle>
+                            <CardTitle>Usuarios</CardTitle>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-muted-foreground">Administra los usuarios del sistema (profesores, socios) y sus permisos.</p>
+                        <p className="text-muted-foreground">Administra los usuarios del sistema (profesores, socios) y sus perfiles.</p>
                     </CardContent>
                     <CardFooter>
                         <Button asChild variant="outline">
@@ -81,7 +81,7 @@ export default function AdminDashboardPage() {
                             <div className="bg-primary/10 p-3 rounded-full">
                                 <CreditCard className="h-6 w-6 text-primary" />
                             </div>
-                            <CardTitle>Membresías</CardTitle>
+                            <CardTitle>Membresías y Cupones</CardTitle>
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -109,6 +109,47 @@ export default function AdminDashboardPage() {
                     <CardFooter>
                         <Button asChild variant="outline">
                             <Link href="/admin/finances">Gestionar Finanzas</Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
+                            <div className="bg-primary/10 p-3 rounded-full">
+                                <Palette className="h-6 w-6 text-primary" />
+                            </div>
+                            <CardTitle>Estilos y Niveles</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Define los estilos y niveles de habilidad para las clases de la academia.</p>
+                    </CardContent>
+                    <CardFooter className="flex gap-2">
+                        <Button asChild variant="outline" size="sm">
+                            <Link href="/admin/styles">Estilos</Link>
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href="/admin/levels">Niveles</Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
+                            <div className="bg-primary/10 p-3 rounded-full">
+                                <ShieldCheck className="h-6 w-6 text-primary" />
+                            </div>
+                            <CardTitle>Roles y Permisos</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">Crea roles y asigna permisos de acceso a los usuarios de la plataforma.</p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button asChild variant="outline">
+                            <Link href="/admin/roles">Gestionar Roles</Link>
                         </Button>
                     </CardFooter>
                 </Card>

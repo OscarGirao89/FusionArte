@@ -41,7 +41,7 @@ const protectedRoutes: { path: string; roles: UserRole[] }[] = [
   { path: '/admin/finances', roles: ['admin', 'socio']},
   { path: '/admin/payments', roles: ['admin', 'socio', 'administrativo']},
   { path: '/admin/settings', roles: ['admin', 'socio']},
-  { path: '/admin/roles', roles: ['admin']},
+  { path: '/admin/roles', roles: ['admin', 'socio']},
   { path: '/admin/users', roles: ['admin', 'socio']},
   { path: '/admin/students', roles: ['admin', 'socio', 'administrativo']},
   { path: '/admin/classes', roles: ['admin', 'socio', 'administrativo']},
@@ -118,7 +118,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
     } else {
         if (redirect === '/login' && pathname !== '/login') {
-            localStorage.setItem('redirectPath', pathname);
+            try {
+              localStorage.setItem('redirectPath', pathname);
+            } catch (error) {
+              console.error("Could not access localStorage", error);
+            }
         }
         router.replace(redirect || '/login');
         // Keep loading=true until redirection happens and the new page is authorized.
