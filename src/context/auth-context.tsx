@@ -40,7 +40,7 @@ const protectedRoutes: { path: string; roles: UserRole[] }[] = [
   { path: '/profile', roles: ['student', 'teacher', 'admin', 'administrativo', 'socio'] },
   { path: '/admin/finances', roles: ['admin', 'socio', 'administrativo']},
   { path: '/admin/payments', roles: ['admin', 'socio', 'administrativo']},
-  { path: '/admin/settings', roles: ['admin', 'socio']},
+  { path: '/admin/settings', roles: ['admin', 'socio', 'administrativo']},
   { path: '/admin/roles', roles: ['admin', 'socio']},
   { path: '/admin/users', roles: ['admin', 'socio', 'administrativo']},
   { path: '/admin/students', roles: ['admin', 'socio', 'administrativo']},

@@ -11,7 +11,7 @@ export default function AdminDashboardPage() {
     const { currentUser, userRole } = useAuth();
     
     const canViewFinances = userRole === 'admin' || userRole === 'socio';
-    const canViewSettings = userRole === 'admin' || userRole === 'socio';
+    const canViewSettings = userRole === 'admin' || userRole === 'socio' || userRole === 'administrativo';
 
     return (
         <div className="p-4 md:p-8">
