@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { User } from '@/lib/types';
+import type { User, StudentMembership, StudentPayment } from '@/lib/types';
 import { useAttendance } from './attendance-context';
 
 export type UserRole = 'admin' | 'teacher' | 'student' | 'administrativo' | 'socio';
@@ -18,6 +18,10 @@ export interface AuthContextType {
   logout: () => void;
   currentUser: User | null;
   updateCurrentUser: (data: Partial<User>) => void;
+  studentPayments: StudentPayment[];
+  addStudentPayment: (payment: StudentPayment, isUpdate?: boolean) => void;
+  studentMemberships: StudentMembership[];
+  updateStudentMembership: (userId: number, membership: Omit<StudentMembership, 'userId'>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,49 +68,82 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { resetAttendance } = useAttendance();
 
+  const [studentPayments, setStudentPayments] = useState<StudentPayment[]>([]);
+  const [studentMemberships, setStudentMemberships] = useState<StudentMembership[]>([]);
+
   const router = useRouter();
   const pathname = usePathname();
+  
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/payments').then(res => res.json()),
+      fetch('/api/student-memberships').then(res => res.json())
+    ]).then(([payments, memberships]) => {
+      setStudentPayments(payments);
+      setStudentMemberships(memberships);
+    }).catch(console.error);
+  }, []);
+
+  const addStudentPayment = useCallback((payment: StudentPayment, isUpdate = false) => {
+    setStudentPayments(prev => {
+      if (isUpdate) {
+        return prev.map(p => p.id === payment.id ? payment : p);
+      }
+      return [...prev, payment];
+    });
+  }, []);
+
+  const updateStudentMembership = useCallback((userIdToUpdate: number, membership: Omit<StudentMembership, 'userId'>) => {
+    setStudentMemberships(prev => {
+        const existingIndex = prev.findIndex(m => m.userId === userIdToUpdate);
+        const newMembership = { ...membership, userId: userIdToUpdate };
+        if (existingIndex > -1) {
+            const updated = [...prev];
+            updated[existingIndex] = newMembership;
+            return updated;
+        }
+        return [...prev, newMembership];
+    });
+  }, []);
 
   useEffect(() => {
     const checkAuthStatus = async () => {
-        let storedUser: User | null = null;
-        try {
-            const userJson = localStorage.getItem('currentUser');
-            if(userJson) storedUser = JSON.parse(userJson);
-        } catch (e) {
-            console.error("Could not access localStorage", e);
-        }
+      let storedUser: User | null = null;
+      try {
+        const userJson = localStorage.getItem('currentUser');
+        if (userJson) storedUser = JSON.parse(userJson);
+      } catch (e) {
+        console.error("Could not access localStorage", e);
+      }
 
-        const currentRole = storedUser?.role as UserRole | null;
-        const { authorized, redirect } = checkAccess(pathname, currentRole);
-
-        if (!authorized) {
-            if (redirect === '/login' && pathname !== '/login') {
-                try {
-                    localStorage.setItem('redirectPath', pathname);
-                } catch (error) {
-                    console.error("Could not access localStorage", error);
-                }
-            }
-            router.replace(redirect || '/login');
-            setIsLoading(false);
-            return;
-        }
-
-        if (storedUser) {
-            setUserRole(currentRole);
-            setUserId(storedUser.id);
-            setCurrentUser(storedUser);
-        }
-        setIsLoading(false);
+      if (storedUser) {
+        setUserRole(storedUser.role as UserRole);
+        setUserId(storedUser.id);
+        setCurrentUser(storedUser);
+      }
+      setIsLoading(false);
     };
 
-    checkAuthStatus().catch(err => {
-        console.error("Auth check failed, redirecting to login.", err);
-        setUserRole(null); setCurrentUser(null); setIsLoading(false);
-        if(!publicPaths.includes(pathname)) { router.replace('/login'); }
-    });
-  }, [pathname, router]);
+    checkAuthStatus();
+  }, []);
+
+  useEffect(() => {
+    if (isLoading) return; // Wait until initial auth check is done
+
+    const currentRole = currentUser?.role as UserRole | null;
+    const { authorized, redirect } = checkAccess(pathname, currentRole);
+
+    if (!authorized) {
+      if (redirect === '/login' && pathname !== '/login') {
+        try {
+          localStorage.setItem('redirectPath', pathname);
+        } catch (error) {
+          console.error("Could not access localStorage", error);
+        }
+      }
+      router.replace(redirect || '/login');
+    }
+  }, [pathname, router, isLoading, currentUser]);
 
 
   const login = async (email: string, pass: string) => {
@@ -126,7 +163,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       localStorage.setItem('currentUser', JSON.stringify(user));
       const role = user.role as UserRole;
-      setIsLoading(true);
       setUserRole(role);
       setUserId(user.id);
       setCurrentUser(user);
@@ -149,7 +185,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     try {
       localStorage.removeItem('currentUser');
-      setIsLoading(true);
       setUserRole(null);
       setUserId(null);
       setCurrentUser(null);
@@ -174,6 +209,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const value = {
     userRole, userId, isAuthenticated: !!userRole,
     isLoading, login, logout, currentUser, updateCurrentUser,
+    studentPayments, addStudentPayment,
+    studentMemberships, updateStudentMembership
   };
   
   if (isLoading) {
