@@ -95,8 +95,7 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
         case 'course_pass':
             return { ...baseData, accessType: 'course_pass', price: plan.price };
         case 'custom_pack':
-            const { price, ...restCommon } = baseData;
-            return { ...restCommon, accessType: 'custom_pack', priceTiersJson: plan.priceTiersJson || [] };
+            return { ...baseData, accessType: 'custom_pack', priceTiersJson: plan.priceTiersJson || [] };
     }
 };
 
@@ -181,33 +180,83 @@ export default function AdminMembershipsPage() {
     
     let planToSave: MembershipPlan;
     
-    const baseData = {
-        id: editingPlan?.id || `plan-${Date.now()}`,
-        title: data.title,
-        description: data.description,
-        features: data.features.split('\n').filter(f => f.trim() !== ''),
-        isPopular: data.isPopular,
-        durationUnit: data.durationUnit,
-        durationValue: data.durationValue,
-        visibility: data.visibility,
-        allowedClasses: data.allowedClasses || [],
-    };
-    
     switch(data.accessType) {
         case 'unlimited':
-            planToSave = { ...baseData, accessType: 'unlimited', price: data.price };
+            planToSave = { 
+                id: editingPlan?.id || `plan-${Date.now()}`,
+                title: data.title,
+                description: data.description,
+                features: data.features.split('\n').filter(f => f.trim() !== ''),
+                isPopular: data.isPopular,
+                durationUnit: data.durationUnit,
+                durationValue: data.durationValue,
+                visibility: data.visibility,
+                allowedClasses: data.allowedClasses || [],
+                accessType: 'unlimited', 
+                price: data.price 
+            };
             break;
         case 'class_pack':
-            planToSave = { ...baseData, accessType: 'class_pack', price: data.price, classCount: data.classCount };
+            planToSave = { 
+                id: editingPlan?.id || `plan-${Date.now()}`,
+                title: data.title,
+                description: data.description,
+                features: data.features.split('\n').filter(f => f.trim() !== ''),
+                isPopular: data.isPopular,
+                durationUnit: data.durationUnit,
+                durationValue: data.durationValue,
+                visibility: data.visibility,
+                allowedClasses: data.allowedClasses || [],
+                accessType: 'class_pack', 
+                price: data.price, 
+                classCount: data.classCount 
+            };
             break;
         case 'trial_class':
-            planToSave = { ...baseData, accessType: 'trial_class', price: data.price, classCount: data.classCount };
+            planToSave = { 
+                id: editingPlan?.id || `plan-${Date.now()}`,
+                title: data.title,
+                description: data.description,
+                features: data.features.split('\n').filter(f => f.trim() !== ''),
+                isPopular: data.isPopular,
+                durationUnit: data.durationUnit,
+                durationValue: data.durationValue,
+                visibility: data.visibility,
+                allowedClasses: data.allowedClasses || [],
+                accessType: 'trial_class', 
+                price: data.price, 
+                classCount: data.classCount 
+            };
             break;
         case 'course_pass':
-            planToSave = { ...baseData, accessType: 'course_pass', price: data.price };
+            planToSave = { 
+                id: editingPlan?.id || `plan-${Date.now()}`,
+                title: data.title,
+                description: data.description,
+                features: data.features.split('\n').filter(f => f.trim() !== ''),
+                isPopular: data.isPopular,
+                durationUnit: data.durationUnit,
+                durationValue: data.durationValue,
+                visibility: data.visibility,
+                allowedClasses: data.allowedClasses || [],
+                accessType: 'course_pass', 
+                price: data.price 
+            };
             break;
         case 'custom_pack':
-            planToSave = { ...baseData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson };
+            planToSave = { 
+                id: editingPlan?.id || `plan-${Date.now()}`,
+                title: data.title,
+                description: data.description,
+                features: data.features.split('\n').filter(f => f.trim() !== ''),
+                isPopular: data.isPopular,
+                durationUnit: data.durationUnit,
+                durationValue: data.durationValue,
+                visibility: data.visibility,
+                allowedClasses: data.allowedClasses || [],
+                accessType: 'custom_pack', 
+                priceTiersJson: data.priceTiersJson 
+            };
             break;
     }
 
@@ -464,7 +513,7 @@ export default function AdminMembershipsPage() {
                       </div>
                       <Button type="button" size="sm" variant="outline" className="mt-4" onClick={() => append({ classCount: 8, price: 80 })}> <PlusCircle className="mr-2 h-4 w-4" /> Añadir Tramo </Button>
                        {accessType === 'custom_pack' && form.formState.errors.priceTiersJson && (
-                          <FormMessage>{form.formState.errors.priceTiersJson.message || (form.formState.errors.priceTiersJson as any)?.root?.message}</FormMessage>
+                          <FormMessage>{(form.formState.errors.priceTiersJson as any)?.message || (form.formState.errors.priceTiersJson as any)?.root?.message}</FormMessage>
                         )}
                     </div>
                 </div>
