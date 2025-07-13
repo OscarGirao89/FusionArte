@@ -201,10 +201,10 @@ export default function AdminMembershipsPage() {
             planToSave = { ...commonData, accessType: 'course_pass', price: data.price };
             break;
         case 'custom_pack':
-            planToSave = { ...commonData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson };
+             planToSave = { ...commonData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson };
             break;
         default:
-            // This should never happen due to Zod validation
+            const _exhaustiveCheck: never = data;
             toast({ title: "Error", description: "Tipo de plan desconocido.", variant: "destructive" });
             return;
     }

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -87,6 +87,7 @@ export default function AdminUsersPage() {
     const { toast } = useToast();
     const router = useRouter();
     const { userRole } = useAuth();
+    const avatarInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -125,11 +126,6 @@ export default function AdminUsersPage() {
     const form = useForm<UserFormValues>({
         resolver: zodResolver(userFormSchema),
         defaultValues: {
-            paymentDetails: {
-                type: 'per_class',
-                payRate: 20,
-                cancelledClassPay: 8,
-            },
             isVisibleToStudents: false,
             isPartner: false,
         }
@@ -150,7 +146,7 @@ export default function AdminUsersPage() {
             role: user.role,
             bio: user.bio,
             specialties: user.specialties?.join(', '),
-            paymentDetails: user.paymentDetails || { type: 'per_class', payRate: 20, cancelledClassPay: 8 },
+            paymentDetails: user.paymentDetails ? user.paymentDetails : undefined,
             avatar: user.avatar,
             isVisibleToStudents: user.isVisibleToStudents,
             isPartner: user.isPartner,
@@ -215,6 +211,17 @@ export default function AdminUsersPage() {
             variant: "destructive"
         });
     }
+    
+    const handleAvatarFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                form.setValue('avatar', reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleExportCSV = () => {
         const headers = ["ID", "Nombre", "Email", "Rol", "Fecha de Ingreso"];
@@ -406,26 +413,16 @@ export default function AdminUsersPage() {
                                     {(watchedName || ' ').split(' ').map(n => n[0]).join('')}
                                 </AvatarFallback>
                             </Avatar>
-                            <FormItem className="flex-grow">
-                                <FormLabel className="sr-only">Subir foto</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        type="file"
-                                        accept="image/png, image/jpeg, image/gif"
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                                const reader = new FileReader();
-                                                reader.onloadend = () => {
-                                                    form.setValue('avatar', reader.result as string);
-                                                };
-                                                reader.readAsDataURL(file);
-                                            }
-                                        }}
-                                    />
-                                </FormControl>
-                                <FormMessage>{form.formState.errors.avatar?.message}</FormMessage>
-                            </FormItem>
+                             <Button type="button" variant="outline" onClick={() => avatarInputRef.current?.click()}>
+                                Subir Foto
+                             </Button>
+                            <input
+                                type="file"
+                                ref={avatarInputRef}
+                                className="hidden"
+                                accept="image/png, image/jpeg, image/gif"
+                                onChange={handleAvatarFileChange}
+                            />
                         </div>
                     </div>
                     <FormField control={form.control} name="role" render={({ field }) => (

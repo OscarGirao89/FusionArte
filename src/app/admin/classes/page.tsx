@@ -39,7 +39,7 @@ const classFormSchema = z.object({
   // Fields for classes/workshops
   styleId: z.string().optional(),
   levelId: z.string().optional(),
-  teacherIds: z.array(z.number()).min(1, "Debes seleccionar al menos un profesor.").optional(),
+  teacherIds: z.array(z.number()).optional(),
   capacity: z.coerce.number().optional(),
 
   // Fields for recurring
@@ -68,7 +68,7 @@ const classFormSchema = z.object({
         return !!data.styleId && !!data.levelId && !!data.teacherIds && data.teacherIds.length > 0 && data.capacity !== undefined && data.capacity > 0;
     }
     return true;
-}, { message: "Estilo, nivel, profesor y capacidad son obligatorios.", path: ["styleId"] })
+}, { message: "Estilo, nivel, profesor y capacidad son obligatorios para este tipo de evento.", path: ["teacherIds"] })
 .refine(data => {
     if (data.type === 'recurring') {
         return !!data.day;
@@ -157,7 +157,6 @@ export default function AdminClassesPage() {
       time: '19:00',
       duration: '60 min',
       capacity: 20,
-      date: new Date(),
       enrolledStudentIds: [],
       teacherIds: [],
       isVisibleToStudents: false,
@@ -178,7 +177,7 @@ export default function AdminClassesPage() {
     if (danceClass) {
       form.reset({
         ...danceClass,
-        date: danceClass.date ? parseISO(danceClass.date) : new Date(),
+        date: danceClass.date ? parseISO(danceClass.date) : undefined,
         capacity: danceClass.capacity || undefined,
         rentalContact: danceClass.rentalContact,
         rentalPrice: danceClass.rentalPrice || undefined,
@@ -223,29 +222,44 @@ export default function AdminClassesPage() {
         return;
     }
     
-    const finalData: Omit<DanceClass, 'id'> & { id?: string } = {
+    // Explicitly build the data object to ensure type safety
+    let finalData: any = {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        time: data.time,
+        room: data.room,
+        duration: data.duration,
+        enrolledStudentIds: data.enrolledStudentIds,
+        cancellationPolicyHours: data.cancellationPolicyHours,
         status: 'scheduled',
-        styleId: '',
-        levelId: '',
-        ...data,
-        day: data.day || '',
-        date: data.date ? data.date.toISOString() : undefined,
-        capacity: data.capacity || 0,
-        teacherIds: data.teacherIds || [],
     };
 
     if (data.type === 'rental') {
-        finalData.name = data.name;
         finalData.rentalContact = data.rentalContact;
+        finalData.rentalPrice = data.rentalPrice;
+        finalData.isVisibleToStudents = data.isVisibleToStudents;
+        finalData.date = data.date?.toISOString();
         finalData.teacherIds = [];
-        finalData.styleId = 'practica';
-        finalData.levelId = 'todos';
+        finalData.styleId = 'practica'; // Default for rentals
+        finalData.levelId = 'todos';    // Default for rentals
         finalData.capacity = 0;
     } else {
-        finalData.teacherIds = data.teacherIds!;
-        finalData.styleId = data.styleId!;
-        finalData.levelId = data.levelId!;
-        finalData.capacity = data.capacity!;
+        finalData.styleId = data.styleId;
+        finalData.levelId = data.levelId;
+        finalData.teacherIds = data.teacherIds;
+        finalData.capacity = data.capacity;
+        
+        if (data.type === 'recurring') {
+            finalData.day = data.day;
+        } else { // one-time or workshop
+            finalData.date = data.date?.toISOString();
+        }
+
+        if (data.type === 'workshop') {
+            finalData.workshopPaymentType = data.workshopPaymentType;
+            finalData.workshopPaymentValue = data.workshopPaymentValue;
+        }
     }
     
     const url = editingClass ? `/api/classes/${editingClass.id}` : '/api/classes';
@@ -577,7 +591,7 @@ export default function AdminClassesPage() {
                             </FormControl>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date("2000-01-01")} initialFocus locale={es}/>
+                            <CalendarComponent mode="single" selected={field.value || undefined} onSelect={field.onChange} disabled={(date) => date < new Date("2000-01-01")} initialFocus locale={es}/>
                           </PopoverContent>
                         </Popover>
                         <FormMessage />
