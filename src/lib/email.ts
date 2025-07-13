@@ -4,11 +4,14 @@
 import { Resend } from 'resend';
 import { z } from 'zod';
 
-if (!process.env.RESEND_API_KEY) {
-  console.log('RESEND_API_KEY is not set. Email sending will be disabled.');
-}
+const resendApiKey = process.env.RESEND_API_KEY;
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend: Resend | null = null;
+if (resendApiKey) {
+  resend = new Resend(resendApiKey);
+} else {
+  console.warn('RESEND_API_KEY is not set. Email sending will be disabled.');
+}
 
 const SendEmailSchema = z.object({
   to: z.string().email(),
@@ -20,8 +23,8 @@ const SendEmailSchema = z.object({
 type SendEmailInput = z.infer<typeof SendEmailSchema>;
 
 export async function sendEmail(input: SendEmailInput) {
-  if (!process.env.RESEND_API_KEY) {
-    console.log('Skipping email send because RESEND_API_KEY is not configured.');
+  if (!resend) {
+    console.log('Skipping email send because Resend is not configured.');
     // Return a success-like object to avoid breaking the UI in development
     return { success: true, data: { id: 'dev-mode-skipped-email' } };
   }
