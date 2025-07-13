@@ -231,6 +231,7 @@ export default function AdminClassesPage() {
         day: data.day || '',
         date: data.date ? data.date.toISOString() : undefined,
         capacity: data.capacity || 0,
+        teacherIds: data.teacherIds || [],
     };
 
     if (data.type === 'rental') {
