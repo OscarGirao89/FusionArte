@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import type { AcademySettings } from '@/lib/types';
 
 export interface SettingsContextType {
@@ -61,13 +61,10 @@ const initialSettings: AcademySettings = {
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [settings, setSettings] = useState<AcademySettings>(initialSettings);
   
-  // In a real app, this would likely fetch from a DB and persist changes.
-  // We'll use localStorage for this prototype for persistence across reloads.
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       const storedSettings = localStorage.getItem('academySettings');
       if (storedSettings) {
-        // Merge stored settings with defaults to handle new properties being added
         setSettings({ ...initialSettings, ...JSON.parse(storedSettings) });
       }
     } catch (error) {
