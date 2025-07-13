@@ -77,13 +77,19 @@ async function main() {
   ];
 
   for (const dc of danceClassesData) {
-    const { teacherIds, ...classData } = dc;
+    const { id, teacherIds, ...classData } = dc;
     await prisma.danceClass.upsert({
-        where: { id: dc.id },
-        update: {},
+        where: { id },
+        update: {
+          ...classData,
+          teacherIds: {
+            set: teacherIds.map(id => ({ id }))
+          }
+        },
         create: {
+            id,
             ...classData,
-            teachers: {
+            teacherIds: {
                 connect: teacherIds.map(id => ({ id }))
             }
         }
@@ -198,11 +204,17 @@ async function main() {
     { id: 'task-3', title: 'Llamar a Ana López por pago pendiente', description: 'Factura inv-2, pendiente de 50€', status: 'todo', category: 'Pagos', priority: 'low', createdAt: new Date('2024-07-10'), alertDateTime: new Date('2024-07-11T09:00:00') ,assigneeIds: [7] },
   ];
   for (const task of taskNotesData) {
-      const { assigneeIds, ...taskData } = task;
+      const { id, assigneeIds, ...taskData } = task;
       await prisma.taskNote.upsert({
-          where: { id: task.id },
-          update: {},
+          where: { id },
+          update: {
+              ...taskData,
+              assignees: {
+                  set: assigneeIds.map(id => ({ id }))
+              }
+          },
           create: {
+              id,
               ...taskData,
               assignees: {
                   connect: assigneeIds.map(id => ({ id }))
@@ -225,5 +237,3 @@ main()
     await prisma.$disconnect()
     process.exit(1)
   })
-
-    

@@ -1,37 +1,75 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { TeacherPayroll } from '@/components/admin/teacher-payroll';
 import { IncomeExpenseLedger } from '@/components/admin/income-expense-ledger';
 import { TrendingUp, TrendingDown, Scale, Users, Handshake } from 'lucide-react';
-import { extraTransactions } from '@/lib/finances-data';
-import { danceClasses, users } from '@/lib/data';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
+import type { User, DanceClass, Transaction, StudentPayment } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 export default function AdminFinancesPage() {
-  const { userRole, userId, studentPayments } = useAuth();
+  const { userRole, userId } = useAuth();
   const router = useRouter();
+
+  const [users, setUsers] = useState<User[]>([]);
+  const [danceClasses, setDanceClasses] = useState<DanceClass[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [studentPayments, setStudentPayments] = useState<StudentPayment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const partners = useMemo(() => users.filter(u => u.isPartner), []);
-  const [selectedPartnerId, setSelectedPartnerId] = useState<string>(partners.length > 0 ? String(partners[0].id) : '');
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [usersRes, classesRes, transRes, paymentsRes] = await Promise.all([
+          fetch('/api/users'),
+          fetch('/api/classes'),
+          fetch('/api/transactions'),
+          fetch('/api/payments'),
+        ]);
+
+        if (usersRes.ok) setUsers(await usersRes.json());
+        if (classesRes.ok) setDanceClasses(await classesRes.json());
+        if (transRes.ok) setTransactions(await transRes.json());
+        if (paymentsRes.ok) setStudentPayments(await paymentsRes.json());
+
+      } catch (error) {
+        console.error("Error fetching finance data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+  
+  const partners = useMemo(() => users.filter(u => u.isPartner), [users]);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
+
+  useEffect(() => {
+    if (partners.length > 0 && !selectedPartnerId) {
+      setSelectedPartnerId(String(partners[0].id));
+    }
+  }, [partners, selectedPartnerId]);
+
   
   const totals = useMemo(() => {
     const studentIncome = studentPayments.filter(p => p.status === 'paid').reduce((acc, p) => acc + p.amountPaid, 0);
-    const otherIncome = extraTransactions.filter(t => t.type === 'ingreso').reduce((acc, t) => acc + t.amount, 0);
+    const otherIncome = transactions.filter(t => t.type === 'ingreso').reduce((acc, t) => acc + t.amount, 0);
     const rentalIncome = danceClasses.filter(c => c.type === 'rental' && c.rentalPrice).reduce((acc, c) => acc + (c.rentalPrice || 0), 0);
     const totalIncome = studentIncome + otherIncome + rentalIncome;
 
-    const totalExpenses = extraTransactions.filter(t => t.type === 'egreso').reduce((acc, t) => acc + t.amount, 0);
+    const totalExpenses = transactions.filter(t => t.type === 'egreso').reduce((acc, t) => acc + t.amount, 0);
     const netBalance = totalIncome - totalExpenses;
     
     return { totalIncome, totalExpenses, netBalance };
-  }, [studentPayments]);
+  }, [studentPayments, danceClasses, transactions]);
   
 
   const AdminAndSocioView = () => (
@@ -184,6 +222,25 @@ export default function AdminFinancesPage() {
         </TabsContent>
     </Tabs>
   );
+  }
+
+  if (isLoading) {
+    return (
+        <div className="p-4 md:p-8 space-y-8">
+            <Skeleton className="h-10 w-64" />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+            </div>
+             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <Skeleton className="lg:col-span-1 h-64" />
+                <Skeleton className="lg:col-span-2 h-64" />
+                <Skeleton className="lg:col-span-3 h-80" />
+            </div>
+        </div>
+    );
   }
 
   return (
