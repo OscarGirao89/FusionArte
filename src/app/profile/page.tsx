@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { useAuth } from "@/context/auth-context";
-import type { StudentPayment, DanceClass, User, MembershipPlan, DanceStyle } from "@/lib/types";
+import type { StudentPayment, DanceClass, User, MembershipPlan, DanceStyle, StudentMembership } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, parseISO, isBefore } from 'date-fns';
@@ -271,3 +271,4 @@ export default function ProfilePage() {
         )
 }
 
+    
