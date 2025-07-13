@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useFieldArray } from "react-hook-form"
 import { z } from "zod"
-import type { MembershipPlan, DanceClass, DanceStyle } from '@/lib/types';
+import type { MembershipPlan, DanceClass, DanceStyle, PriceTier } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,20 +68,30 @@ const formSchema = z.discriminatedUnion("accessType", [
 type MembershipFormValues = z.infer<typeof formSchema>;
 
 const planToForm = (plan: MembershipPlan): MembershipFormValues => {
-  const common = {
-    ...plan,
-    isPopular: plan.isPopular ?? false,
-    features: plan.features.join('\n'),
-    visibility: plan.visibility || 'public',
-    allowedClasses: plan.allowedClasses || [],
-  };
-  switch (plan.accessType) {
-    case 'unlimited': return { ...common, accessType: 'unlimited' };
-    case 'class_pack': return { ...common, accessType: 'class_pack' };
-    case 'trial_class': return { ...common, accessType: 'trial_class' };
-    case 'course_pass': return { ...common, accessType: 'course_pass' };
-    case 'custom_pack': return { ...common, accessType: 'custom_pack', priceTiersJson: plan.priceTiersJson || [] };
-  }
+    const baseData = {
+        id: plan.id,
+        title: plan.title,
+        description: plan.description,
+        features: plan.features.join('\n'),
+        isPopular: plan.isPopular ?? false,
+        durationUnit: plan.durationUnit,
+        durationValue: plan.durationValue,
+        visibility: plan.visibility || 'public',
+        allowedClasses: plan.allowedClasses || [],
+    };
+
+    switch (plan.accessType) {
+        case 'unlimited':
+            return { ...baseData, accessType: 'unlimited', price: plan.price };
+        case 'class_pack':
+            return { ...baseData, accessType: 'class_pack', price: plan.price, classCount: plan.classCount };
+        case 'trial_class':
+            return { ...baseData, accessType: 'trial_class', price: plan.price, classCount: plan.classCount };
+        case 'course_pass':
+            return { ...baseData, accessType: 'course_pass', price: plan.price };
+        case 'custom_pack':
+            return { ...baseData, accessType: 'custom_pack', priceTiersJson: plan.priceTiersJson || [] };
+    }
 };
 
 export default function AdminMembershipsPage() {
