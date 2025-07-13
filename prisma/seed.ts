@@ -1,3 +1,4 @@
+
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
@@ -7,7 +8,6 @@ async function main() {
   console.log(`Start seeding ...`)
 
   // Clean up database
-  await prisma.attendance.deleteMany();
   await prisma.studentPayment.deleteMany();
   await prisma.studentMembership.deleteMany();
   await prisma.danceClass.deleteMany();
