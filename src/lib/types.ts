@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 
 export type DanceStyle = {
@@ -111,6 +112,12 @@ export type AttendanceRecord = {
   status: 'presente' | 'ausente';
 };
 
+export type PaymentDetails =
+  | { type: 'per_class'; payRate: number; cancelledClassPay: number }
+  | { type: 'monthly'; monthlySalary: number; cancelledClassPay: number }
+  | { type: 'percentage'; payRate: number; cancelledClassPay: number };
+
+
 export type User = {
     id: number;
     name: string;
@@ -127,12 +134,7 @@ export type User = {
     // Teacher-specific fields
     bio?: string;
     specialties?: string[];
-    paymentDetails?: {
-        type: 'per_class' | 'monthly' | 'percentage';
-        payRate?: number; // per hour for 'per_class' or percentage for 'percentage'
-        monthlySalary?: number; // for 'monthly'
-        cancelledClassPay: number; // Can be 0
-    };
+    paymentDetails?: PaymentDetails;
 };
 
 export type Transaction = {

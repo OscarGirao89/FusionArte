@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import type { User } from '@/lib/types';
+import type { User, PaymentDetails } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -146,7 +146,7 @@ export default function AdminUsersPage() {
             role: user.role,
             bio: user.bio,
             specialties: user.specialties?.join(', '),
-            paymentDetails: user.paymentDetails ? user.paymentDetails : undefined,
+            paymentDetails: user.paymentDetails,
             avatar: user.avatar,
             isVisibleToStudents: user.isVisibleToStudents,
             isPartner: user.isPartner,
@@ -189,12 +189,12 @@ export default function AdminUsersPage() {
         }
 
         if (editingUser) {
-            setUsers(users.map(u => u.id === editingUser.id ? { ...editingUser, ...dataToSave } : u));
+            setUsers(users.map(u => u.id === editingUser.id ? { ...editingUser, ...dataToSave } as User : u));
         } else {
             const newUser: User = {
                 id: Math.max(...users.map(u => u.id)) + 1,
                 ...dataToSave,
-                avatar: dataToSave.avatar, // Ensure avatar is set on creation
+                avatar: dataToSave.avatar!, // Ensure avatar is set on creation
                 joined: new Date().toISOString().split('T')[0],
             };
             setUsers([...users, newUser]);
