@@ -46,11 +46,13 @@ const paymentDetailsSchema = z.discriminatedUnion("type", [
 ]);
 
 
+const userRolesEnum = z.enum(['Estudiante', 'Profesor', 'Administrador', 'Administrativo', 'Socio']);
+
 const userFormSchema = z.object({
     id: z.number().optional(),
     name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
     email: z.string().email("Email inválido."),
-    role: z.enum(['Estudiante', 'Profesor', 'Administrador', 'Administrativo', 'Socio']),
+    role: userRolesEnum,
     bio: z.string().optional(),
     specialties: z.string().optional(),
     paymentDetails: paymentDetailsSchema.optional(),
@@ -77,7 +79,7 @@ const roleVariant: { [key: string]: "default" | "secondary" | "destructive" } = 
     'Administrativo': 'secondary'
 }
 
-const userRoles: User['role'][] = ['Estudiante', 'Profesor', 'Administrador', 'Administrativo', 'Socio'];
+const userRoles: z.infer<typeof userRolesEnum>[] = ['Estudiante', 'Profesor', 'Administrador', 'Administrativo', 'Socio'];
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<User[]>([]);
@@ -143,7 +145,7 @@ export default function AdminUsersPage() {
             id: user.id,
             name: user.name,
             email: user.email,
-            role: user.role,
+            role: user.role as z.infer<typeof userRolesEnum>,
             bio: user.bio,
             specialties: user.specialties?.join(', '),
             paymentDetails: user.paymentDetails,
@@ -193,9 +195,12 @@ export default function AdminUsersPage() {
         } else {
             const newUser: User = {
                 id: Math.max(...users.map(u => u.id)) + 1,
-                ...dataToSave,
-                avatar: dataToSave.avatar!, // Ensure avatar is set on creation
+                name: dataToSave.name,
+                email: dataToSave.email,
+                role: dataToSave.role,
+                avatar: dataToSave.avatar!,
                 joined: new Date().toISOString().split('T')[0],
+                ...dataToSave
             };
             setUsers([...users, newUser]);
         }
