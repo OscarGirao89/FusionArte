@@ -77,16 +77,17 @@ async function main() {
   ];
 
   for (const dc of danceClassesData) {
-      await prisma.danceClass.upsert({
-          where: { id: dc.id },
-          update: {},
-          create: {
-              ...dc,
-              teacherIds: {
-                  connect: dc.teacherIds.map(id => ({ id }))
-              }
-          }
-      });
+    const { teacherIds, ...classData } = dc;
+    await prisma.danceClass.upsert({
+        where: { id: dc.id },
+        update: {},
+        create: {
+            ...classData,
+            teachers: {
+                connect: teacherIds.map(id => ({ id }))
+            }
+        }
+    });
   }
   console.log('Dance Classes seeded.');
 
@@ -116,8 +117,6 @@ async function main() {
       await prisma.studentMembership.upsert({
           where: { userId_planId: { userId: sm.userId, planId: sm.planId } },
           update: {
-            user: { connect: { id: sm.userId } },
-            plan: { connect: { id: sm.planId } },
             startDate: sm.startDate,
             endDate: sm.endDate,
             classesRemaining: sm.classesRemaining,
@@ -199,14 +198,14 @@ async function main() {
     { id: 'task-3', title: 'Llamar a Ana López por pago pendiente', description: 'Factura inv-2, pendiente de 50€', status: 'todo', category: 'Pagos', priority: 'low', createdAt: new Date('2024-07-10'), alertDateTime: new Date('2024-07-11T09:00:00') ,assigneeIds: [7] },
   ];
   for (const task of taskNotesData) {
+      const { assigneeIds, ...taskData } = task;
       await prisma.taskNote.upsert({
           where: { id: task.id },
           update: {},
           create: {
-              ...task,
-              assigneeIds: undefined, // Prisma handles this through connect
+              ...taskData,
               assignees: {
-                  connect: task.assigneeIds.map(id => ({ id }))
+                  connect: assigneeIds.map(id => ({ id }))
               }
           }
       });
@@ -226,3 +225,5 @@ main()
     await prisma.$disconnect()
     process.exit(1)
   })
+
+    
