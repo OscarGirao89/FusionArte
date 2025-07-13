@@ -1,4 +1,5 @@
 
+
 import { z } from "zod";
 
 export type DanceStyle = {
@@ -128,7 +129,7 @@ export type User = {
     id: number;
     name: string;
     email: string;
-    role: 'Estudiante' | 'Profesor' | 'Administrador' | 'Administrativo' | 'Socio';
+    role: string;
     joined: string;
     avatar: string;
     dob?: string; // YYYY-MM-DD

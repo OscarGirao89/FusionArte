@@ -1,4 +1,3 @@
-
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
@@ -7,13 +6,27 @@ const prisma = new PrismaClient()
 async function main() {
   console.log(`Start seeding ...`)
 
-  // Seed Roles (necessary for the admin user)
+  // Clean up database
+  await prisma.attendance.deleteMany();
+  await prisma.studentPayment.deleteMany();
+  await prisma.studentMembership.deleteMany();
+  await prisma.danceClass.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.role.deleteMany();
+  await prisma.danceStyle.deleteMany();
+  await prisma.danceLevel.deleteMany();
+  await prisma.coupon.deleteMany();
+  await prisma.transaction.deleteMany();
+  await prisma.taskNote.deleteMany();
+  console.log('Database cleaned.');
+
+  // Seed Roles
   const rolesData = [
-      { id: 'admin', name: 'Administrador', permissions: ['view_dashboard', 'manage_users', 'manage_students', 'manage_classes', 'manage_memberships', 'manage_finances', 'manage_settings', 'manage_roles', 'take_attendance'] },
+      { id: 'admin', name: 'Admin', permissions: ['view_dashboard', 'manage_users', 'manage_students', 'manage_classes', 'manage_memberships', 'manage_finances', 'manage_settings', 'manage_roles', 'take_attendance'] },
       { id: 'socio', name: 'Socio', permissions: ['view_dashboard', 'manage_users', 'manage_students', 'manage_classes', 'manage_memberships', 'manage_finances', 'manage_settings', 'view_teacher_area', 'take_attendance'] },
       { id: 'profesor', name: 'Profesor', permissions: ['view_teacher_area', 'take_attendance'] },
       { id: 'administrativo', name: 'Administrativo', permissions: ['view_dashboard', 'manage_students', 'manage_classes'] },
-      { id: 'student', name: 'Estudiante', permissions: [] },
+      { id: 'student', name: 'Student', permissions: [] },
   ];
   for (const role of rolesData) {
       await prisma.role.upsert({
@@ -23,60 +36,32 @@ async function main() {
       });
   }
   console.log('Roles seeded.');
-  
-  // Seed Dance Styles
-  const danceStylesData = [
-    { id: 'salsa', name: 'Salsa', description: 'Ritmos latinos llenos de energía y pasión.' },
-    { id: 'bachata', name: 'Bachata', description: 'Baile sensual y romántico de la República Dominicana.' },
-    { id: 'm-zouk', name: 'M-Zouk', description: 'Moderno zouk brasileño con movimientos fluidos y complejos.' },
-    { id: 'aeroyoga', name: 'Aeroyoga', description: 'Yoga en suspensión que combina posturas, acrobacias y relajación.' },
-    { id: 'elongacion', name: 'Elongación', description: 'Clases para mejorar la flexibilidad y el rango de movimiento.' },
-    { id: 'hip-hop', name: 'Hip Hop', description: 'Cultura y movimiento urbano con diversos estilos.' },
-    { id: 'practica', name: 'Práctica Libre', description: 'Espacio para practicar lo aprendido.' },
-  ];
-  for (const style of danceStylesData) {
-    await prisma.danceStyle.upsert({
-      where: { name: style.name },
-      update: {},
-      create: style,
-    });
-  }
-  console.log('Dance Styles seeded.');
-  
-  // Seed Dance Levels
-  const danceLevelsData = [
-    { id: 'iniciacion', name: 'Iniciación', description: 'Para quienes nunca han bailado antes.' },
-    { id: 'basico', name: 'Básico', description: 'Conocimientos fundamentales del baile.' },
-    { id: 'intermedio', name: 'Intermedio', description: 'Dominio de pasos y figuras más complejas.' },
-    { id: 'avanzado', name: 'Avanzado', description: 'Para bailarines con amplia experiencia y técnica.' },
-    { id: 'todos', name: 'Todos los niveles', description: 'Clases abiertas a cualquier nivel de experiencia.' },
-  ];
-  for (const level of danceLevelsData) {
-    await prisma.danceLevel.upsert({
-      where: { name: level.name },
-      update: {},
-      create: level,
-    });
-  }
-  console.log('Dance Levels seeded.');
 
-
-  // Create a single Admin user
+  // Create one user for each role
   const hashedPassword = await bcrypt.hash('password123', 10);
-  await prisma.user.upsert({
-      where: { email: 'admin@fusionarte.com' },
-      update: {},
-      create: {
-          id: 4,
-          name: 'Admin FusionArte',
-          email: 'admin@fusionarte.com',
-          password: hashedPassword,
-          role: 'Administrador',
-          joined: new Date(),
-          avatar: 'https://placehold.co/100x100.png?text=AF'
-      },
-  });
-  console.log('Admin user created.');
+  
+  const usersToCreate = [
+    { name: 'Admin User', email: 'admin@fusionarte.com', roleName: 'Admin' },
+    { name: 'Socio User', email: 'socio@fusionarte.com', roleName: 'Socio' },
+    { name: 'Profesor User', email: 'profesor@fusionarte.com', roleName: 'Profesor' },
+    { name: 'Administrativo User', email: 'administrativo@fusionarte.com', roleName: 'Administrativo' },
+    { name: 'Student User', email: 'estudiante@fusionarte.com', roleName: 'Student' },
+  ];
+
+  for (const userData of usersToCreate) {
+      const initials = userData.name.split(' ').map(n => n[0]).join('');
+      await prisma.user.create({
+          data: {
+              name: userData.name,
+              email: userData.email,
+              password: hashedPassword,
+              role: userData.roleName,
+              joined: new Date(),
+              avatar: `https://placehold.co/100x100.png?text=${initials}`
+          },
+      });
+      console.log(`Created user: ${userData.name}`);
+  }
 
   console.log(`Seeding finished.`)
 }
@@ -90,4 +75,3 @@ main()
     await prisma.$disconnect()
     process.exit(1)
   })
-
