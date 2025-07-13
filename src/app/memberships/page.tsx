@@ -39,6 +39,7 @@ const getPlanPriceDisplay = (plan: MembershipPlan) => {
 };
 
 function PlanCard({ plan, onPurchaseRequest }: { plan: MembershipPlan, onPurchaseRequest: (plan: MembershipPlan) => void }) {
+  const price = 'price' in plan ? plan.price : 0;
   return (
     <Card className={cn(
       "flex flex-col",
@@ -55,7 +56,7 @@ function PlanCard({ plan, onPurchaseRequest }: { plan: MembershipPlan, onPurchas
         <CardDescription>
           {plan.accessType === 'custom_pack' && plan.priceTiersJson && plan.priceTiersJson.length > 0
             ? <span className="text-4xl font-bold text-foreground">Desde €{plan.priceTiersJson[0].price}</span>
-            : <span className="text-4xl font-bold text-foreground">€{plan.price}</span>
+            : <span className="text-4xl font-bold text-foreground">€{price}</span>
           }
           <span className="text-muted-foreground">{getPlanPriceDisplay(plan)}</span>
         </CardDescription>
@@ -148,7 +149,7 @@ export default function MembershipsPage() {
   };
 
   const handleConfirmUnlimitedPurchase = () => {
-    if (!planToConfirm) return;
+    if (!planToConfirm || !('price' in planToConfirm)) return;
     processPurchase(planToConfirm, planToConfirm.price);
     setPlanToConfirm(null);
   };
@@ -167,15 +168,20 @@ export default function MembershipsPage() {
         return;
      }
 
-     let planToPurchase = selectedPlan;
-     let finalPrice = selectedPlan.price;
+     let finalPrice: number;
      let finalClassCount: number | undefined;
 
-     if (planToPurchase.accessType === 'class_pack' || planToPurchase.accessType === 'trial_class') {
-        finalClassCount = planToPurchase.classCount;
-     } else if (planToPurchase.accessType === 'custom_pack' && customPackConfig) {
+     if (selectedPlan.accessType === 'class_pack' || selectedPlan.accessType === 'trial_class') {
+        finalPrice = selectedPlan.price;
+        finalClassCount = selectedPlan.classCount;
+     } else if (selectedPlan.accessType === 'custom_pack' && customPackConfig) {
         finalPrice = customPackConfig.totalPrice;
         finalClassCount = customPackConfig.classCount;
+     } else if ('price' in selectedPlan) {
+        finalPrice = selectedPlan.price;
+     } else {
+        toast({ title: "Error", description: "El plan seleccionado no tiene un precio válido.", variant: "destructive" });
+        return;
      }
 
      if (finalClassCount && classIds.length !== finalClassCount) {
@@ -183,7 +189,7 @@ export default function MembershipsPage() {
          return;
      }
 
-    processPurchase(planToPurchase, finalPrice, finalClassCount);
+    processPurchase(selectedPlan, finalPrice, finalClassCount);
     setIsSelectorOpen(false);
     setSelectedPlan(null);
     setCustomPackConfig(null);
@@ -246,7 +252,7 @@ export default function MembershipsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Compra</AlertDialogTitle>
             <AlertDialogDescription>
-              Estás a punto de adquirir el plan "{planToConfirm?.title}" por €{planToConfirm?.price}. Se generará una factura pendiente en tu perfil. ¿Deseas continuar?
+              Estás a punto de adquirir el plan "{planToConfirm?.title}" por €{planToConfirm && 'price' in planToConfirm ? planToConfirm.price : '0'}. Se generará una factura pendiente en tu perfil. ¿Deseas continuar?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -277,3 +283,5 @@ export default function MembershipsPage() {
     </>
   );
 }
+
+    

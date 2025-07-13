@@ -116,16 +116,23 @@ export default function AdminPaymentsPage() {
           toast({ title: "Error", description: "Alumno o plan no encontrado.", variant: "destructive" });
           return;
       }
+
+      if (plan.accessType === 'custom_pack') {
+        toast({ title: "Acción no permitida", description: "Los bonos personalizados no pueden ser asignados desde esta pantalla.", variant: "destructive" });
+        return;
+      }
       
+      const totalAmount = 'price' in plan ? plan.price : 0;
+
       const newPayment: StudentPayment = {
           id: `inv-${Date.now()}`,
           studentId: student.id,
           planId: plan.id,
           invoiceDate: new Date().toISOString(),
-          totalAmount: plan.price,
+          totalAmount: totalAmount,
           status: 'pending',
           amountPaid: 0,
-          amountDue: plan.price,
+          amountDue: totalAmount,
           lastUpdatedBy: getEditorName(),
           lastUpdatedDate: new Date().toISOString(),
           notes: '',
@@ -209,7 +216,11 @@ export default function AdminPaymentsPage() {
                               <FormItem><FormLabel>Plan de Membresía</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                  {membershipPlans.map(p => <SelectItem key={p.id} value={p.id}>{p.title} (€{p.price})</SelectItem>)}
+                                  {membershipPlans.map(p => (
+                                    <SelectItem key={p.id} value={p.id} disabled={p.accessType === 'custom_pack'}>
+                                      {p.title} {'price' in p ? `(€${p.price})` : '(Bono personalizado)'}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select><FormMessage /></FormItem>
                             )} />
@@ -265,3 +276,5 @@ export default function AdminPaymentsPage() {
     </div>
   );
 }
+
+    
