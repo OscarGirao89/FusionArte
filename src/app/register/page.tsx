@@ -29,6 +29,7 @@ import { LogoIcon } from "@/components/icons/logo-icon";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from '@/context/settings-context';
 import Image from 'next/image';
+import { sendEmail } from '@/lib/email';
 
 const registerFormSchema = z.object({
     name: z.string().min(3, { message: "El nombre debe tener al menos 3 caracteres." }),
@@ -65,6 +66,19 @@ export default function RegisterPage() {
         toast({
             title: "¡Registro Exitoso!",
             description: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
+        });
+
+        // Send a welcome email
+        const emailHtml = `
+          <h1>¡Bienvenido a ${settings.academyName}, ${data.name}!</h1>
+          <p>${settings.registrationEmailMessage?.replace('{{name}}', data.name).replace('{{academyName}}', settings.academyName) || 'Gracias por registrarte.'}</p>
+          <p>¡Te esperamos en la pista!</p>
+        `;
+        
+        await sendEmail({
+          to: data.email,
+          subject: `¡Bienvenido/a a ${settings.academyName}!`,
+          html: emailHtml,
         });
         
         router.push('/login');
