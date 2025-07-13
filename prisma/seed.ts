@@ -115,8 +115,20 @@ async function main() {
   for (const sm of studentMembershipsData) {
       await prisma.studentMembership.upsert({
           where: { userId_planId: { userId: sm.userId, planId: sm.planId } },
-          update: {},
-          create: sm,
+          update: {
+            user: { connect: { id: sm.userId } },
+            plan: { connect: { id: sm.planId } },
+            startDate: sm.startDate,
+            endDate: sm.endDate,
+            classesRemaining: sm.classesRemaining,
+          },
+          create: {
+            user: { connect: { id: sm.userId } },
+            plan: { connect: { id: sm.planId } },
+            startDate: sm.startDate,
+            endDate: sm.endDate,
+            classesRemaining: sm.classesRemaining,
+          },
       });
   }
   console.log('Student Memberships seeded.');
