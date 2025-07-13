@@ -27,7 +27,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       where: { id: params.id },
       data: {
         ...data,
-        teacherIds: {
+        teachers: {
           set: data.teacherIds.map((id: number) => ({ id })),
         },
       },

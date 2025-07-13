@@ -16,7 +16,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    return NextResponse.json(user);
+    const { password, ...userWithoutPassword } = user;
+    return NextResponse.json(userWithoutPassword);
   } catch (error) {
     console.error(`Error fetching user ${params.id}:`, error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -30,7 +31,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       where: { id: parseInt(params.id, 10) },
       data,
     });
-    return NextResponse.json(updatedUser);
+    const { password, ...userWithoutPassword } = updatedUser;
+    return NextResponse.json(userWithoutPassword);
   } catch (error) {
     console.error(`Error updating user ${params.id}:`, error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
