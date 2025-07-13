@@ -78,7 +78,7 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
         title: plan.title,
         description: plan.description,
         features: plan.features.join('\n'),
-        isPopular: plan.isPopular,
+        isPopular: plan.isPopular ?? false,
         durationUnit: plan.durationUnit,
         durationValue: plan.durationValue,
         visibility: plan.visibility || 'public',
@@ -95,7 +95,8 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
         case 'course_pass':
             return { ...baseData, accessType: 'course_pass', price: plan.price };
         case 'custom_pack':
-            return { ...baseData, accessType: 'custom_pack', priceTiersJson: plan.priceTiersJson || [] };
+            const { price, ...restCommon } = baseData;
+            return { ...restCommon, accessType: 'custom_pack', priceTiersJson: plan.priceTiersJson || [] };
     }
 };
 
@@ -182,20 +183,31 @@ export default function AdminMembershipsPage() {
     
     const baseData = {
         id: editingPlan?.id || `plan-${Date.now()}`,
-        title: data.title, description: data.description,
+        title: data.title,
+        description: data.description,
         features: data.features.split('\n').filter(f => f.trim() !== ''),
-        isPopular: data.isPopular, durationUnit: data.durationUnit,
-        durationValue: data.durationValue, visibility: data.visibility,
+        isPopular: data.isPopular,
+        durationUnit: data.durationUnit,
+        durationValue: data.durationValue,
+        visibility: data.visibility,
         allowedClasses: data.allowedClasses || [],
     };
     
     switch(data.accessType) {
-        case 'unlimited': planToSave = { ...baseData, accessType: 'unlimited', price: data.price }; break;
-        case 'class_pack': planToSave = { ...baseData, accessType: 'class_pack', price: data.price, classCount: data.classCount }; break;
-        case 'trial_class': planToSave = { ...baseData, accessType: 'trial_class', price: data.price, classCount: data.classCount }; break;
-        case 'course_pass': planToSave = { ...baseData, accessType: 'course_pass', price: data.price }; break;
-        case 'custom_pack': 
-            planToSave = { ...baseData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson }; 
+        case 'unlimited':
+            planToSave = { ...baseData, accessType: 'unlimited', price: data.price };
+            break;
+        case 'class_pack':
+            planToSave = { ...baseData, accessType: 'class_pack', price: data.price, classCount: data.classCount };
+            break;
+        case 'trial_class':
+            planToSave = { ...baseData, accessType: 'trial_class', price: data.price, classCount: data.classCount };
+            break;
+        case 'course_pass':
+            planToSave = { ...baseData, accessType: 'course_pass', price: data.price };
+            break;
+        case 'custom_pack':
+            planToSave = { ...baseData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson };
             break;
     }
 
@@ -502,4 +514,3 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
-
