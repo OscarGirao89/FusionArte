@@ -145,7 +145,7 @@ export default function AdminUsersPage() {
             id: user.id,
             name: user.name,
             email: user.email,
-            role: user.role as z.infer<typeof userRolesEnum>,
+            role: user.role as User['role'],
             bio: user.bio,
             specialties: user.specialties?.join(', '),
             paymentDetails: user.paymentDetails,
@@ -175,30 +175,23 @@ export default function AdminUsersPage() {
           description: `El usuario "${data.name}" ha sido guardado (simulación).`,
         });
 
-        const dataToSave: Omit<User, 'id' | 'joined'> & { id?: number } = {
+        const dataToSave = {
             name: data.name,
             email: data.email,
             role: data.role,
             avatar: data.avatar || `https://placehold.co/100x100.png?text=${data.name.split(' ').map(n=>n[0]).join('')}`,
+            bio: data.bio,
+            specialties: data.specialties?.split(',').map(s => s.trim()) || [],
+            paymentDetails: data.paymentDetails,
+            isVisibleToStudents: data.isVisibleToStudents,
+            isPartner: data.isPartner
         };
 
-        if (data.role === 'Profesor' || data.role === 'Socio') {
-            dataToSave.bio = data.bio;
-            dataToSave.specialties = data.specialties?.split(',').map(s => s.trim());
-            dataToSave.paymentDetails = data.paymentDetails;
-            dataToSave.isVisibleToStudents = data.isVisibleToStudents;
-            dataToSave.isPartner = data.isPartner;
-        }
-
         if (editingUser) {
-            setUsers(users.map(u => u.id === editingUser.id ? { ...editingUser, ...dataToSave } as User : u));
+            setUsers(users.map(u => u.id === editingUser.id ? { ...editingUser, ...dataToSave } : u));
         } else {
             const newUser: User = {
                 id: Math.max(...users.map(u => u.id)) + 1,
-                name: dataToSave.name,
-                email: dataToSave.email,
-                role: dataToSave.role,
-                avatar: dataToSave.avatar!,
                 joined: new Date().toISOString().split('T')[0],
                 ...dataToSave
             };
@@ -521,3 +514,5 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+
+    
