@@ -78,7 +78,7 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
         title: plan.title,
         description: plan.description,
         features: plan.features.join('\n'),
-        isPopular: plan.isPopular ?? false,
+        isPopular: plan.isPopular,
         durationUnit: plan.durationUnit,
         durationValue: plan.durationValue,
         visibility: plan.visibility || 'public',
@@ -193,8 +193,10 @@ export default function AdminMembershipsPage() {
         case 'unlimited': planToSave = { ...baseData, accessType: 'unlimited', price: data.price }; break;
         case 'class_pack': planToSave = { ...baseData, accessType: 'class_pack', price: data.price, classCount: data.classCount }; break;
         case 'trial_class': planToSave = { ...baseData, accessType: 'trial_class', price: data.price, classCount: data.classCount }; break;
-        case 'course_pass': planToSave = { ...baseData, accessType: 'course_pass', price: data.price, allowedClasses: data.allowedClasses }; break;
-        case 'custom_pack': planToSave = { ...baseData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson }; break;
+        case 'course_pass': planToSave = { ...baseData, accessType: 'course_pass', price: data.price }; break;
+        case 'custom_pack': 
+            planToSave = { ...baseData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson }; 
+            break;
     }
 
     if (editingPlan) {
@@ -449,7 +451,7 @@ export default function AdminMembershipsPage() {
                         ))}
                       </div>
                       <Button type="button" size="sm" variant="outline" className="mt-4" onClick={() => append({ classCount: 8, price: 80 })}> <PlusCircle className="mr-2 h-4 w-4" /> Añadir Tramo </Button>
-                       {form.formState.errors.accessType === 'custom_pack' && form.formState.errors.priceTiersJson && (
+                       {accessType === 'custom_pack' && form.formState.errors.priceTiersJson && (
                           <FormMessage>{form.formState.errors.priceTiersJson.message || (form.formState.errors.priceTiersJson as any)?.root?.message}</FormMessage>
                         )}
                     </div>
@@ -500,3 +502,4 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
+
