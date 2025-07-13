@@ -145,7 +145,7 @@ export default function AdminUsersPage() {
             id: user.id,
             name: user.name,
             email: user.email,
-            role: user.role as User['role'],
+            role: user.role as UserFormValues['role'],
             bio: user.bio,
             specialties: user.specialties?.join(', '),
             paymentDetails: user.paymentDetails,
@@ -192,8 +192,8 @@ export default function AdminUsersPage() {
         } else {
             const newUser: User = {
                 id: Math.max(...users.map(u => u.id)) + 1,
+                ...dataToSave,
                 joined: new Date().toISOString().split('T')[0],
-                ...dataToSave
             };
             setUsers([...users, newUser]);
         }
@@ -514,5 +514,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-
-    
