@@ -126,12 +126,14 @@ export default function AdminMembershipsPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       accessType: 'unlimited', title: '', price: 0, description: '', features: '', isPopular: false,
-      durationUnit: 'months', durationValue: 1, visibility: 'public', allowedClasses: [],
+      durationUnit: 'months', durationValue: 1, allowedClasses: [],
+      visibility: 'public',
     },
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
+    // @ts-ignore
     name: "priceTiersJson"
   });
 
@@ -144,9 +146,16 @@ export default function AdminMembershipsPage() {
       form.reset(planToForm(plan));
     } else {
       form.reset({
-        accessType: 'unlimited', title: '', price: 0, description: '', features: '', isPopular: false,
-        durationUnit: 'months', durationValue: 1, classCount: 10, allowedClasses: [],
-        visibility: 'public', priceTiersJson: [{ classCount: 4, price: 40 }],
+        accessType: 'unlimited',
+        title: '',
+        description: '',
+        price: 0,
+        features: '',
+        isPopular: false,
+        durationUnit: 'months',
+        durationValue: 1,
+        allowedClasses: [],
+        visibility: 'public',
       });
     }
     setIsDialogOpen(true);
@@ -175,7 +184,7 @@ export default function AdminMembershipsPage() {
         case 'class_pack': planToSave = { ...commonData, accessType: 'class_pack', classCount: data.classCount }; break;
         case 'trial_class': planToSave = { ...commonData, accessType: 'trial_class', classCount: data.classCount }; break;
         case 'course_pass': planToSave = { ...commonData, accessType: 'course_pass' }; break;
-        case 'custom_pack': planToSave = { ...commonData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson }; break;
+        case 'custom_pack': planToSave = { ...commonData, price: 0, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson }; break;
     }
 
     if (editingPlan) {
@@ -430,7 +439,7 @@ export default function AdminMembershipsPage() {
                         ))}
                       </div>
                       <Button type="button" size="sm" variant="outline" className="mt-4" onClick={() => append({ classCount: 8, price: 80 })}> <PlusCircle className="mr-2 h-4 w-4" /> Añadir Tramo </Button>
-                       <FormMessage>{form.formState.errors.priceTiersJson?.message || form.formState.errors.priceTiersJson?.root?.message}</FormMessage>
+                       <FormMessage>{form.formState.errors.priceTiersJson?.message || (form.formState.errors.priceTiersJson as any)?.root?.message}</FormMessage>
                     </div>
                 </div>
               )}
@@ -479,3 +488,4 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
+
