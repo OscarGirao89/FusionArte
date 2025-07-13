@@ -211,7 +211,7 @@ export default function AdminSettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <FormField control={form.control} name="registrationEmailMessage" render={({ field }) => (
-                        <FormItem><FormLabel>Mensaje de Bienvenida (Registro)</FormLabel><FormControl><Textarea {...field} rows={5} /></FormControl><FormDescription>Este mensaje se enviará a los nuevos usuarios al registrarse. Usa `{{name}}` para insertar el nombre del usuario.</FormDescription><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Mensaje de Bienvenida (Registro)</FormLabel><FormControl><Textarea {...field} rows={5} /></FormControl><FormDescription>Este mensaje se enviará a los nuevos usuarios al registrarse. Usa {'{{name}}'} para insertar el nombre del usuario.</FormDescription><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="membershipEmailMessage" render={({ field }) => (
                         <FormItem><FormLabel>Mensaje de Agradecimiento (Membresía)</FormLabel><FormControl><Textarea {...field} rows={5} /></FormControl><FormDescription>Este mensaje se incluirá en el email de confirmación de compra de membresía.</FormDescription><FormMessage /></FormItem>
@@ -397,3 +397,5 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
+
+    
