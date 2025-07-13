@@ -38,6 +38,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700&family=Belleza&display=swap" rel="stylesheet" />
         <title>FusionArte</title>
         <meta name="description" content="Sistema de gestión integral para la escuela de baile FusionArte." />
+        <meta name="theme-color" content="#6d28d9" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body className="font-body antialiased">
         <SettingsProvider>

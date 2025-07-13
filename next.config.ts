@@ -5,6 +5,10 @@ import { loadEnvConfig } from '@next/env';
 // Load environment variables from .env files
 loadEnvConfig(process.cwd());
 
+const withPWA = require("@ducanh2912/next-pwa").default({
+  dest: "public",
+});
+
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
@@ -19,4 +23,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);
