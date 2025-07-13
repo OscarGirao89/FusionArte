@@ -159,8 +159,8 @@ export default function AdminMembershipsPage() {
       form.reset({
         accessType: 'unlimited',
         title: '',
-        description: '',
         price: 0,
+        description: '',
         features: '',
         isPopular: false,
         durationUnit: 'months',
@@ -180,7 +180,7 @@ export default function AdminMembershipsPage() {
     
     let planToSave: MembershipPlan;
     
-    const commonData = {
+    const baseData = {
         id: editingPlan?.id || `plan-${Date.now()}`,
         title: data.title, description: data.description,
         features: data.features.split('\n').filter(f => f.trim() !== ''),
@@ -190,13 +190,11 @@ export default function AdminMembershipsPage() {
     };
     
     switch(data.accessType) {
-        case 'unlimited': planToSave = { ...commonData, accessType: 'unlimited', price: data.price }; break;
-        case 'class_pack': planToSave = { ...commonData, accessType: 'class_pack', price: data.price, classCount: data.classCount }; break;
-        case 'trial_class': planToSave = { ...commonData, accessType: 'trial_class', price: data.price, classCount: data.classCount }; break;
-        case 'course_pass': planToSave = { ...commonData, accessType: 'course_pass', price: data.price, allowedClasses: data.allowedClasses }; break;
-        case 'custom_pack': 
-            planToSave = { ...commonData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson }; 
-            break;
+        case 'unlimited': planToSave = { ...baseData, accessType: 'unlimited', price: data.price }; break;
+        case 'class_pack': planToSave = { ...baseData, accessType: 'class_pack', price: data.price, classCount: data.classCount }; break;
+        case 'trial_class': planToSave = { ...baseData, accessType: 'trial_class', price: data.price, classCount: data.classCount }; break;
+        case 'course_pass': planToSave = { ...baseData, accessType: 'course_pass', price: data.price, allowedClasses: data.allowedClasses }; break;
+        case 'custom_pack': planToSave = { ...baseData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson }; break;
     }
 
     if (editingPlan) {
@@ -451,7 +449,9 @@ export default function AdminMembershipsPage() {
                         ))}
                       </div>
                       <Button type="button" size="sm" variant="outline" className="mt-4" onClick={() => append({ classCount: 8, price: 80 })}> <PlusCircle className="mr-2 h-4 w-4" /> Añadir Tramo </Button>
-                       <FormMessage>{form.formState.errors.priceTiersJson?.message || (form.formState.errors.priceTiersJson as any)?.root?.message}</FormMessage>
+                       {form.formState.errors.accessType === 'custom_pack' && form.formState.errors.priceTiersJson && (
+                          <FormMessage>{form.formState.errors.priceTiersJson.message || (form.formState.errors.priceTiersJson as any)?.root?.message}</FormMessage>
+                        )}
                     </div>
                 </div>
               )}
@@ -500,5 +500,3 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
-
-    
