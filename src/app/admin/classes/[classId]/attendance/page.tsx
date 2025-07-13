@@ -1,3 +1,4 @@
+
 'use client';
 
 import { AttendanceSheet } from '@/components/shared/attendance-sheet';
@@ -17,5 +18,5 @@ export default function AdminClassAttendancePage() {
     return <div>Cargando...</div>;
   }
 
-  return <AttendanceSheet classId={classId} date={date} userRole="admin" />;
+  return <AttendanceSheet classId={classId} date={date} userRole="Admin" />;
 }
