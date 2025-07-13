@@ -1,4 +1,3 @@
-
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -12,110 +11,140 @@ datasource db {
 }
 
 model User {
-  id                  Int                  @id @default(autoincrement())
-  name                String
-  email               String               @unique
-  password            String
-  role                String
-  joined              DateTime             @default(now())
-  avatar              String
-  dob                 DateTime?            @db.Date
-  mobile              String?
+  id                Int      @id @default(autoincrement())
+  name              String
+  email             String   @unique
+  password          String
+  role              String   @default("Estudiante")
+  joined            DateTime @default(now())
+  avatar            String
+  dob               DateTime? @db.Date
+  mobile            String?
   isVisibleToStudents Boolean?
-  isPartner           Boolean?
-  bio                 String?
-  specialties         String[]
-  paymentDetailsJson  Json?
+  isPartner         Boolean?
 
-  taughtClasses      DanceClass[]         @relation("ClassTeachers")
-  enrolledClasses    DanceClass[]         @relation("EnrolledStudents")
-  memberships        StudentMembership[]
-  payments           StudentPayment[]
-  assignedTasks      TaskNote[]           @relation("TaskAssignees")
-  attendanceHistory  AttendanceRecord[]
+  // Student-specific fields
+  memberships       StudentMembership[]
+  payments          StudentPayment[]
+  enrolledClasses   DanceClass[]        @relation("EnrolledStudents")
+  attendanceHistory AttendanceRecord[]
+
+  // Teacher-specific fields
+  taughtClasses     DanceClass[]        @relation("ClassTeachers")
+  paymentDetailsJson Json? @map("paymentDetails")
+
+  // Management fields
+  assignedTasks     TaskNote[]          @relation("TaskAssignees")
+
+  @@map("User")
 }
 
-model DanceClass {
-  id                     String    @id @default(cuid())
-  name                   String
-  type                   String // 'recurring', 'one-time', 'workshop', 'rental'
-  styleId                String
-  levelId                String
-  day                    String?
-  time                   String
-  room                   String
-  duration               String
-  capacity               Int
-  cancellationPolicyHours Int?
-  date                   DateTime? @db.Date
-  status                 String    @default("scheduled")
-  isCancelledAndHidden   Boolean?
-  isVisibleToStudents    Boolean?
-  rentalContact          String?
-  rentalPrice            Float?
-  workshopPaymentType    String?
-  workshopPaymentValue   Float?
 
+model DanceClass {
+  id                      String   @id @default(cuid())
+  name                    String
+  type                    String
+  styleId                 String
+  levelId                 String
+  day                     String?
+  time                    String
+  room                    String
+  duration                String
+  capacity                Int
+  cancellationPolicyHours Int?
+  date                    DateTime? @db.Date
+  status                  String   @default("scheduled")
+  isCancelledAndHidden    Boolean?
+  isVisibleToStudents     Boolean?
+  rentalContact           String?
+  rentalPrice             Float?
+  workshopPaymentType     String?
+  workshopPaymentValue    Float?
+  
   style             DanceStyle @relation(fields: [styleId], references: [id])
   level             DanceLevel @relation(fields: [levelId], references: [id])
   teachers          User[]     @relation("ClassTeachers")
   enrolledStudents  User[]     @relation("EnrolledStudents")
-  coupons           Coupon[]   @relation("CouponClasses")
-  attendance        AttendanceRecord[]
+  
+  @@map("DanceClass")
 }
 
 model DanceStyle {
-  id          String       @id @default(cuid())
+  id          String       @id
   name        String       @unique
   description String
   classes     DanceClass[]
+
+  @@map("DanceStyle")
 }
 
 model DanceLevel {
-  id          String       @id @default(cuid())
+  id          String       @id
   name        String       @unique
   description String
   classes     DanceClass[]
+
+  @@map("DanceLevel")
 }
 
-model MembershipPlan {
-  id               String              @id @default(cuid())
-  title            String
-  price            Float
-  description      String
-  features         String[]
-  isPopular        Boolean?
-  durationUnit     String
-  durationValue    Int
-  accessType       String
-  classCount       Int?
-  priceTiersJson   Json?
-  visibility       String              @default("public")
-  allowedClasses   String[]
-  
-  studentMemberships StudentMembership[]
-  studentPayments    StudentPayment[]
-  coupons            Coupon[]            @relation("CouponMemberships")
-}
 
 model StudentMembership {
   userId           Int
   planId           String
-  startDate        DateTime
-  endDate          DateTime
+  startDate        DateTime @db.Date
+  endDate          DateTime @db.Date
   classesRemaining Int?
 
-  user User           @relation(fields: [userId], references: [id])
-  plan MembershipPlan @relation(fields: [planId], references: [id])
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan MembershipPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@id([userId, planId])
+  @@map("StudentMembership")
+}
+
+
+model MembershipPlan {
+  id            String    @id
+  title         String
+  description   String
+  features      String[]
+  isPopular     Boolean?
+  durationUnit  String
+  durationValue Int
+  visibility    String
+  accessType    String
+  price         Float?
+  classCount    Int?
+  priceTiersJson Json? @map("priceTiers")
+
+  allowedClasses      String[]
+  studentMemberships StudentMembership[]
+  payments           StudentPayment[]
+  applicableCoupons  Coupon[]          @relation("CouponApplicablePlans")
+
+  @@map("MembershipPlan")
+}
+
+model Coupon {
+  id             String   @id
+  code           String   @unique
+  discountType   String
+  discountValue  Float
+  expirationDate DateTime? @db.Date
+  usageLimit     Int?
+  status         String
+  applicableTo   String
+  
+  specificPlans  MembershipPlan[] @relation("CouponApplicablePlans")
+
+  @@map("Coupon")
 }
 
 model StudentPayment {
-  id              String   @id @default(cuid())
+  id              String   @id
   studentId       Int
   planId          String
-  invoiceDate     DateTime
+  invoiceDate     DateTime @db.Date
   totalAmount     Float
   status          String
   amountPaid      Float
@@ -124,39 +153,38 @@ model StudentPayment {
   lastUpdatedBy   String?
   lastUpdatedDate DateTime?
 
-  student User           @relation(fields: [studentId], references: [id])
-  plan    MembershipPlan @relation(fields: [planId], references: [id])
+  student User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  plan    MembershipPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("StudentPayment")
 }
 
-model Coupon {
-  id              String   @id @default(cuid())
-  code            String   @unique
-  discountType    String
-  discountValue   Float
-  expirationDate  DateTime?
-  usageLimit      Int?
-  status          String
-  applicableTo    String
-  
-  specificPlans   MembershipPlan[] @relation("CouponMemberships")
-  specificClasses DanceClass[]     @relation("CouponClasses")
-}
 
 model Transaction {
-  id          String   @id @default(cuid())
+  id          String   @id
   type        String
   category    String
   description String
   amount      Float
-  date        DateTime
+  date        DateTime @db.Date
   receiptUrl  String?
+
+  @@map("Transaction")
 }
 
-model Role {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  permissions String[]
+
+model AttendanceRecord {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  classId   String
+  date      DateTime @db.Date
+  status    String
+
+  student User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("AttendanceRecord")
 }
+
 
 model TaskNote {
   id             String    @id @default(cuid())
@@ -166,20 +194,20 @@ model TaskNote {
   category       String
   priority       String?
   createdAt      DateTime  @default(now())
-  dueDate        DateTime?
+  dueDate        DateTime? @db.Date
   alertDateTime  DateTime?
-  alertDismissed Boolean   @default(false)
-  
+  alertDismissed Boolean?
+
   assignees User[] @relation("TaskAssignees")
+
+  @@map("TaskNote")
 }
 
-model AttendanceRecord {
-  id        Int      @id @default(autoincrement())
-  classId   String
-  date      DateTime
-  status    String // 'presente' | 'ausente'
-  studentId Int
 
-  student   User       @relation(fields: [studentId], references: [id])
-  danceClass DanceClass @relation(fields: [classId], references: [id])
+model Role {
+  id          String   @id
+  name        String   @unique
+  permissions String[]
+
+  @@map("Role")
 }
