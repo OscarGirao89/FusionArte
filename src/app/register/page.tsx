@@ -89,6 +89,7 @@ export default function RegisterPage() {
             `;
             
             await sendEmail({
+              from: `FusionArte <no-reply@fusionarte.com>`,
               to: data.email,
               subject: `¡Bienvenido/a a ${settings.academyName}!`,
               html: emailHtml,

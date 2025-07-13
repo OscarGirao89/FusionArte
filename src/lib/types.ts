@@ -29,7 +29,6 @@ export type Coupon = {
 type MembershipPlanBase = {
   id: string;
   title: string;
-  price: number;
   description: string;
   features: string[];
   isPopular?: boolean;
@@ -41,20 +40,24 @@ type MembershipPlanBase = {
 
 type UnlimitedPlan = MembershipPlanBase & {
   accessType: 'unlimited';
+  price: number;
 };
 
 type ClassPackPlan = MembershipPlanBase & {
   accessType: 'class_pack';
+  price: number;
   classCount: number;
 };
 
 type TrialClassPlan = MembershipPlanBase & {
   accessType: 'trial_class';
+  price: number;
   classCount: number;
 };
 
 type CoursePassPlan = MembershipPlanBase & {
   accessType: 'course_pass';
+  price: number;
 };
 
 export type PriceTier = {
@@ -112,10 +115,13 @@ export type AttendanceRecord = {
   status: 'presente' | 'ausente';
 };
 
-export type PaymentDetails =
-  | { type: 'per_class'; payRate: number; cancelledClassPay: number }
-  | { type: 'monthly'; monthlySalary: number; cancelledClassPay: number }
-  | { type: 'percentage'; payRate: number; cancelledClassPay: number };
+export const paymentDetailsSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("per_class"), payRate: z.number(), cancelledClassPay: z.number() }),
+  z.object({ type: z.literal("monthly"), monthlySalary: z.number(), cancelledClassPay: z.number() }),
+  z.object({ type: z.literal("percentage"), payRate: z.number(), cancelledClassPay: z.number() })
+]);
+
+export type PaymentDetails = z.infer<typeof paymentDetailsSchema>;
 
 
 export type User = {
@@ -253,9 +259,10 @@ export type AcademySettings = {
 };
 
 export const SendEmailInputSchema = z.object({
+  from: z.string().email().describe("The sender's email address."),
   to: z.string().email().describe("The recipient's email address."),
   subject: z.string().describe("The subject of the email."),
-  body: z.string().describe("The HTML content of the email."),
+  html: z.string().describe("The HTML content of the email."),
   bcc: z.string().email().optional().describe("The BCC recipient's email address."),
 });
 export type SendEmailInput = z.infer<typeof SendEmailInputSchema>;
