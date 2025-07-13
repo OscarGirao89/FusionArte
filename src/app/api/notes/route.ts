@@ -1,35 +1,27 @@
+
 'use server';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 
-// GET /api/notes
 export async function GET() {
   try {
     const tasks = await prisma.taskNote.findMany({
-      where: {
-        alertDateTime: {
-          not: null, // Only fetch tasks that have an alert set
-        },
-        alertDismissed: false, // Only fetch non-dismissed alerts
-      },
       include: {
         assignees: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
     return NextResponse.json(tasks);
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error('Prisma Error:', error.message);
-      return NextResponse.json({ error: 'Database error while fetching tasks.', details: error.message }, { status: 500 });
-    }
-    console.error('Unknown Error:', error);
+    console.error('Error fetching tasks:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-// POST /api/notes
 const taskNoteCreateSchema = z.object({
   title: z.string().min(1, "El título es obligatorio."),
   description: z.string().optional(),
@@ -69,3 +61,4 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+

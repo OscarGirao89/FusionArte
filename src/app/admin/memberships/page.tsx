@@ -173,11 +173,6 @@ export default function AdminMembershipsPage() {
   };
 
   const onSubmit = (data: MembershipFormValues) => {
-    toast({
-      title: `Plan ${editingPlan ? 'actualizado' : 'creado'} con éxito`,
-      description: `El plan "${data.title}" ha sido guardado.`,
-    });
-    
     let planToSave: MembershipPlan;
     
     const baseData = {
@@ -215,6 +210,12 @@ export default function AdminMembershipsPage() {
     } else {
       setPlans([...plans, planToSave]);
     }
+
+    toast({
+      title: `Plan ${editingPlan ? 'actualizado' : 'creado'} con éxito`,
+      description: `El plan "${data.title}" ha sido guardado.`,
+    });
+    
     setIsDialogOpen(false);
     setEditingPlan(null);
   };
@@ -463,11 +464,7 @@ export default function AdminMembershipsPage() {
                       </div>
                       <Button type="button" size="sm" variant="outline" className="mt-4" onClick={() => append({ classCount: 8, price: 80 })}> <PlusCircle className="mr-2 h-4 w-4" /> Añadir Tramo </Button>
                        {accessType === 'custom_pack' && (
-                          <FormField
-                            control={form.control}
-                            name="priceTiersJson"
-                            render={() => <FormMessage />}
-                          />
+                          <FormMessage>{(form.formState.errors.priceTiersJson as any)?.message || (form.formState.errors.priceTiersJson as any)?.root?.message}</FormMessage>
                         )}
                     </div>
                 </div>
@@ -517,3 +514,4 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
+

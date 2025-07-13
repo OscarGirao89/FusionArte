@@ -42,7 +42,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfilePage() {
-    const { userRole, currentUser, updateCurrentUser } = useAuth();
+    const { currentUser, updateCurrentUser } = useAuth();
     const { settings } = useSettings();
     const { toast } = useToast();
     const [isEditing, setIsEditing] = useState(false);
@@ -54,6 +54,7 @@ export default function ProfilePage() {
         danceClasses: DanceClass[];
         membershipPlans: MembershipPlan[];
         studentPayments: StudentPayment[];
+        studentMemberships: StudentMembership[];
     } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -65,14 +66,16 @@ export default function ProfilePage() {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [usersRes, classesRes, plansRes, paymentsRes] = await Promise.all([
-                    fetch('/api/users'), fetch('/api/classes'), fetch('/api/memberships'), fetch('/api/payments')
+                const [usersRes, classesRes, plansRes, paymentsRes, membershipsRes] = await Promise.all([
+                    fetch('/api/users'), fetch('/api/classes'), fetch('/api/memberships'), 
+                    fetch('/api/payments'), fetch('/api/student-memberships')
                 ]);
                 const users = await usersRes.json();
                 const danceClasses = await classesRes.json();
                 const membershipPlans = await plansRes.json();
                 const studentPayments = await paymentsRes.json();
-                setAllData({ users, danceClasses, membershipPlans, studentPayments });
+                const studentMemberships = await membershipsRes.json();
+                setAllData({ users, danceClasses, membershipPlans, studentPayments, studentMemberships });
             } catch (error) {
                 toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
             } finally {
@@ -91,9 +94,8 @@ export default function ProfilePage() {
       }
     }, [currentUser, form]);
     
-    const studentMemberships = []; // This should come from a dedicated API endpoint if needed
     
-    const membership = currentUser ? studentMemberships.find(m => m.userId === currentUser.id) : null;
+    const membership = currentUser && allData ? allData.studentMemberships.find(m => m.userId === currentUser.id) : null;
     const plan = membership && allData ? allData.membershipPlans.find(p => p.id === membership.planId) : null;
     const payment = currentUser && allData ? allData.studentPayments.find(p => p.studentId === currentUser.id && p.planId === membership?.planId) : null;
     const isMembershipActive = membership ? isBefore(new Date(), parseISO(membership.endDate)) : false;
@@ -268,3 +270,4 @@ export default function ProfilePage() {
             </div>
         )
 }
+
