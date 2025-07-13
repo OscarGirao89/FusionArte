@@ -248,10 +248,9 @@ export default function AdminFinancesPage() {
       <div className="flex items-center justify-between mb-8 flex-wrap gap-2">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Panel de Finanzas</h1>
       </div>
-        {(userRole === 'admin') && <AdminAndSocioView />}
-        {userRole === 'socio' && <PartnerView />}
-        {userRole === 'administrativo' && <AdministrativeView />}
+        {(userRole === 'Admin') && <AdminAndSocioView />}
+        {userRole === 'Socio' && <PartnerView />}
+        {userRole === 'Administrativo' && <AdministrativeView />}
     </div>
   );
 }
-
