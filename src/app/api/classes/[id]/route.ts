@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-type RouteParams = {
-  params: {
-    id: string;
-  };
-};
-
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const danceClass = await prisma.danceClass.findUnique({
       where: { id: params.id },
@@ -26,7 +23,10 @@ export async function GET(request: Request, { params }: RouteParams) {
   }
 }
 
-export async function PUT(request: Request, { params }: RouteParams) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const data = await request.json();
     const { teacherIds, ...classData } = data;
@@ -47,7 +47,10 @@ export async function PUT(request: Request, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     await prisma.danceClass.delete({
       where: { id: params.id },
