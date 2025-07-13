@@ -198,6 +198,7 @@ export default function AdminUsersPage() {
             const newUser: User = {
                 id: Math.max(...users.map(u => u.id)) + 1,
                 ...dataToSave,
+                avatar: dataToSave.avatar, // Ensure avatar is set on creation
                 joined: new Date().toISOString().split('T')[0],
             };
             setUsers([...users, newUser]);

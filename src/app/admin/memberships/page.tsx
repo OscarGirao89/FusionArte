@@ -125,8 +125,15 @@ export default function AdminMembershipsPage() {
   const form = useForm<MembershipFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      accessType: 'unlimited', title: '', price: 0, description: '', features: '', isPopular: false,
-      durationUnit: 'months', durationValue: 1, allowedClasses: [],
+      accessType: 'unlimited',
+      title: '',
+      price: 0,
+      description: '',
+      features: '',
+      isPopular: false,
+      durationUnit: 'months',
+      durationValue: 1,
+      allowedClasses: [],
       visibility: 'public',
     },
   });
@@ -169,6 +176,7 @@ export default function AdminMembershipsPage() {
     });
     
     let planToSave: MembershipPlan;
+    
     const commonData = {
         id: editingPlan?.id || `plan-${Date.now()}`,
         title: data.title, description: data.description,
@@ -176,15 +184,17 @@ export default function AdminMembershipsPage() {
         isPopular: data.isPopular, durationUnit: data.durationUnit,
         durationValue: data.durationValue, visibility: data.visibility,
         allowedClasses: data.allowedClasses || [],
-        price: 'price' in data ? data.price : 0,
     };
-
+    
     switch(data.accessType) {
-        case 'unlimited': planToSave = { ...commonData, accessType: 'unlimited' }; break;
-        case 'class_pack': planToSave = { ...commonData, accessType: 'class_pack', classCount: data.classCount }; break;
-        case 'trial_class': planToSave = { ...commonData, accessType: 'trial_class', classCount: data.classCount }; break;
-        case 'course_pass': planToSave = { ...commonData, accessType: 'course_pass' }; break;
-        case 'custom_pack': planToSave = { ...commonData, price: 0, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson }; break;
+        case 'unlimited': planToSave = { ...commonData, accessType: 'unlimited', price: data.price }; break;
+        case 'class_pack': planToSave = { ...commonData, accessType: 'class_pack', price: data.price, classCount: data.classCount }; break;
+        case 'trial_class': planToSave = { ...commonData, accessType: 'trial_class', price: data.price, classCount: data.classCount }; break;
+        case 'course_pass': planToSave = { ...commonData, accessType: 'course_pass', price: data.price }; break;
+        case 'custom_pack': 
+            const { price, ...restCommon } = commonData; // Exclude price for custom_pack
+            planToSave = { ...restCommon, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson }; 
+            break;
     }
 
     if (editingPlan) {
@@ -488,4 +498,3 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
-
