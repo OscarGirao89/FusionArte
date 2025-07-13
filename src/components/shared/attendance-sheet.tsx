@@ -102,7 +102,7 @@ export function AttendanceSheet({ classId, date, userRole }: AttendanceSheetProp
     router.back();
   };
   
-  const backUrl = userRole === 'admin' ? '/admin/classes' : '/my-classes';
+  const backUrl = userRole === 'Admin' ? '/admin/classes' : '/my-classes';
 
   return (
     <div className="p-4 md:p-8">
