@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+type RouteParams = {
+  params: {
+    id: string;
+  };
+};
+
+export async function GET(request: Request, { params }: RouteParams) {
   try {
     const danceClass = await prisma.danceClass.findUnique({
       where: { id: params.id },
@@ -20,16 +26,18 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: RouteParams) {
   try {
     const data = await request.json();
+    const { teacherIds, ...classData } = data;
+
     const updatedClass = await prisma.danceClass.update({
       where: { id: params.id },
       data: {
-        ...data,
-        teachers: {
-          set: data.teacherIds.map((id: number) => ({ id })),
-        },
+        ...classData,
+        teachers: teacherIds ? {
+          set: teacherIds.map((id: number) => ({ id })),
+        } : undefined,
       },
     });
     return NextResponse.json(updatedClass);
@@ -39,7 +47,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     await prisma.danceClass.delete({
       where: { id: params.id },
