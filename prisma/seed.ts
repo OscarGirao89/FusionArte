@@ -26,7 +26,7 @@ async function main() {
       { id: 'socio', name: 'Socio', permissions: ['view_dashboard', 'manage_users', 'manage_students', 'manage_classes', 'manage_memberships', 'manage_finances', 'manage_settings', 'view_teacher_area', 'take_attendance'] },
       { id: 'profesor', name: 'Profesor', permissions: ['view_teacher_area', 'take_attendance'] },
       { id: 'administrativo', name: 'Administrativo', permissions: ['view_dashboard', 'manage_students', 'manage_classes'] },
-      { id: 'student', name: 'Student', permissions: [] },
+      { id: 'estudiante', name: 'Estudiante', permissions: [] },
   ];
   for (const role of rolesData) {
       await prisma.role.upsert({
@@ -45,7 +45,7 @@ async function main() {
     { name: 'Socio User', email: 'socio@fusionarte.com', roleName: 'Socio' },
     { name: 'Profesor User', email: 'profesor@fusionarte.com', roleName: 'Profesor' },
     { name: 'Administrativo User', email: 'administrativo@fusionarte.com', roleName: 'Administrativo' },
-    { name: 'Student User', email: 'estudiante@fusionarte.com', roleName: 'Student' },
+    { name: 'Estudiante User', email: 'estudiante@fusionarte.com', roleName: 'Estudiante' },
   ];
 
   for (const userData of usersToCreate) {

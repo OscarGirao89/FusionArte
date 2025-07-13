@@ -191,8 +191,8 @@ export default function AdminUsersPage() {
             setUsers(users.map(u => u.id === editingUser.id ? { ...editingUser, ...dataToSave } : u));
         } else {
             const newUser: User = {
-                id: Math.max(...users.map(u => u.id)) + 1,
                 ...dataToSave,
+                id: Math.max(...users.map(u => u.id)) + 1,
                 joined: new Date().toISOString().split('T')[0],
             };
             setUsers([...users, newUser]);
