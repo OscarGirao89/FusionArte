@@ -1,5 +1,5 @@
 
-import { loadEnvConfig } from '@next/env';
+const { loadEnvConfig } = require('@next/env');
 
 // Load environment variables from .env files
 loadEnvConfig(process.cwd());
@@ -19,4 +19,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
