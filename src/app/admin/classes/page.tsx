@@ -223,23 +223,28 @@ export default function AdminClassesPage() {
         return;
     }
     
-    let finalData: Omit<DanceClass, 'id'> & { id?: string } = {
+    const finalData: Omit<DanceClass, 'id'> & { id?: string } = {
         status: 'scheduled',
         styleId: '',
         levelId: '',
         ...data,
         day: data.day || '',
         date: data.date ? data.date.toISOString() : undefined,
+        capacity: data.capacity || 0,
     };
 
     if (data.type === 'rental') {
-        finalData = {
-            ...finalData, name: data.name, rentalContact: data.rentalContact, teacherIds: [], styleId: 'practica',
-            levelId: 'todos', capacity: 0,
-        }
+        finalData.name = data.name;
+        finalData.rentalContact = data.rentalContact;
+        finalData.teacherIds = [];
+        finalData.styleId = 'practica';
+        finalData.levelId = 'todos';
+        finalData.capacity = 0;
     } else {
-        finalData.teacherIds = data.teacherIds!; finalData.styleId = data.styleId!;
-        finalData.levelId = data.levelId!; finalData.capacity = data.capacity!;
+        finalData.teacherIds = data.teacherIds!;
+        finalData.styleId = data.styleId!;
+        finalData.levelId = data.levelId!;
+        finalData.capacity = data.capacity!;
     }
     
     const url = editingClass ? `/api/classes/${editingClass.id}` : '/api/classes';
