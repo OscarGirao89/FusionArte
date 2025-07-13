@@ -169,7 +169,6 @@ export default function AdminMembershipsPage() {
   };
 
   const onSubmit = (data: MembershipFormValues) => {
-    // In a real app, this would be an API call
     toast({
       title: `Plan ${editingPlan ? 'actualizado' : 'creado'} con éxito`,
       description: `El plan "${data.title}" ha sido guardado.`,
@@ -177,7 +176,7 @@ export default function AdminMembershipsPage() {
     
     let planToSave: MembershipPlan;
     
-    const commonData = {
+    const baseData = {
         id: editingPlan?.id || `plan-${Date.now()}`,
         title: data.title, description: data.description,
         features: data.features.split('\n').filter(f => f.trim() !== ''),
@@ -187,12 +186,12 @@ export default function AdminMembershipsPage() {
     };
     
     switch(data.accessType) {
-        case 'unlimited': planToSave = { ...commonData, accessType: 'unlimited', price: data.price }; break;
-        case 'class_pack': planToSave = { ...commonData, accessType: 'class_pack', price: data.price, classCount: data.classCount }; break;
-        case 'trial_class': planToSave = { ...commonData, accessType: 'trial_class', price: data.price, classCount: data.classCount }; break;
-        case 'course_pass': planToSave = { ...commonData, accessType: 'course_pass', price: data.price }; break;
+        case 'unlimited': planToSave = { ...baseData, accessType: 'unlimited', price: data.price }; break;
+        case 'class_pack': planToSave = { ...baseData, accessType: 'class_pack', price: data.price, classCount: data.classCount }; break;
+        case 'trial_class': planToSave = { ...baseData, accessType: 'trial_class', price: data.price, classCount: data.classCount }; break;
+        case 'course_pass': planToSave = { ...baseData, accessType: 'course_pass', price: data.price }; break;
         case 'custom_pack': 
-            const { price, ...restCommon } = commonData; // Exclude price for custom_pack
+            const { price, ...restCommon } = baseData; // Exclude price for custom_pack
             planToSave = { ...restCommon, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson }; 
             break;
     }
