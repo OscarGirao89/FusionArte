@@ -31,7 +31,6 @@ const baseSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, "El título es obligatorio."),
   description: z.string().min(1, "La descripción es obligatoria."),
-  price: z.coerce.number().min(0, "El precio debe ser un número no negativo."),
   features: z.string().min(10, "Añade al menos una característica."),
   isPopular: z.boolean().default(false),
   durationUnit: z.enum(['days', 'weeks', 'months'], { required_error: "Debes seleccionar una unidad." }),
@@ -41,17 +40,23 @@ const baseSchema = z.object({
 });
 
 const formSchema = z.discriminatedUnion("accessType", [
-  z.object({ accessType: z.literal("unlimited") }).merge(baseSchema),
+  z.object({ 
+    accessType: z.literal("unlimited"),
+    price: z.coerce.number().min(0, "El precio debe ser un número no negativo."),
+  }).merge(baseSchema),
   z.object({
     accessType: z.literal("class_pack"),
+    price: z.coerce.number().min(0, "El precio debe ser un número no negativo."),
     classCount: z.coerce.number().int().min(1, "El número de clases debe ser al menos 1."),
   }).merge(baseSchema),
   z.object({
     accessType: z.literal("trial_class"),
+    price: z.coerce.number().min(0, "El precio debe ser un número no negativo."),
     classCount: z.coerce.number().int().min(1, "El número de clases debe ser al menos 1.").default(1),
   }).merge(baseSchema),
   z.object({
     accessType: z.literal("course_pass"),
+    price: z.coerce.number().min(0, "El precio debe ser un número no negativo."),
     allowedClasses: z.array(z.string()).refine((value) => value.length > 0, {
         message: "Debes seleccionar al menos una clase.",
     }),
@@ -62,7 +67,7 @@ const formSchema = z.discriminatedUnion("accessType", [
       classCount: z.coerce.number().int().min(1, 'Debe ser al menos 1'),
       price: z.coerce.number().min(0, 'Debe ser positivo')
     })).min(1, "Debes añadir al menos un tramo de precios."),
-  }).merge(baseSchema.omit({ price: true }))
+  }).merge(baseSchema)
 ]);
 
 type MembershipFormValues = z.infer<typeof formSchema>;
@@ -140,7 +145,6 @@ export default function AdminMembershipsPage() {
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    // @ts-ignore
     name: "priceTiersJson"
   });
 
@@ -176,7 +180,7 @@ export default function AdminMembershipsPage() {
     
     let planToSave: MembershipPlan;
     
-    const baseData = {
+    const commonData = {
         id: editingPlan?.id || `plan-${Date.now()}`,
         title: data.title, description: data.description,
         features: data.features.split('\n').filter(f => f.trim() !== ''),
@@ -186,13 +190,12 @@ export default function AdminMembershipsPage() {
     };
     
     switch(data.accessType) {
-        case 'unlimited': planToSave = { ...baseData, accessType: 'unlimited', price: data.price }; break;
-        case 'class_pack': planToSave = { ...baseData, accessType: 'class_pack', price: data.price, classCount: data.classCount }; break;
-        case 'trial_class': planToSave = { ...baseData, accessType: 'trial_class', price: data.price, classCount: data.classCount }; break;
-        case 'course_pass': planToSave = { ...baseData, accessType: 'course_pass', price: data.price }; break;
+        case 'unlimited': planToSave = { ...commonData, accessType: 'unlimited', price: data.price }; break;
+        case 'class_pack': planToSave = { ...commonData, accessType: 'class_pack', price: data.price, classCount: data.classCount }; break;
+        case 'trial_class': planToSave = { ...commonData, accessType: 'trial_class', price: data.price, classCount: data.classCount }; break;
+        case 'course_pass': planToSave = { ...commonData, accessType: 'course_pass', price: data.price, allowedClasses: data.allowedClasses }; break;
         case 'custom_pack': 
-            const { price, ...restCommon } = baseData; // Exclude price for custom_pack
-            planToSave = { ...restCommon, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson }; 
+            planToSave = { ...commonData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson }; 
             break;
     }
 
@@ -497,3 +500,5 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
+
+    
