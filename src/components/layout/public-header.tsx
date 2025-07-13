@@ -9,6 +9,7 @@ import { Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSettings } from '@/context/settings-context';
 import Image from 'next/image';
+import { useAuth } from '@/context/auth-context';
 
 const navLinks = [
   { href: '/about', label: 'Acerca de Nosotros' },
@@ -21,6 +22,7 @@ const navLinks = [
 export function PublicHeader() {
   const pathname = usePathname();
   const { settings } = useSettings();
+  const { isAuthenticated } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -46,14 +48,18 @@ export function PublicHeader() {
             </Link>
           ))}
         </nav>
-        <div className="hidden md:flex items-center gap-2">
-          <Button asChild size="sm" variant="default">
-            <Link href="/login">Acceder</Link>
-          </Button>
-          <Button asChild size="sm" variant="default">
-            <Link href="/register">Registrar</Link>
-          </Button>
-        </div>
+        
+        {!isAuthenticated && (
+          <div className="hidden md:flex items-center gap-2">
+            <Button asChild size="sm" variant="outline">
+              <Link href="/login">Acceder</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link href="/register">Registrarse</Link>
+            </Button>
+          </div>
+        )}
+        
         <div className="md:hidden">
           <Sheet>
             <SheetTrigger asChild>
@@ -73,16 +79,20 @@ export function PublicHeader() {
                     </Link>
                   </SheetClose>
                 ))}
-                 <SheetClose asChild>
-                    <Button asChild className="mt-4">
-                      <Link href="/login">Acceder</Link>
-                    </Button>
-                 </SheetClose>
-                 <SheetClose asChild>
-                    <Button asChild variant="outline">
-                      <Link href="/register">Registrar</Link>
-                    </Button>
-                 </SheetClose>
+                {!isAuthenticated && (
+                  <>
+                    <SheetClose asChild>
+                        <Button asChild className="mt-4">
+                          <Link href="/login">Acceder</Link>
+                        </Button>
+                    </SheetClose>
+                    <SheetClose asChild>
+                        <Button asChild variant="outline">
+                          <Link href="/register">Registrar</Link>
+                        </Button>
+                    </SheetClose>
+                  </>
+                )}
               </nav>
             </SheetContent>
           </Sheet>

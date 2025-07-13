@@ -41,11 +41,22 @@ export const userProfiles: Record<UserRole, { id: number; name: string; role: st
 };
 
 function UserMenu() {
-    const { userRole, logout, currentUser } = useAuth();
+    const { userRole, logout, currentUser, isAuthenticated } = useAuth();
     const router = useRouter();
 
-    if (!currentUser) return null;
-
+    if (!isAuthenticated || !currentUser) {
+        return (
+            <div className="hidden md:flex items-center gap-2">
+                <Button asChild size="sm" variant="outline">
+                    <Link href="/login">Acceder</Link>
+                </Button>
+                <Button asChild size="sm">
+                    <Link href="/register">Registrarse</Link>
+                </Button>
+            </div>
+        );
+    }
+    
     const managementRoles: UserRole[] = ['admin', 'socio', 'administrativo'];
     const canManage = userRole && managementRoles.includes(userRole);
 
@@ -127,6 +138,8 @@ function NavLinks() {
 }
 
 function MobileNav() {
+    const { isAuthenticated } = useAuth();
+    
     return (
         <Sheet>
             <SheetTrigger asChild>
@@ -147,6 +160,16 @@ function MobileNav() {
                         </SheetClose>
                     ))}
                 </nav>
+                 {!isAuthenticated && (
+                  <div className="mt-8 flex flex-col gap-2">
+                     <SheetClose asChild>
+                        <Button asChild><Link href="/login">Acceder</Link></Button>
+                     </SheetClose>
+                     <SheetClose asChild>
+                        <Button asChild variant="outline"><Link href="/register">Registrarse</Link></Button>
+                     </SheetClose>
+                  </div>
+                )}
             </SheetContent>
         </Sheet>
     );

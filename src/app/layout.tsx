@@ -11,27 +11,15 @@ import { AttendanceProvider } from '@/context/attendance-context';
 import { TaskAlerts } from '@/components/shared/task-alerts';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  
-  // If authenticated, render the app layout with the main horizontal nav
-  if (isAuthenticated) {
-    return (
-       <div className="flex flex-col min-h-screen bg-background">
-          <MainNav />
-          <main className="flex-1">{children}</main>
-          <Toaster />
-          <TaskAlerts />
-        </div>
-    );
-  }
-  
-  // Otherwise, render the public layout for ALL unauthenticated pages, including login.
+  // The MainNav will now handle visibility of auth-related components internally.
+  // This ensures the main structure is always present.
   return (
      <div className="flex flex-col min-h-screen bg-background">
-        <PublicHeader />
+        <MainNav />
         <main className="flex-1 flex flex-col">{children}</main>
         <PublicFooter />
         <Toaster />
+        <TaskAlerts />
       </div>
   )
 }
