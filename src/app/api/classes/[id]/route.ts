@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -24,12 +24,12 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const data = await request.json();
-    const { teacherIds, ...classData } = data;
+    const { teacherIds, enrolledStudentIds, ...classData } = data;
 
     const updatedClass = await prisma.danceClass.update({
       where: { id: params.id },
@@ -38,7 +38,14 @@ export async function PUT(
         teachers: teacherIds ? {
           set: teacherIds.map((id: number) => ({ id })),
         } : undefined,
+        enrolledStudents: enrolledStudentIds ? {
+          set: enrolledStudentIds.map((id: number) => ({ id })),
+        } : undefined,
       },
+      include: {
+        teachers: true,
+        enrolledStudents: true,
+      }
     });
     return NextResponse.json(updatedClass);
   } catch (error) {
@@ -48,7 +55,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
