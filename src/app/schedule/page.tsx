@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Clock, User, Award, Users, CalendarDays, MapPin, Building, Calendar as CalendarIcon, Image as ImageIcon } from 'lucide-react';
+import { Clock, User as UserIcon, Award, Users, CalendarDays, MapPin, Building, Calendar as CalendarIcon, Image as ImageIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO, getDay, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -53,7 +53,7 @@ function ClassListCard({ danceClass, onEnrollRequest, allStyles, allUsers }: { d
                     <div className="flex items-center gap-2"><Clock className="h-4 w-4" /> {danceClass.time}</div>
                 </div>
                 <div className="text-muted-foreground flex items-center gap-2">
-                    <User className="h-4 w-4" /> {getTeacherNames(danceClass.teacherIds) || danceClass.rentalContact || 'N/A'}
+                    <UserIcon className="h-4 w-4" /> {getTeacherNames(danceClass.teacherIds) || danceClass.rentalContact || 'N/A'}
                 </div>
             </CardContent>
             {danceClass.type === 'recurring' && (
@@ -138,7 +138,7 @@ function ScheduleCalendarView({ classes, isRecurring, allUsers, allStyles, allLe
                                   </CardHeader>
                                   <CardContent className="p-4 pt-0 text-sm space-y-2">
                                      <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /> {c.time} ({c.duration})</div>
-                                     <div className="flex items-center gap-2 text-muted-foreground"><User className="h-4 w-4" />{getTeacherNames(c.teacherIds) || c.rentalContact}</div>
+                                     <div className="flex items-center gap-2 text-muted-foreground"><UserIcon className="h-4 w-4" />{getTeacherNames(c.teacherIds) || c.rentalContact}</div>
                                      <div className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-4 w-4" /> {c.room}</div>
                                   </CardContent>
                                 </Card>
