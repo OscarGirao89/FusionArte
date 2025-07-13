@@ -10,9 +10,9 @@ import { useAuth } from "@/context/auth-context";
 export default function AdminDashboardPage() {
     const { currentUser, userRole } = useAuth();
     
-    const canViewFinances = userRole === 'admin' || userRole === 'socio';
-    const canViewSettings = userRole === 'admin' || userRole === 'socio' || userRole === 'administrativo';
-    const canViewNotes = userRole === 'admin' || userRole === 'socio';
+    const canViewFinances = userRole === 'Admin' || userRole === 'Socio';
+    const canViewSettings = userRole === 'Admin' || userRole === 'Socio' || userRole === 'Administrativo';
+    const canViewNotes = userRole === 'Admin' || userRole === 'Socio';
 
     return (
         <div className="p-4 md:p-8">
@@ -98,7 +98,7 @@ export default function AdminDashboardPage() {
                     </CardFooter>
                 </Card>
                 
-                 {userRole === 'administrativo' && (
+                 {userRole === 'Administrativo' && (
                      <Card>
                         <CardHeader>
                             <div className="flex items-center gap-4">
