@@ -306,7 +306,7 @@ export default function NotesAndTasksPage() {
                                       {field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Elegir fecha</span>)}
                                       <CalendarDaysIcon className="ml-auto h-4 w-4 opacity-50" />
                                     </Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
-                                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/>
+                                      <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus locale={es}/>
                                     </PopoverContent></Popover><FormMessage />
                                   </FormItem>
                                 )} />
@@ -334,7 +334,7 @@ export default function NotesAndTasksPage() {
                                           {field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Elegir fecha</span>)}
                                           <CalendarDaysIcon className="ml-auto h-4 w-4 opacity-50" />
                                         </Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
-                                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/>
+                                          <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus locale={es}/>
                                         </PopoverContent></Popover><FormMessage />
                                       </FormItem>
                                     )} />
