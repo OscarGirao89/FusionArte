@@ -228,6 +228,7 @@ export default function AdminClassesPage() {
         styleId: '',
         levelId: '',
         ...data,
+        day: data.day || '',
         date: data.date ? data.date.toISOString() : undefined,
     };
 
@@ -585,7 +586,7 @@ export default function AdminClassesPage() {
                             <FormItem><FormLabel>Tipo de Pago al Profesor</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                    <SelectItem value="fixed">Monto Fijo</SelectItem>
+                                    <SelectItem value="fixed">Monto Fijo (€)</SelectItem>
                                     <SelectItem value="percentage">Porcentaje (%)</SelectItem>
                                 </SelectContent>
                             </Select><FormMessage /></FormItem>
