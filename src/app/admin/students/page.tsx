@@ -144,12 +144,12 @@ export default function AdminStudentsPage() {
             }
 
             // Case 2: A plan is selected, create or update membership
-            const newMembershipData = {
+            const newMembershipData: StudentMembership = {
                 userId: data.id,
                 planId: data.membershipPlanId,
                 startDate: format(data.membershipStartDate, 'yyyy-MM-dd'),
                 endDate: format(data.membershipEndDate, 'yyyy-MM-dd'),
-                classesRemaining: selectedPlanDetails?.accessType === 'class_pack' ? data.membershipClassesRemaining : undefined,
+                classesRemaining: data.membershipClassesRemaining ?? undefined,
             };
             
             if (existingMembershipIndex > -1) {
@@ -268,7 +268,9 @@ export default function AdminStudentsPage() {
             printWindow.document.write('<table>');
             printWindow.document.write(`<tr><td><strong>Alumno:</strong></td><td>${selectedStudent.name}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Plan:</strong></td><td>${currentPlan.title}</td></tr>`);
-            printWindow.document.write(`<tr><td><strong>Precio:</strong></td><td>€${currentPlan.price.toFixed(2)}</td></tr>`);
+            if ('price' in currentPlan) {
+              printWindow.document.write(`<tr><td><strong>Precio:</strong></td><td>€${currentPlan.price.toFixed(2)}</td></tr>`);
+            }
             printWindow.document.write(`<tr><td><strong>Fecha de Inicio:</strong></td><td>${format(parseISO(currentMembership.startDate), 'PPP', { locale: es })}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Fecha de Vencimiento:</strong></td><td>${format(parseISO(currentMembership.endDate), 'PPP', { locale: es })}</td></tr>`);
             if (currentPlan.accessType === 'class_pack') {
