@@ -111,14 +111,14 @@ export default function AdminUsersPage() {
     }, [toast]);
     
     // Permission flags
-    const canManageRoles = userRole === 'admin' || userRole === 'socio';
-    const canCreateUser = userRole === 'admin' || userRole === 'socio';
-    const canDeleteUser = userRole === 'admin' || userRole === 'socio';
+    const canManageRoles = userRole === 'Admin' || userRole === 'Socio';
+    const canCreateUser = userRole === 'Admin' || userRole === 'Socio';
+    const canDeleteUser = userRole === 'Admin' || userRole === 'Socio';
     const canEditUser = (userToEdit: User) => {
-        if (userRole === 'admin' || userRole === 'socio') {
+        if (userRole === 'Admin' || userRole === 'Socio') {
             return true;
         }
-        if (userRole === 'administrativo') {
+        if (userRole === 'Administrativo') {
             return userToEdit.role === 'Estudiante' || userToEdit.role === 'Profesor';
         }
         return false;
@@ -514,3 +514,5 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+
+    

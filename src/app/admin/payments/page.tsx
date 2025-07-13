@@ -63,7 +63,7 @@ export default function AdminPaymentsPage() {
     fetchData();
   }, []);
 
-  const canCreate = userRole === 'admin' || userRole === 'administrativo' || userRole === 'socio';
+  const canCreate = userRole === 'Admin' || userRole === 'Administrativo' || userRole === 'Socio';
 
   const students = users.filter(u => u.role === 'Estudiante');
   
@@ -186,7 +186,7 @@ export default function AdminPaymentsPage() {
     <div className="p-4 md:p-8">
       <div className="flex items-start justify-between mb-8 flex-wrap gap-2 no-print">
         <div>
-            <Button variant="ghost" onClick={() => router.push('/admin/finances')} className="mb-2">
+            <Button variant="ghost" onClick={() => router.push('/admin/finanzas')} className="mb-2">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Volver a Finanzas
             </Button>
@@ -276,5 +276,7 @@ export default function AdminPaymentsPage() {
     </div>
   );
 }
+
+    
 
     

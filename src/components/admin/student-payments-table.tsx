@@ -44,7 +44,7 @@ export function StudentPaymentsTable({ payments, users, membershipPlans, title, 
   const [editingPayment, setEditingPayment] = useState<StudentPayment | null>(null);
   const { toast } = useToast();
   
-  const canEdit = userRole === 'admin' || userRole === 'administrativo' || userRole === 'socio';
+  const canEdit = userRole === 'Admin' || userRole === 'Administrativo' || userRole === 'Socio';
 
   const editForm = useForm<PaymentEditFormValues>({
     resolver: zodResolver(paymentEditSchema),
@@ -209,3 +209,5 @@ export function StudentPaymentsTable({ payments, users, membershipPlans, title, 
     </Card>
   );
 }
+
+    
