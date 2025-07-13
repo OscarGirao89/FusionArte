@@ -1,28 +1,25 @@
 
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth, UserRole } from '@/context/auth-context';
+import { useAuth } from '@/context/auth-context';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LogIn } from 'lucide-react';
 import { LogoIcon } from '@/components/icons/logo-icon';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useSettings } from '@/context/settings-context';
 import Image from 'next/image';
+import { useToast } from '@/hooks/use-toast';
 
 const loginFormSchema = z.object({
   email: z.string().email("Por favor, introduce un email válido."),
   password: z.string().min(1, "La contraseña es obligatoria."),
-  role: z.enum(['student', 'teacher', 'admin', 'administrativo', 'socio']),
 });
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
@@ -31,21 +28,26 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   const { settings } = useSettings();
+  const { toast } = useToast();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
       email: '',
       password: '',
-      role: 'student',
     },
   });
 
-  const handleLogin = (data: LoginFormValues) => {
-    // In this prototype, we're not actually checking the email/password.
-    // The role selector is the "key" to the simulation.
-    console.log(`Simulating login for email: ${data.email} with role: ${data.role}`);
-    login(data.role);
+  const handleLogin = async (data: LoginFormValues) => {
+    try {
+      await login(data.email, data.password);
+    } catch (error) {
+      toast({
+        title: "Error de inicio de sesión",
+        description: (error as Error).message || "El email o la contraseña son incorrectos. Por favor, inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -92,31 +94,9 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rol (para simulación)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                       <FormControl>
-                         <SelectTrigger><SelectValue /></SelectTrigger>
-                       </FormControl>
-                       <SelectContent>
-                         <SelectItem value="student">Estudiante</SelectItem>
-                         <SelectItem value="teacher">Profesor</SelectItem>
-                         <SelectItem value="admin">Administrador</SelectItem>
-                         <SelectItem value="administrativo">Administrativo</SelectItem>
-                         <SelectItem value="socio">Socio</SelectItem>
-                       </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
                 <LogIn className="mr-2 h-4 w-4" />
-                Iniciar Sesión
+                {form.formState.isSubmitting ? 'Accediendo...' : 'Iniciar Sesión'}
               </Button>
             </form>
           </Form>

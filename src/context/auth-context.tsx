@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { StudentMembership, StudentPayment, User } from '@/lib/types';
+import type { User } from '@/lib/types';
 import { useAttendance } from './attendance-context';
 
 export type UserRole = 'admin' | 'teacher' | 'student' | 'administrativo' | 'socio';
@@ -14,7 +14,7 @@ export interface AuthContextType {
   userId: number | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (role: UserRole) => void;
+  login: (email: string, pass: string) => Promise<void>;
   logout: () => void;
   currentUser: User | null;
   updateCurrentUser: (data: Partial<User>) => void;
@@ -57,14 +57,6 @@ const checkAccess = (pathname: string, role: UserRole | null): { authorized: boo
     return { authorized: false, redirect: '/' };
 };
 
-const userMap: Record<UserRole, number> = {
-    student: 1,
-    teacher: 10,
-    admin: 4,
-    administrativo: 7,
-    socio: 2,
-}
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
@@ -77,14 +69,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const checkAuthStatus = async () => {
-        let storedRole: UserRole | null = null;
+        let storedUser: User | null = null;
         try {
-            storedRole = localStorage.getItem('userRole') as UserRole | null;
+            const userJson = localStorage.getItem('currentUser');
+            if(userJson) storedUser = JSON.parse(userJson);
         } catch (e) {
             console.error("Could not access localStorage", e);
         }
 
-        const { authorized, redirect } = checkAccess(pathname, storedRole);
+        const currentRole = storedUser?.role as UserRole | null;
+        const { authorized, redirect } = checkAccess(pathname, currentRole);
 
         if (!authorized) {
             if (redirect === '/login' && pathname !== '/login') {
@@ -99,21 +93,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
 
-        if (storedRole) {
-            if (!currentUser || storedRole !== userRole) {
-                const currentId = userMap[storedRole];
-                try {
-                    const res = await fetch(`/api/users`);
-                    if(res.ok) {
-                        const users = await res.json();
-                        const user = users.find((u: User) => u.id === currentId);
-                        setCurrentUser(user);
-                    }
-                } catch (e) { console.error(e) }
-
-                setUserRole(storedRole);
-                setUserId(currentId || null);
-            }
+        if (storedUser) {
+            setUserRole(currentRole);
+            setUserId(storedUser.id);
+            setCurrentUser(storedUser);
         }
         setIsLoading(false);
     };
@@ -123,25 +106,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserRole(null); setCurrentUser(null); setIsLoading(false);
         if(!publicPaths.includes(pathname)) { router.replace('/login'); }
     });
-  }, [pathname, router, currentUser, userRole]);
+  }, [pathname, router]);
 
 
-  const login = async (role: UserRole) => {
+  const login = async (email: string, pass: string) => {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to login');
+    }
+
+    const user: User = await response.json();
+    
     try {
-      localStorage.setItem('userRole', role);
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      const role = user.role as UserRole;
       setIsLoading(true);
       setUserRole(role);
-      const currentId = userMap[role];
-      setUserId(currentId);
-
-      try {
-        const res = await fetch(`/api/users`);
-        if(res.ok) {
-            const users = await res.json();
-            const user = users.find((u:User) => u.id === currentId);
-            setCurrentUser(user);
-        }
-      } catch (e) { console.error(e); }
+      setUserId(user.id);
+      setCurrentUser(user);
 
       const redirectPath = localStorage.getItem('redirectPath');
       localStorage.removeItem('redirectPath');
@@ -160,7 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     try {
-      localStorage.removeItem('userRole');
+      localStorage.removeItem('currentUser');
       setIsLoading(true);
       setUserRole(null);
       setUserId(null);
@@ -173,8 +161,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateCurrentUser = useCallback((data: Partial<User>) => {
-    // This would be an API call in a real app
-    setCurrentUser(prev => prev ? { ...prev, ...data } : null);
+    setCurrentUser(prev => {
+        if (!prev) return null;
+        const updatedUser = { ...prev, ...data };
+        try {
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        } catch(e) { console.error(e) }
+        return updatedUser;
+    });
   }, []);
 
   const value = {

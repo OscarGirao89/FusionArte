@@ -1,9 +1,13 @@
+
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log(`Start seeding ...`)
+
+  const hashedPassword = await bcrypt.hash('password123', 10);
 
   // Seed Dance Styles
   const danceStylesData = [
@@ -43,14 +47,14 @@ async function main() {
   
   // Seed Users
   const usersData = [
-    { id: 1, name: 'Ana López', email: 'ana.lopez@email.com', role: 'Estudiante', joined: new Date('2023-01-15'), avatar: 'https://placehold.co/100x100.png?text=AL', dob: new Date('1995-05-20'), mobile: '600111222'},
-    { id: 2, name: 'Oscar Girao', email: 'oscar.girao@email.com', role: 'Socio', joined: new Date('2022-01-01'), avatar: 'https://placehold.co/100x100.png?text=OG', isPartner: true, isVisibleToStudents: true, bio: 'Cofundador de FusionArte y experto en Salsa y Bachata con más de 15 años de experiencia.', specialties: ['Salsa On1', 'Bachata Fusión']},
-    { id: 3, name: 'Marta Rodriguez', email: 'marta.rodriguez@email.com', role: 'Estudiante', joined: new Date('2023-03-10'), avatar: 'https://placehold.co/100x100.png?text=MR', dob: new Date('1998-11-02'), mobile: '600333444'},
-    { id: 4, name: 'Admin FusionArte', email: 'admin@fusionarte.com', role: 'Administrador', joined: new Date('2022-01-01'), avatar: 'https://placehold.co/100x100.png?text=AF'},
-    { id: 5, name: 'Carlos Gomez', email: 'carlos.gomez@email.com', role: 'Profesor', joined: new Date('2022-06-01'), avatar: 'https://placehold.co/100x100.png?text=CG', bio: 'Profesor de Hip Hop especializado en Popping y Locking.', specialties: ['Hip Hop', 'Popping'], paymentDetailsJson: { type: 'per_class', payRate: 25, cancelledClassPay: 10 }},
-    { id: 6, name: 'Elena Peña', email: 'elena.pena@email.com', role: 'Profesor', joined: new Date('2022-09-15'), avatar: 'https://placehold.co/100x100.png?text=EP', bio: 'Instructora certificada de Aeroyoga, apasionada por el bienestar y el movimiento consciente.', specialties: ['Aeroyoga', 'Elongación'], paymentDetailsJson: { type: 'monthly', monthlySalary: 1200, cancelledClassPay: 0 }},
-    { id: 7, name: 'Laura Martinez', email: 'laura.martinez@email.com', role: 'Administrativo', joined: new Date('2023-02-01'), avatar: 'https://placehold.co/100x100.png?text=LM' },
-    { id: 10, name: 'Alexandra', email: 'alexandra@email.com', role: 'Profesor', joined: new Date('2022-03-01'), avatar: 'https://placehold.co/100x100.png?text=A', isPartner: false, isVisibleToStudents: true, bio: 'Bailarina profesional y apasionada por la enseñanza de ritmos latinos.', specialties: ['M-Zouk', 'Bachata Sensual'], paymentDetailsJson: { type: 'percentage', payRate: 50, cancelledClassPay: 15 }}
+    { id: 1, name: 'Ana López', email: 'ana.lopez@email.com', password: hashedPassword, role: 'Estudiante', joined: new Date('2023-01-15'), avatar: 'https://placehold.co/100x100.png?text=AL', dob: new Date('1995-05-20'), mobile: '600111222'},
+    { id: 2, name: 'Oscar Girao', email: 'oscar.girao@email.com', password: hashedPassword, role: 'Socio', joined: new Date('2022-01-01'), avatar: 'https://placehold.co/100x100.png?text=OG', isPartner: true, isVisibleToStudents: true, bio: 'Cofundador de FusionArte y experto en Salsa y Bachata con más de 15 años de experiencia.', specialties: ['Salsa On1', 'Bachata Fusión']},
+    { id: 3, name: 'Marta Rodriguez', email: 'marta.rodriguez@email.com', password: hashedPassword, role: 'Estudiante', joined: new Date('2023-03-10'), avatar: 'https://placehold.co/100x100.png?text=MR', dob: new Date('1998-11-02'), mobile: '600333444'},
+    { id: 4, name: 'Admin FusionArte', email: 'admin@fusionarte.com', password: hashedPassword, role: 'Administrador', joined: new Date('2022-01-01'), avatar: 'https://placehold.co/100x100.png?text=AF'},
+    { id: 5, name: 'Carlos Gomez', email: 'carlos.gomez@email.com', password: hashedPassword, role: 'Profesor', joined: new Date('2022-06-01'), avatar: 'https://placehold.co/100x100.png?text=CG', bio: 'Profesor de Hip Hop especializado en Popping y Locking.', specialties: ['Hip Hop', 'Popping'], paymentDetailsJson: { type: 'per_class', payRate: 25, cancelledClassPay: 10 }},
+    { id: 6, name: 'Elena Peña', email: 'elena.pena@email.com', password: hashedPassword, role: 'Profesor', joined: new Date('2022-09-15'), avatar: 'https://placehold.co/100x100.png?text=EP', bio: 'Instructora certificada de Aeroyoga, apasionada por el bienestar y el movimiento consciente.', specialties: ['Aeroyoga', 'Elongación'], paymentDetailsJson: { type: 'monthly', monthlySalary: 1200, cancelledClassPay: 0 }},
+    { id: 7, name: 'Laura Martinez', email: 'laura.martinez@email.com', password: hashedPassword, role: 'Administrativo', joined: new Date('2023-02-01'), avatar: 'https://placehold.co/100x100.png?text=LM' },
+    { id: 10, name: 'Alexandra', email: 'alexandra@email.com', password: hashedPassword, role: 'Profesor', joined: new Date('2022-03-01'), avatar: 'https://placehold.co/100x100.png?text=A', isPartner: false, isVisibleToStudents: true, bio: 'Bailarina profesional y apasionada por la enseñanza de ritmos latinos.', specialties: ['M-Zouk', 'Bachata Sensual'], paymentDetailsJson: { type: 'percentage', payRate: 50, cancelledClassPay: 15 }}
   ];
 
   for (const u of usersData) {
@@ -92,7 +96,7 @@ async function main() {
 
   // Seed Membership Plans
   const membershipPlansData = [
-      { id: 'unlimited-1', title: 'Pase Ilimitado', price: 80, description: 'Acceso a todas las clases regulares.', features: ['Clases ilimitadas', 'Acceso a prácticas libres', 'Descuentos en talleres'], isPopular: true, durationUnit: 'months', durationValue: 1, accessType: 'unlimited', visibility: 'public' },
+      { id: 'unlimited-1', title: 'Pase Ilimitado', price: 80, description: 'Acceso a todas las clases regulares.', features: ['Clases ilimitadas', 'Acceso a prácticas libres', 'Descuentos en talleres'], isPopular: true, durationUnit: 'months', durationValue: 1, accessType: 'unlimited', visibility: 'public', allowedClasses: [] },
       { id: 'pack-10', title: 'Bono 10 Clases', price: 100, description: '10 clases a tu elección.', features: ['10 clases', 'Válido por 3 meses'], isPopular: false, durationUnit: 'months', durationValue: 3, accessType: 'class_pack', classCount: 10, allowedClasses: [], visibility: 'public' },
       { id: 'trial', title: 'Clase de Prueba', price: 10, description: 'Prueba una de nuestras clases.', features: ['1 clase', 'Válido por 1 semana'], isPopular: false, durationUnit: 'weeks', durationValue: 1, accessType: 'trial_class', classCount: 1, allowedClasses: [], visibility: 'public'},
       { id: 'course-salsa-1', title: 'Pase Mensual Salsa', price: 40, description: 'Acceso a todas las clases de Salsa durante un mes.', features: ['Todas las clases de Salsa', 'Flexibilidad mensual'], isPopular: false, durationUnit: 'months', durationValue: 1, accessType: 'course_pass', allowedClasses: ['salsa-iniciacion'], visibility: 'unlisted'},
@@ -133,22 +137,19 @@ async function main() {
   
   // Seed Coupons
   const couponsData = [
-    { id: 'verano20', code: 'VERANO20', discountType: 'percentage', discountValue: 20, status: 'active', applicableTo: 'all_memberships', specificPlanIds: [], specificClassIds: [] },
-    { id: 'salsapass', code: 'SALSAPASS', discountType: 'fixed', discountValue: 5, status: 'active', applicableTo: 'specific_memberships', specificPlanIds: ['course-salsa-1'], specificClassIds: [] },
+    { id: 'verano20', code: 'VERANO20', discountType: 'percentage', discountValue: 20, status: 'active', applicableTo: 'all_memberships' },
+    { id: 'salsapass', code: 'SALSAPASS', discountType: 'fixed', discountValue: 5, status: 'active', applicableTo: 'specific_memberships', specificPlanIds: ['course-salsa-1'] },
   ];
   for (const coupon of couponsData) {
-      const { specificPlanIds, specificClassIds, ...couponData } = coupon;
+      const { specificPlanIds, ...couponData } = coupon;
       await prisma.coupon.upsert({
           where: { code: coupon.code },
           update: {},
           create: {
               ...couponData,
-              specificPlanIds: {
-                connect: specificPlanIds.map(planId => ({ id: planId }))
+              specificPlans: {
+                connect: (specificPlanIds || []).map(planId => ({ id: planId }))
               },
-              specificClassIds: {
-                connect: specificClassIds.map(classId => ({ id: classId }))
-              }
           },
       });
   }

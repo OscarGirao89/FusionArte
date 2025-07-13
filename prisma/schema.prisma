@@ -1,3 +1,4 @@
+
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -8,6 +9,59 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  email               String               @unique
+  password            String
+  role                String
+  joined              DateTime             @default(now())
+  avatar              String
+  dob                 DateTime?            @db.Date
+  mobile              String?
+  isVisibleToStudents Boolean?
+  isPartner           Boolean?
+  bio                 String?
+  specialties         String[]
+  paymentDetailsJson  Json?
+
+  taughtClasses      DanceClass[]         @relation("ClassTeachers")
+  enrolledClasses    DanceClass[]         @relation("EnrolledStudents")
+  memberships        StudentMembership[]
+  payments           StudentPayment[]
+  assignedTasks      TaskNote[]           @relation("TaskAssignees")
+  attendanceHistory  AttendanceRecord[]
+}
+
+model DanceClass {
+  id                     String    @id @default(cuid())
+  name                   String
+  type                   String // 'recurring', 'one-time', 'workshop', 'rental'
+  styleId                String
+  levelId                String
+  day                    String?
+  time                   String
+  room                   String
+  duration               String
+  capacity               Int
+  cancellationPolicyHours Int?
+  date                   DateTime? @db.Date
+  status                 String    @default("scheduled")
+  isCancelledAndHidden   Boolean?
+  isVisibleToStudents    Boolean?
+  rentalContact          String?
+  rentalPrice            Float?
+  workshopPaymentType    String?
+  workshopPaymentValue   Float?
+
+  style             DanceStyle @relation(fields: [styleId], references: [id])
+  level             DanceLevel @relation(fields: [levelId], references: [id])
+  teachers          User[]     @relation("ClassTeachers")
+  enrolledStudents  User[]     @relation("EnrolledStudents")
+  coupons           Coupon[]   @relation("CouponClasses")
+  attendance        AttendanceRecord[]
 }
 
 model DanceStyle {
@@ -24,61 +78,25 @@ model DanceLevel {
   classes     DanceClass[]
 }
 
-model User {
-  id                Int                  @id @default(autoincrement())
-  email             String               @unique
-  name              String
-  avatar            String?
-  role              String // "Estudiante", "Profesor", "Administrador", "Socio", "Administrativo"
-  joined            DateTime             @default(now())
-  dob               DateTime?
-  mobile            String?
-  isPartner         Boolean?
-  isVisibleToStudents Boolean?
-  bio               String?
-  specialties       String[]
-  paymentDetailsJson Json? // Storing payment details as JSON to simplify relations
+model MembershipPlan {
+  id               String              @id @default(cuid())
+  title            String
+  price            Float
+  description      String
+  features         String[]
+  isPopular        Boolean?
+  durationUnit     String
+  durationValue    Int
+  accessType       String
+  classCount       Int?
+  priceTiersJson   Json?
+  visibility       String              @default("public")
+  allowedClasses   String[]
   
-  // Simplified relations
-  taughtClasses     DanceClass[]
-  enrolledClasses   DanceClass[] @relation("ClassStudents")
-  memberships       StudentMembership[]
-  payments          StudentPayment[]
-  assignedTasks     TaskNote[]           @relation("TaskAssignees")
+  studentMemberships StudentMembership[]
+  studentPayments    StudentPayment[]
+  coupons            Coupon[]            @relation("CouponMemberships")
 }
-
-model DanceClass {
-  id                      String   @id @default(cuid())
-  name                    String
-  type                    String // "recurring", "one-time", "workshop", "rental"
-  day                     String?
-  date                    DateTime?
-  time                    String
-  room                    String
-  duration                String
-  capacity                Int
-  status                  String // "scheduled", "completed", "cancelled-low-attendance", "cancelled-teacher"
-  isCancelledAndHidden    Boolean?
-  isVisibleToStudents     Boolean?
-  rentalContact           String?
-  rentalPrice             Float?
-  workshopPaymentType     String?
-  workshopPaymentValue    Float?
-  cancellationPolicyHours Int?
-
-  styleId String
-  style   DanceStyle @relation(fields: [styleId], references: [id])
-
-  levelId String
-  level   DanceLevel @relation(fields: [levelId], references: [id])
-
-  // Simplified M-N relations
-  teachers          User[]
-  enrolledStudents  User[] @relation("ClassStudents")
-
-  coupons           Coupon[] @relation("CouponClasses")
-}
-
 
 model StudentMembership {
   userId           Int
@@ -93,63 +111,40 @@ model StudentMembership {
   @@id([userId, planId])
 }
 
-model MembershipPlan {
-  id            String    @id @default(cuid())
-  title         String
-  price         Float
-  description   String
-  features      String[]
-  isPopular     Boolean   @default(false)
-  durationUnit  String // "days", "weeks", "months"
-  durationValue Int
-  accessType    String // "unlimited", "class_pack", "trial_class", "course_pass", "custom_pack"
-  visibility    String // "public", "unlisted"
-  classCount    Int?
-  priceTiersJson Json?
-
-  allowedClasses   String[] // Array of DanceClass IDs
-  
-  students         StudentMembership[]
-  payments         StudentPayment[]
-  coupons          Coupon[]            @relation("CouponPlans")
-}
-
 model StudentPayment {
   id              String   @id @default(cuid())
+  studentId       Int
+  planId          String
   invoiceDate     DateTime
   totalAmount     Float
-  status          String // "paid", "pending", "deposit"
+  status          String
   amountPaid      Float
   amountDue       Float
   notes           String?
   lastUpdatedBy   String?
   lastUpdatedDate DateTime?
 
-  studentId Int
-  student   User   @relation(fields: [studentId], references: [id])
-
-  planId String
-  plan   MembershipPlan @relation(fields: [planId], references: [id])
+  student User           @relation(fields: [studentId], references: [id])
+  plan    MembershipPlan @relation(fields: [planId], references: [id])
 }
 
 model Coupon {
   id              String   @id @default(cuid())
   code            String   @unique
-  discountType    String // "percentage", "fixed"
+  discountType    String
   discountValue   Float
   expirationDate  DateTime?
   usageLimit      Int?
-  status          String   // "active", "inactive"
+  status          String
+  applicableTo    String
   
-  applicableTo     String // "all_memberships", "specific_memberships", "all_classes", "specific_classes"
-  
-  specificPlanIds  MembershipPlan[] @relation("CouponPlans")
-  specificClassIds DanceClass[]     @relation("CouponClasses")
+  specificPlans   MembershipPlan[] @relation("CouponMemberships")
+  specificClasses DanceClass[]     @relation("CouponClasses")
 }
 
 model Transaction {
   id          String   @id @default(cuid())
-  type        String // "ingreso", "egreso"
+  type        String
   category    String
   description String
   amount      Float
@@ -167,13 +162,24 @@ model TaskNote {
   id             String    @id @default(cuid())
   title          String
   description    String?
-  status         String // "todo", "in_progress", "done"
+  status         String
   category       String
-  priority       String? // "low", "medium", "high"
+  priority       String?
   createdAt      DateTime  @default(now())
   dueDate        DateTime?
   alertDateTime  DateTime?
-  alertDismissed Boolean?
-
+  alertDismissed Boolean   @default(false)
+  
   assignees User[] @relation("TaskAssignees")
+}
+
+model AttendanceRecord {
+  id        Int      @id @default(autoincrement())
+  classId   String
+  date      DateTime
+  status    String // 'presente' | 'ausente'
+  studentId Int
+
+  student   User       @relation(fields: [studentId], references: [id])
+  danceClass DanceClass @relation(fields: [classId], references: [id])
 }

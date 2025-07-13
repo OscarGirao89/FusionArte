@@ -38,7 +38,7 @@ const registerFormSchema = z.object({
     confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden.",
-    path: ["confirmPassword"], // path of error
+    path: ["confirmPassword"],
 });
 
 type RegisterFormValues = z.infer<typeof registerFormSchema>;
@@ -59,29 +59,49 @@ export default function RegisterPage() {
     });
 
     const onSubmit = async (data: RegisterFormValues) => {
-        // In a real app, this is where you'd call your registration API.
-        // For this prototype, we'll just simulate success.
-        console.log("Simulating registration for:", data.email);
+        try {
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: data.name,
+                    email: data.email,
+                    password: data.password,
+                    role: 'Estudiante',
+                    avatar: `https://placehold.co/100x100.png?text=${data.name.split(' ').map(n => n[0]).join('')}`,
+                }),
+            });
 
-        toast({
-            title: "¡Registro Exitoso!",
-            description: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
-        });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'No se pudo completar el registro.');
+            }
 
-        // Send a welcome email
-        const emailHtml = `
-          <h1>¡Bienvenido a ${settings.academyName}, ${data.name}!</h1>
-          <p>${settings.registrationEmailMessage?.replace('{{name}}', data.name).replace('{{academyName}}', settings.academyName) || 'Gracias por registrarte.'}</p>
-          <p>¡Te esperamos en la pista!</p>
-        `;
-        
-        await sendEmail({
-          to: data.email,
-          subject: `¡Bienvenido/a a ${settings.academyName}!`,
-          html: emailHtml,
-        });
-        
-        router.push('/login');
+            toast({
+                title: "¡Registro Exitoso!",
+                description: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
+            });
+
+            const emailHtml = `
+              <h1>¡Bienvenido a ${settings.academyName}, ${data.name}!</h1>
+              <p>${settings.registrationEmailMessage?.replace('{{name}}', data.name).replace('{{academyName}}', settings.academyName) || 'Gracias por registrarte.'}</p>
+              <p>¡Te esperamos en la pista!</p>
+            `;
+            
+            await sendEmail({
+              to: data.email,
+              subject: `¡Bienvenido/a a ${settings.academyName}!`,
+              html: emailHtml,
+            });
+            
+            router.push('/login');
+        } catch (error) {
+            toast({
+                title: "Error en el registro",
+                description: (error as Error).message,
+                variant: "destructive",
+            });
+        }
     };
 
     return (
@@ -130,7 +150,9 @@ export default function RegisterPage() {
                                     <FormMessage />
                                 </FormItem>
                             )} />
-                            <Button type="submit" className="w-full">Crear Cuenta</Button>
+                            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting ? 'Creando cuenta...' : 'Crear Cuenta'}
+                            </Button>
                         </form>
                     </Form>
                 </CardContent>
