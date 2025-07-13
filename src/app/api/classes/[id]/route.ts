@@ -1,6 +1,25 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export async function GET(request: Request, { params }: { params: { id: string } }) {
+  try {
+    const danceClass = await prisma.danceClass.findUnique({
+      where: { id: params.id },
+      include: {
+        teachers: true,
+        enrolledStudents: true,
+      },
+    });
+    if (!danceClass) {
+      return NextResponse.json({ error: 'Class not found' }, { status: 404 });
+    }
+    return NextResponse.json(danceClass);
+  } catch (error) {
+    console.error(`Error fetching class ${params.id}:`, error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const data = await request.json();

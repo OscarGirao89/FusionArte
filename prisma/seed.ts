@@ -17,7 +17,7 @@ async function main() {
   ];
   for (const style of danceStylesData) {
     await prisma.danceStyle.upsert({
-      where: { id: style.id },
+      where: { name: style.name },
       update: {},
       create: style,
     });
@@ -34,7 +34,7 @@ async function main() {
   ];
   for (const level of danceLevelsData) {
     await prisma.danceLevel.upsert({
-      where: { id: level.id },
+      where: { name: level.name },
       update: {},
       create: level,
     });
@@ -54,43 +54,36 @@ async function main() {
   ];
 
   for (const u of usersData) {
-      const { id, ...userData } = u;
       await prisma.user.upsert({
-          where: { email: userData.email },
-          update: userData,
-          create: {
-              ...userData,
-              id: u.id,
-          }
+          where: { email: u.email },
+          update: u,
+          create: u,
       });
   }
   console.log('Users seeded.');
 
   // Seed Dance Classes
   const danceClassesData = [
-    { id: 'salsa-iniciacion', name: 'Salsa Iniciación', type: 'recurring', styleId: 'salsa', levelId: 'iniciacion', teacherIds: [2], day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 20, enrolledStudentIds: [1], status: 'scheduled' },
-    { id: 'bachata-basico', name: 'Bachata Básico', type: 'recurring', styleId: 'bachata', levelId: 'basico', teacherIds: [2, 10], day: 'Lunes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 20, enrolledStudentIds: [3], status: 'scheduled' },
-    { id: 'm-zouk-intermedio', name: 'M-Zouk Intermedio', type: 'recurring', styleId: 'm-zouk', levelId: 'intermedio', teacherIds: [10], day: 'Martes', time: '20:00', room: 'Estudio 2', duration: '90 min', capacity: 15, enrolledStudentIds: [], status: 'scheduled' },
-    { id: 'hip-hop-avanzado', name: 'Hip Hop Avanzado', type: 'recurring', styleId: 'hip-hop', levelId: 'avanzado', teacherIds: [5], day: 'Miércoles', time: '18:30', room: 'Estudio 1', duration: '60 min', capacity: 25, enrolledStudentIds: [], status: 'scheduled' },
-    { id: 'aeroyoga-todos', name: 'Aeroyoga', type: 'recurring', styleId: 'aeroyoga', levelId: 'todos', teacherIds: [6], day: 'Jueves', time: '10:00', room: 'Estudio 2', duration: '75 min', capacity: 10, enrolledStudentIds: [3], status: 'scheduled' },
-    { id: 'workshop-salsa-on2', name: 'Taller de Salsa On2', type: 'workshop', styleId: 'salsa', levelId: 'intermedio', teacherIds: [2], day: 'Sábado', time: '12:00', room: 'Estudio 1', duration: '120 min', capacity: 30, enrolledStudentIds: [], status: 'scheduled', date: new Date('2024-08-10'), workshopPaymentType: 'percentage', workshopPaymentValue: 60 },
+    { id: 'salsa-iniciacion', name: 'Salsa Iniciación', type: 'recurring', styleId: 'salsa', levelId: 'iniciacion', teacherIds: [2], enrolledStudentIds: [1], day: 'Lunes', time: '19:00', room: 'Estudio 1', duration: '60 min', capacity: 20, status: 'scheduled' },
+    { id: 'bachata-basico', name: 'Bachata Básico', type: 'recurring', styleId: 'bachata', levelId: 'basico', teacherIds: [2, 10], enrolledStudentIds: [3], day: 'Lunes', time: '20:00', room: 'Estudio 1', duration: '60 min', capacity: 20, status: 'scheduled' },
+    { id: 'm-zouk-intermedio', name: 'M-Zouk Intermedio', type: 'recurring', styleId: 'm-zouk', levelId: 'intermedio', teacherIds: [10], enrolledStudentIds: [], day: 'Martes', time: '20:00', room: 'Estudio 2', duration: '90 min', capacity: 15, status: 'scheduled' },
+    { id: 'hip-hop-avanzado', name: 'Hip Hop Avanzado', type: 'recurring', styleId: 'hip-hop', levelId: 'avanzado', teacherIds: [5], enrolledStudentIds: [], day: 'Miércoles', time: '18:30', room: 'Estudio 1', duration: '60 min', capacity: 25, status: 'scheduled' },
+    { id: 'aeroyoga-todos', name: 'Aeroyoga', type: 'recurring', styleId: 'aeroyoga', levelId: 'todos', teacherIds: [6], enrolledStudentIds: [3], day: 'Jueves', time: '10:00', room: 'Estudio 2', duration: '75 min', capacity: 10, status: 'scheduled' },
+    { id: 'workshop-salsa-on2', name: 'Taller de Salsa On2', type: 'workshop', styleId: 'salsa', levelId: 'intermedio', teacherIds: [2], enrolledStudentIds: [], day: 'Sábado', time: '12:00', room: 'Estudio 1', duration: '120 min', capacity: 30, status: 'scheduled', date: new Date('2024-08-10'), workshopPaymentType: 'percentage', workshopPaymentValue: 60 },
   ];
 
   for (const dc of danceClassesData) {
-    const { id, teacherIds, ...classData } = dc;
+    const { teacherIds, enrolledStudentIds, ...classData } = dc;
     await prisma.danceClass.upsert({
-        where: { id },
-        update: {
-          ...classData,
-          teacherIds: {
-            set: teacherIds.map(id => ({ id }))
-          }
-        },
+        where: { id: classData.id },
+        update: {},
         create: {
-            id,
             ...classData,
-            teacherIds: {
+            teachers: {
                 connect: teacherIds.map(id => ({ id }))
+            },
+            enrolledStudents: {
+                connect: enrolledStudentIds.map(id => ({ id }))
             }
         }
     });
@@ -128,8 +121,8 @@ async function main() {
             classesRemaining: sm.classesRemaining,
           },
           create: {
-            user: { connect: { id: sm.userId } },
-            plan: { connect: { id: sm.planId } },
+            userId: sm.userId,
+            planId: sm.planId,
             startDate: sm.startDate,
             endDate: sm.endDate,
             classesRemaining: sm.classesRemaining,
@@ -144,10 +137,19 @@ async function main() {
     { id: 'salsapass', code: 'SALSAPASS', discountType: 'fixed', discountValue: 5, status: 'active', applicableTo: 'specific_memberships', specificPlanIds: ['course-salsa-1'], specificClassIds: [] },
   ];
   for (const coupon of couponsData) {
+      const { specificPlanIds, specificClassIds, ...couponData } = coupon;
       await prisma.coupon.upsert({
-          where: { id: coupon.id },
+          where: { code: coupon.code },
           update: {},
-          create: coupon,
+          create: {
+              ...couponData,
+              specificPlanIds: {
+                connect: specificPlanIds.map(planId => ({ id: planId }))
+              },
+              specificClassIds: {
+                connect: specificClassIds.map(classId => ({ id: classId }))
+              }
+          },
       });
   }
   console.log('Coupons seeded.');
@@ -190,7 +192,7 @@ async function main() {
   ];
   for (const role of rolesData) {
       await prisma.role.upsert({
-          where: { id: role.id },
+          where: { name: role.name },
           update: {},
           create: role,
       });
@@ -204,17 +206,16 @@ async function main() {
     { id: 'task-3', title: 'Llamar a Ana López por pago pendiente', description: 'Factura inv-2, pendiente de 50€', status: 'todo', category: 'Pagos', priority: 'low', createdAt: new Date('2024-07-10'), alertDateTime: new Date('2024-07-11T09:00:00') ,assigneeIds: [7] },
   ];
   for (const task of taskNotesData) {
-      const { id, assigneeIds, ...taskData } = task;
+      const { assigneeIds, ...taskData } = task;
       await prisma.taskNote.upsert({
-          where: { id },
+          where: { id: task.id },
           update: {
               ...taskData,
               assignees: {
-                  set: assigneeIds.map(id => ({ id }))
+                  connect: assigneeIds.map(id => ({ id }))
               }
           },
           create: {
-              id,
               ...taskData,
               assignees: {
                   connect: assigneeIds.map(id => ({ id }))
