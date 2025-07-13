@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { User, StudentMembership, StudentPayment } from '@/lib/types';
 import { useAttendance } from './attendance-context';
 
-export type UserRole = 'admin' | 'teacher' | 'student' | 'administrativo' | 'socio';
+export type UserRole = 'Admin' | 'Profesor' | 'Estudiante' | 'Administrativo' | 'Socio';
 
 export interface AuthContextType {
   userRole: UserRole | null;
@@ -29,10 +29,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const publicPaths = ['/login', '/', '/about', '/schedule', '/memberships', '/teachers', '/contact', '/register'];
 
 const protectedRoutes: { path: string; roles: UserRole[] }[] = [
-  { path: '/admin', roles: ['admin', 'socio', 'administrativo'] },
-  { path: '/my-classes', roles: ['teacher', 'socio'] },
-  { path: '/my-finances', roles: ['teacher', 'socio'] },
-  { path: '/profile', roles: ['student', 'teacher', 'admin', 'administrativo', 'socio'] },
+  { path: '/admin', roles: ['Admin', 'Socio', 'Administrativo'] },
+  { path: '/my-classes', roles: ['Profesor', 'Socio'] },
+  { path: '/my-finances', roles: ['Profesor', 'Socio'] },
+  { path: '/profile', roles: ['Estudiante', 'Profesor', 'Admin', 'Administrativo', 'Socio'] },
 ];
 
 const checkAccess = (pathname: string, role: UserRole | null): { authorized: boolean; redirect?: string } => {
@@ -52,8 +52,8 @@ const checkAccess = (pathname: string, role: UserRole | null): { authorized: boo
             return { authorized: true };
         } else {
             let defaultPath = '/profile';
-            if (role === 'teacher' || role === 'socio') defaultPath = '/my-classes';
-            if (role === 'admin' || role === 'administrativo') defaultPath = '/admin/dashboard';
+            if (role === 'Profesor' || role === 'Socio') defaultPath = '/my-classes';
+            if (role === 'Admin' || role === 'Administrativo') defaultPath = '/admin/dashboard';
             return { authorized: false, redirect: defaultPath };
         }
     }
@@ -173,8 +173,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (redirectPath && redirectPath !== '/login') {
         router.push(redirectPath);
       } else {
-         if (role === 'student') router.push('/profile');
-         else if (role === 'teacher' || role === 'socio') router.push('/my-classes');
+         if (role === 'Estudiante') router.push('/profile');
+         else if (role === 'Profesor' || role === 'Socio') router.push('/my-classes');
          else router.push('/admin/dashboard');
       }
     } catch (error) {

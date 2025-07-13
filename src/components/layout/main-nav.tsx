@@ -57,8 +57,14 @@ function UserMenu() {
         );
     }
     
-    const managementRoles: UserRole[] = ['admin', 'socio', 'administrativo'];
-    const canManage = userRole && managementRoles.includes(userRole);
+    // Correct role names from the database
+    const managementRoles = ['Admin', 'Socio', 'Administrativo'];
+    const teacherAreaRoles = ['Profesor', 'Socio'];
+    
+    const canManage = userRole && managementRoles.includes(currentUser.role);
+    const canAccessTeacherArea = userRole && teacherAreaRoles.includes(currentUser.role);
+    const canManageNotes = userRole && (currentUser.role === 'Admin' || currentUser.role === 'Socio');
+    const canManageSettings = userRole && (currentUser.role === 'Admin' || currentUser.role === 'Socio');
 
     return (
         <DropdownMenu>
@@ -78,7 +84,7 @@ function UserMenu() {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                     <DropdownMenuItem onClick={() => router.push('/profile')}><User className="mr-2 h-4 w-4"/> Mi Perfil</DropdownMenuItem>
-                    {(userRole === 'teacher' || userRole === 'socio') && (
+                    {canAccessTeacherArea && (
                         <>
                             <DropdownMenuItem onClick={() => router.push('/my-classes')}><ClipboardList className="mr-2 h-4 w-4"/>Mis Clases</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => router.push('/my-finances')}><HandCoins className="mr-2 h-4 w-4"/>Mis Finanzas</DropdownMenuItem>
@@ -95,16 +101,18 @@ function UserMenu() {
                                     <span>{item.label}</span>
                                 </DropdownMenuItem>
                             ))}
-                            {(userRole === 'admin' || userRole === 'socio') && (
+                            {canManageNotes && (
                                 <DropdownMenuItem onClick={() => router.push('/admin/notes')}>
                                     <StickyNote className="mr-2 h-4 w-4" />
                                     <span>Notas y Tareas</span>
                                 </DropdownMenuItem>
                             )}
-                             <DropdownMenuItem onClick={() => router.push('/admin/settings')}>
-                                <Settings className="mr-2 h-4 w-4" />
-                                <span>Configuración</span>
-                            </DropdownMenuItem>
+                             {canManageSettings && (
+                                <DropdownMenuItem onClick={() => router.push('/admin/settings')}>
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    <span>Configuración</span>
+                                </DropdownMenuItem>
+                             )}
                         </DropdownMenuGroup>
                     </>
                  )}
