@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MoreHorizontal, Edit, Trash2, Tag, User, Circle, CheckCircle, Clock, Calendar as CalendarDaysIcon, Users as UsersIcon, Bell } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Tag, User as UserIcon, Circle, CheckCircle, Clock, Calendar as CalendarDaysIcon, Users as UsersIcon, Bell } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu';
@@ -355,3 +355,5 @@ export default function NotesAndTasksPage() {
         </div>
     );
 }
+
+    
