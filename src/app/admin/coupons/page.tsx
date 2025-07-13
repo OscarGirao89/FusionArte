@@ -120,8 +120,8 @@ export default function AdminCouponsPage() {
     const couponToSave: Coupon = {
         ...data,
         id: editingCoupon?.id || `coupon-${Date.now()}`,
-        specificPlanIds: data.applicableTo === 'specific_memberships' ? data.specificPlanIds : [],
-        specificClassIds: data.applicableTo === 'specific_classes' ? data.specificClassIds : [],
+        specificPlanIds: data.applicableTo === 'specific_memberships' ? (data.specificPlanIds || []) : [],
+        specificClassIds: data.applicableTo === 'specific_classes' ? (data.specificClassIds || []) : [],
     };
     
     // In a real app, this would be an API call
