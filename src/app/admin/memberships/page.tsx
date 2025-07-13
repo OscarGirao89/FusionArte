@@ -70,6 +70,7 @@ type MembershipFormValues = z.infer<typeof formSchema>;
 const planToForm = (plan: MembershipPlan): MembershipFormValues => {
   const common = {
     ...plan,
+    isPopular: plan.isPopular ?? false,
     features: plan.features.join('\n'),
     visibility: plan.visibility || 'public',
     allowedClasses: plan.allowedClasses || [],
