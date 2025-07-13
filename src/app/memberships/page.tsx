@@ -118,7 +118,7 @@ export default function MembershipsPage() {
         setIsLoginDialogOpen(true);
         return;
     }
-    if (userRole !== 'student') {
+    if (userRole !== 'Estudiante') {
         toast({ title: "Acción no permitida", description: "Solo los estudiantes pueden adquirir membresías.", variant: "destructive" });
         return;
     }
@@ -283,5 +283,7 @@ export default function MembershipsPage() {
     </>
   );
 }
+
+    
 
     

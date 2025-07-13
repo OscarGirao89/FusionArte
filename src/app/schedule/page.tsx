@@ -201,7 +201,7 @@ export default function SchedulePage() {
   
   const handleEnrollRequest = (danceClass: DanceClass) => {
       if (!isAuthenticated) { setIsLoginDialogOpen(true); return; }
-      if (userRole === 'student') { setClassToEnroll(danceClass); } 
+      if (userRole === 'Estudiante') { setClassToEnroll(danceClass); } 
       else { toast({ title: "Acción no permitida", description: "Solo los estudiantes pueden inscribirse.", variant: "destructive" }); }
   };
 
@@ -350,3 +350,5 @@ export default function SchedulePage() {
     </div>
   );
 }
+
+    
