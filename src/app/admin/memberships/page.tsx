@@ -145,7 +145,7 @@ export default function AdminMembershipsPage() {
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "priceTiersJson"
+    name: "priceTiersJson" as 'priceTiersJson',
   });
 
   const accessType = form.watch('accessType');
@@ -175,7 +175,7 @@ export default function AdminMembershipsPage() {
   const onSubmit = (data: MembershipFormValues) => {
     let planToSave: MembershipPlan;
     
-    const baseData = {
+    const commonData = {
         id: editingPlan?.id || `plan-${Date.now()}`,
         title: data.title,
         description: data.description,
@@ -189,20 +189,24 @@ export default function AdminMembershipsPage() {
     
     switch(data.accessType) {
         case 'unlimited':
-            planToSave = { ...baseData, accessType: 'unlimited', price: data.price };
+            planToSave = { ...commonData, accessType: 'unlimited', price: data.price };
             break;
         case 'class_pack':
-            planToSave = { ...baseData, accessType: 'class_pack', price: data.price, classCount: data.classCount };
+            planToSave = { ...commonData, accessType: 'class_pack', price: data.price, classCount: data.classCount };
             break;
         case 'trial_class':
-            planToSave = { ...baseData, accessType: 'trial_class', price: data.price, classCount: data.classCount };
+            planToSave = { ...commonData, accessType: 'trial_class', price: data.price, classCount: data.classCount };
             break;
         case 'course_pass':
-            planToSave = { ...baseData, accessType: 'course_pass', price: data.price };
+            planToSave = { ...commonData, accessType: 'course_pass', price: data.price };
             break;
         case 'custom_pack':
-            planToSave = { ...baseData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson };
+            planToSave = { ...commonData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson };
             break;
+        default:
+            // This should never happen due to Zod validation
+            toast({ title: "Error", description: "Tipo de plan desconocido.", variant: "destructive" });
+            return;
     }
 
     if (editingPlan) {
@@ -464,7 +468,7 @@ export default function AdminMembershipsPage() {
                       </div>
                       <Button type="button" size="sm" variant="outline" className="mt-4" onClick={() => append({ classCount: 8, price: 80 })}> <PlusCircle className="mr-2 h-4 w-4" /> Añadir Tramo </Button>
                        {accessType === 'custom_pack' && (
-                          <FormMessage>{(form.formState.errors.priceTiersJson as any)?.message || (form.formState.errors.priceTiersJson as any)?.root?.message}</FormMessage>
+                          <FormField name="priceTiersJson" render={() => <FormMessage />} />
                         )}
                     </div>
                 </div>
@@ -514,4 +518,3 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
-
