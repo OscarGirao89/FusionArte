@@ -1,4 +1,5 @@
 
+'use server';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
@@ -16,6 +17,7 @@ const userCreateSchema = z.object({
     paymentDetails: paymentDetailsSchema.optional().nullable(),
     avatar: z.string().optional().nullable(),
     isVisibleToStudents: z.boolean().optional(),
+    isPartner: z.boolean().optional(),
 });
 
 
@@ -76,3 +78,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
