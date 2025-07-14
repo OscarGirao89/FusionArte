@@ -3,12 +3,15 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
+import { paymentDetailsSchema } from '@/lib/types';
+
 
 const userUpdateSchema = z.object({
+    id: z.number().optional(),
     name: z.string().min(3),
     email: z.string().email(),
-    mobile: z.string().optional(),
-    dob: z.string().optional(),
+    mobile: z.string().optional().nullable(),
+    dob: z.string().optional().nullable(),
     role: z.string().optional(), // Role might not always be updated from student page
     
     // Membership fields
@@ -23,6 +26,7 @@ const userUpdateSchema = z.object({
     avatar: z.string().optional().nullable(),
     isVisibleToStudents: z.boolean().optional(),
     password: z.string().min(8).optional().nullable(),
+    paymentDetails: paymentDetailsSchema.optional().nullable(),
 });
 
 
@@ -69,7 +73,6 @@ export async function PUT(
     }
 
     const json = await request.json();
-    // Manually handle date conversion before parsing with Zod
     if (json.membershipStartDate) json.membershipStartDate = new Date(json.membershipStartDate);
     if (json.membershipEndDate) json.membershipEndDate = new Date(json.membershipEndDate);
     const validatedData = userUpdateSchema.parse(json);
@@ -94,6 +97,11 @@ export async function PUT(
         dataToUpdate.password = await bcrypt.hash(validatedData.password, 10);
     }
     
+    // Only include paymentDetailsJson if it's not null/undefined
+    if (validatedData.paymentDetails) {
+        dataToUpdate.paymentDetailsJson = validatedData.paymentDetails;
+    }
+
     const updatedUser = await prisma.$transaction(async (tx) => {
       // 1. Update user profile data
       const user = await tx.user.update({
@@ -105,31 +113,23 @@ export async function PUT(
       const startDate = validatedData.membershipStartDate;
       const endDate = validatedData.membershipEndDate;
 
-      // 2. Manage student membership
+      // 2. Manage student membership: Delete any existing, then create if a new plan is provided.
+      // This is safer than upsert with compound keys.
+      await tx.studentMembership.deleteMany({
+        where: { userId: userId },
+      });
+
       if (planId && planId !== 'none' && startDate && endDate) {
-        // Create or update membership
-        await tx.studentMembership.upsert({
-          where: { userId: userId },
-          create: {
+        // Create the new membership record
+        await tx.studentMembership.create({
+          data: {
             userId: userId,
-            planId: planId,
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            classesRemaining: validatedData.membershipClassesRemaining,
-          },
-          update: {
             planId: planId,
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString(),
             classesRemaining: validatedData.membershipClassesRemaining,
           }
         });
-      } else {
-        // No plan selected, remove existing membership if it exists
-        const existingMembership = await tx.studentMembership.findUnique({ where: { userId } });
-        if (existingMembership) {
-          await tx.studentMembership.delete({ where: { userId } });
-        }
       }
       
       return user;
