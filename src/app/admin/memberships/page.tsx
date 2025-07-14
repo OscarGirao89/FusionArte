@@ -108,24 +108,25 @@ export default function AdminMembershipsPage() {
   const { toast } = useToast();
   const router = useRouter();
 
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+        const [plansRes, classesRes] = await Promise.all([
+            fetch('/api/memberships'),
+            fetch('/api/classes'),
+        ]);
+        if (plansRes.ok) setPlans(await plansRes.json());
+        if (classesRes.ok) setDanceClasses(await classesRes.json());
+    } catch (error) {
+        toast({ title: "Error", description: "No se pudieron cargar los datos." });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-        setIsLoading(true);
-        try {
-            const [plansRes, classesRes] = await Promise.all([
-                fetch('/api/memberships'),
-                fetch('/api/classes'),
-            ]);
-            if (plansRes.ok) setPlans(await plansRes.json());
-            if (classesRes.ok) setDanceClasses(await classesRes.json());
-        } catch (error) {
-            toast({ title: "Error", description: "No se pudieron cargar los datos." });
-        } finally {
-            setIsLoading(false);
-        }
-    };
     fetchData();
-  }, [toast]);
+  }, []);
 
   const form = useForm<MembershipFormValues>({
     resolver: zodResolver(formSchema),
@@ -172,61 +173,50 @@ export default function AdminMembershipsPage() {
     setIsDialogOpen(true);
   };
 
-  const onSubmit = (data: MembershipFormValues) => {
-    let planToSave: MembershipPlan;
-    
-    const commonData = {
-        id: editingPlan?.id || `plan-${Date.now()}`,
-        title: data.title,
-        description: data.description,
+  const onSubmit = async (data: MembershipFormValues) => {
+    const url = editingPlan ? `/api/memberships/${editingPlan.id}` : '/api/memberships';
+    const method = editingPlan ? 'PUT' : 'POST';
+
+    const planToSave = {
+        ...data,
         features: data.features.split('\n').filter(f => f.trim() !== ''),
-        isPopular: data.isPopular,
-        durationUnit: data.durationUnit,
-        durationValue: data.durationValue,
-        visibility: data.visibility,
-        allowedClasses: data.allowedClasses || [],
-    };
-    
-    switch(data.accessType) {
-        case 'unlimited':
-            planToSave = { ...commonData, accessType: 'unlimited', price: data.price };
-            break;
-        case 'class_pack':
-            planToSave = { ...commonData, accessType: 'class_pack', price: data.price, classCount: data.classCount };
-            break;
-        case 'trial_class':
-            planToSave = { ...commonData, accessType: 'trial_class', price: data.price, classCount: data.classCount };
-            break;
-        case 'course_pass':
-            planToSave = { ...commonData, accessType: 'course_pass', price: data.price };
-            break;
-        case 'custom_pack':
-             planToSave = { ...commonData, accessType: 'custom_pack', priceTiersJson: data.priceTiersJson };
-            break;
-        default:
-            const _exhaustiveCheck: never = data;
-            toast({ title: "Error", description: "Tipo de plan desconocido.", variant: "destructive" });
-            return;
     }
 
-    if (editingPlan) {
-      setPlans(plans.map(p => p.id === editingPlan.id ? planToSave : p));
-    } else {
-      setPlans([...plans, planToSave]);
-    }
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(planToSave),
+      });
 
-    toast({
-      title: `Plan ${editingPlan ? 'actualizado' : 'creado'} con éxito`,
-      description: `El plan "${data.title}" ha sido guardado.`,
-    });
-    
-    setIsDialogOpen(false);
-    setEditingPlan(null);
+      if (!response.ok) {
+        throw new Error(`Failed to ${method} plan.`);
+      }
+
+      toast({
+        title: `Plan ${editingPlan ? 'actualizado' : 'creado'} con éxito`,
+        description: `El plan "${data.title}" ha sido guardado.`,
+      });
+
+      await fetchData();
+    } catch (error) {
+       toast({ title: "Error", description: "No se pudo guardar el plan.", variant: "destructive" });
+    } finally {
+      setIsDialogOpen(false);
+      setEditingPlan(null);
+    }
   };
   
-  const handleDelete = (planId: string) => {
-    setPlans(plans.filter(p => p.id !== planId));
-    toast({ title: "Plan eliminado", variant: "destructive" });
+  const handleDelete = async (planId: string) => {
+    try {
+      const response = await fetch(`/api/memberships/${planId}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error("Failed to delete plan");
+
+      toast({ title: "Plan eliminado", variant: "destructive" });
+      await fetchData();
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudo eliminar el plan.", variant: "destructive" });
+    }
   }
 
   const allowedClassesDescription = (

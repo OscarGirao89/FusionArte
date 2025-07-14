@@ -1,5 +1,5 @@
 
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -27,31 +27,40 @@ const formSchema = z.discriminatedUnion("accessType", [
   z.object({ accessType: z.literal("custom_pack"), priceTiersJson: z.array(priceTierSchema).min(1) }).merge(baseSchema)
 ]);
 
-export async function GET() {
-  try {
-    const plans = await prisma.membershipPlan.findMany();
-    return NextResponse.json(plans);
-  } catch (error) {
-    console.error('Error fetching membership plans:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-}
-
-export async function POST(request: Request) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const json = await request.json();
     const validatedData = formSchema.parse(json);
 
-    const newPlan = await prisma.membershipPlan.create({
+    const updatedPlan = await prisma.membershipPlan.update({
+      where: { id: params.id },
       data: validatedData,
     });
-    return NextResponse.json(newPlan, { status: 201 });
+    return NextResponse.json(updatedPlan);
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.log(error.errors);
       return NextResponse.json({ error: 'Invalid data', details: error.errors }, { status: 400 });
     }
-    console.error('Error creating membership plan:', error);
+    console.error('Error updating membership plan:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+    try {
+        await prisma.membershipPlan.delete({
+            where: { id: params.id },
+        });
+        return new NextResponse(null, { status: 204 });
+    } catch (error) {
+        console.error(`Error deleting membership plan ${params.id}:`, error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
 }
