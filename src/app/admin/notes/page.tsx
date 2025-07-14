@@ -37,8 +37,7 @@ const taskNoteSchema = z.object({
   category: z.string().min(1, "La categoría es obligatoria."),
   assigneeIds: z.array(z.number()).default([]),
   dueDate: z.date().optional().nullable(),
-  alertDate: z.date().optional().nullable(),
-  alertTime: z.string().optional(),
+  alertDateTime: z.string().optional().nullable(), // Combines alertDate and alertTime
   createdAt: z.string().optional(),
 });
 
@@ -133,31 +132,32 @@ export default function NotesAndTasksPage() {
     const [editingTask, setEditingTask] = useState<TaskNote | null>(null);
     const { toast } = useToast();
 
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [tasksRes, usersRes] = await Promise.all([
+                fetch('/api/notes'),
+                fetch('/api/users'),
+            ]);
+            if (tasksRes.ok) setTasks(await tasksRes.json());
+            if (usersRes.ok) setAllUsers(await usersRes.json());
+        } catch (error) {
+            toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                const [tasksRes, usersRes] = await Promise.all([
-                    fetch('/api/notes'),
-                    fetch('/api/users'),
-                ]);
-                if (tasksRes.ok) setTasks(await tasksRes.json());
-                if (usersRes.ok) setAllUsers(await usersRes.json());
-            } catch (error) {
-                toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchData();
-    }, [toast]);
+    }, []);
 
     const form = useForm<TaskNoteFormValues>({
         resolver: zodResolver(taskNoteSchema),
         defaultValues: { status: 'todo', assigneeIds: [], priority: 'medium' }
     });
     
-    const managementUsers = allUsers.filter(u => u.role === 'Socio' || u.role === 'Administrador' || u.role === 'Administrativo');
+    const managementUsers = allUsers.filter(u => u.role === 'Socio' || u.role === 'Admin' || u.role === 'Administrativo');
 
     const handleOpenDialog = (task: TaskNote | null = null) => {
         setEditingTask(task);
@@ -167,52 +167,69 @@ export default function NotesAndTasksPage() {
                 assigneeIds: task.assigneeIds || [],
                 priority: task.priority || 'medium',
                 dueDate: task.dueDate ? parseISO(task.dueDate) : null,
-                alertDate: task.alertDateTime ? parseISO(task.alertDateTime) : null,
-                alertTime: task.alertDateTime ? format(parseISO(task.alertDateTime), 'HH:mm') : undefined,
+                alertDateTime: task.alertDateTime,
             });
         } else {
             form.reset({
                 title: '', description: '', status: 'todo', priority: 'medium', category: 'General',
-                assigneeIds: [], dueDate: null, alertDate: null,
+                assigneeIds: [], dueDate: null, alertDateTime: undefined,
             });
         }
         setIsDialogOpen(true);
     };
 
     const onSubmit = async (data: TaskNoteFormValues) => {
-        const dataToSave = {
-            ...data,
-            dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
-            alertDateTime: data.alertDate && data.alertTime ? `${format(data.alertDate, 'yyyy-MM-dd')}T${data.alertTime}:00` : undefined,
-        };
-        
-        // Simulating API call for now
-        if (editingTask) {
-            setTasks(tasks.map(t => t.id === editingTask.id ? { ...t, ...dataToSave } as TaskNote : t));
-        } else {
-            const newTask: TaskNote = { ...dataToSave, id: `task-${Date.now()}`, createdAt: new Date().toISOString() };
-            setTasks([...tasks, newTask]);
+        const url = editingTask ? `/api/notes/${editingTask.id}` : '/api/notes';
+        const method = editingTask ? 'PUT' : 'POST';
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) throw new Error(`Failed to ${method} task`);
+            
+            toast({ title: `Tarea ${editingTask ? 'actualizada' : 'creada'}` });
+            await fetchData();
+        } catch (error) {
+            toast({ title: "Error", description: "No se pudo guardar la tarea.", variant: "destructive" });
+        } finally {
+            setIsDialogOpen(false);
         }
-        toast({ title: `Tarea ${editingTask ? 'actualizada' : 'creada'}` });
-        setIsDialogOpen(false);
     };
     
-    const handleDelete = (taskId: string) => {
-        // Simulating API call
-        setTasks(tasks.filter(t => t.id !== taskId));
-        toast({ title: "Tarea eliminada", variant: "destructive" });
+    const handleDelete = async (taskId: string) => {
+        try {
+            const response = await fetch(`/api/notes/${taskId}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error("Failed to delete task");
+            toast({ title: "Tarea eliminada", variant: "destructive" });
+            await fetchData();
+        } catch (error) {
+            toast({ title: "Error al eliminar", description: "No se pudo eliminar la tarea.", variant: "destructive" });
+        }
     }
 
-    const handleStatusChange = (taskId: string, status: TaskStatus) => {
-        // Simulating API call
-        setTasks(tasks.map(t => t.id === taskId ? { ...t, status } : t));
+    const handleStatusChange = async (taskId: string, status: TaskStatus) => {
+        try {
+            const response = await fetch(`/api/notes/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status }),
+            });
+            if (!response.ok) throw new Error("Failed to update status");
+            await fetchData();
+        } catch (error) {
+             toast({ title: "Error", description: "No se pudo actualizar el estado.", variant: "destructive" });
+        }
     };
 
-    const columns: Record<TaskStatus, TaskNote[]> = {
+    const columns: Record<TaskStatus, TaskNote[]> = useMemo(() => ({
         todo: tasks.filter(t => t.status === 'todo'),
         in_progress: tasks.filter(t => t.status === 'in_progress'),
         done: tasks.filter(t => t.status === 'done'),
-    };
+    }), [tasks]);
     
     if (isLoading) {
         return (
@@ -325,24 +342,9 @@ export default function NotesAndTasksPage() {
                                 <FormMessage /></FormItem>
                             )} />
 
-                            <div className="p-4 border rounded-md space-y-3">
-                                <h4 className="font-semibold flex items-center gap-2"><Bell className="h-4 w-4"/> Configurar Alerta</h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                     <FormField control={form.control} name="alertDate" render={({ field }) => (
-                                      <FormItem className="flex flex-col"><FormLabel>Fecha de Alerta</FormLabel>
-                                        <Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                          {field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Elegir fecha</span>)}
-                                          <CalendarDaysIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
-                                          <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus locale={es}/>
-                                        </PopoverContent></Popover><FormMessage />
-                                      </FormItem>
-                                    )} />
-                                     <FormField control={form.control} name="alertTime" render={({ field }) => (
-                                        <FormItem><FormLabel>Hora (HH:MM)</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>
-                                    )} />
-                                </div>
-                            </div>
+                            <FormField control={form.control} name="alertDateTime" render={({ field }) => (
+                                <FormItem><FormLabel>Fecha y Hora de Alerta</FormLabel><FormControl><Input type="datetime-local" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
+                            )} />
                             
                             <DialogFooter>
                                 <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
