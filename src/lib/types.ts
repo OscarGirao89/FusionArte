@@ -31,6 +31,7 @@ type MembershipPlanBase = {
   id: string;
   title: string;
   description: string;
+  price?: number; // Price is now optional in the base type
   features: string[];
   isPopular?: boolean;
   durationUnit: 'days' | 'weeks' | 'months';
@@ -41,24 +42,24 @@ type MembershipPlanBase = {
 
 type UnlimitedPlan = MembershipPlanBase & {
   accessType: 'unlimited';
-  price: number;
+  price: number; // Required for this specific type
 };
 
 type ClassPackPlan = MembershipPlanBase & {
   accessType: 'class_pack';
-  price: number;
+  price: number; // Required for this specific type
   classCount: number;
 };
 
 type TrialClassPlan = MembershipPlanBase & {
   accessType: 'trial_class';
-  price: number;
+  price: number; // Required for this specific type
   classCount: number;
 };
 
 type CoursePassPlan = MembershipPlanBase & {
   accessType: 'course_pass';
-  price: number;
+  price: number; // Required for this specific type
 };
 
 export type PriceTier = {
@@ -66,8 +67,9 @@ export type PriceTier = {
   price: number;
 };
 
-type CustomPackPlan = Omit<MembershipPlanBase, 'price'> & {
+type CustomPackPlan = MembershipPlanBase & {
   accessType: 'custom_pack';
+  price?: never; // Explicitly disallow price for this type
   priceTiersJson: PriceTier[];
 };
 

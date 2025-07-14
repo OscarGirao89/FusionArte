@@ -1,4 +1,5 @@
 
+'use server';
 import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
@@ -26,14 +27,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plan no encontrado' }, { status: 404 });
     }
 
-    let finalPrice: number;
-    if (totalPrice !== undefined) {
-      finalPrice = totalPrice;
-    } else if ('price' in plan) {
-      finalPrice = plan.price;
-    } else {
-      finalPrice = 0; // Default safe value
-    }
+    // Use a robust fallback for the price.
+    // 1. Use `totalPrice` if it's a custom pack.
+    // 2. Use `plan.price` if it's a standard plan.
+    // 3. Default to 0 if neither exists (safety net).
+    const finalPrice = totalPrice ?? plan.price ?? 0;
     
     const classesRemaining = classCount ?? ('classCount' in plan ? plan.classCount : undefined);
 
