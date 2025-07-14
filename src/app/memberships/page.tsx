@@ -264,7 +264,7 @@ export default function MembershipsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Compra</AlertDialogTitle>
             <AlertDialogDescription>
-              Estás a punto de adquirir el plan "{planToConfirm?.title}" por €{planToConfirm && 'price' in planToConfirm ? planToConfirm.price : '0'}. Se generará una factura pendiente en tu perfil. ¿Deseas continuar?
+              Estás a punto de adquirir el plan "{planToConfirm?.title}" por €{planToConfirm && 'price' in planToConfirm && planToConfirm.price !== undefined ? planToConfirm.price : '0'}. Se generará una factura pendiente en tu perfil. ¿Deseas continuar?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

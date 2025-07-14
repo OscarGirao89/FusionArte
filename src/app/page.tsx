@@ -13,12 +13,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function HomePage() {
   const [featuredTeachers, setFeaturedTeachers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { settings } = useSettings();
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  const { settings, isLoading: isSettingsLoading } = useSettings();
 
   useEffect(() => {
     const fetchTeachers = async () => {
-      setIsLoading(true);
+      setIsDataLoading(true);
       try {
         const response = await fetch('/api/users');
         if (!response.ok) {
@@ -31,12 +31,16 @@ export default function HomePage() {
       } catch (error) {
         console.error("Failed to fetch teachers for homepage:", error);
       } finally {
-        setIsLoading(false);
+        setIsDataLoading(false);
       }
     };
 
     fetchTeachers();
   }, []);
+  
+  if (isSettingsLoading || !settings) {
+    return <div className="p-8"><Skeleton className="h-screen w-full" /></div>
+  }
 
   return (
     <div className="flex-1 bg-background">
@@ -160,7 +164,7 @@ export default function HomePage() {
              <p className="text-lg text-muted-foreground mt-2">Conoce a algunos de los talentos que te guiarán.</p>
           </div>
            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {isLoading ? (
+            {isDataLoading ? (
                 Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-96 w-full" />)
             ) : (
                 featuredTeachers.map(teacher => (

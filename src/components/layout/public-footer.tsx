@@ -11,6 +11,8 @@ import Image from 'next/image';
 export function PublicFooter() {
   const { settings } = useSettings();
 
+  if (!settings) return null;
+
   return (
     <footer className="bg-muted py-8 border-t">
       <div className="container mx-auto px-4 text-center text-muted-foreground">

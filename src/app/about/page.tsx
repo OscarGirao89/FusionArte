@@ -9,12 +9,13 @@ import { useSettings } from '@/context/settings-context';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AboutPage() {
-    const { settings } = useSettings();
+    const { settings, isLoading: isSettingsLoading } = useSettings();
     const [founders, setFounders] = useState<User[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isDataLoading, setIsDataLoading] = useState(true);
 
     useEffect(() => {
         const fetchFounders = async () => {
+            setIsDataLoading(true);
             try {
                 const response = await fetch('/api/users');
                 if (response.ok) {
@@ -25,11 +26,21 @@ export default function AboutPage() {
             } catch (error) {
                 console.error("Failed to fetch founders", error);
             } finally {
-                setIsLoading(false);
+                setIsDataLoading(false);
             }
         };
         fetchFounders();
     }, []);
+
+    if (isSettingsLoading || !settings) {
+        return (
+             <div className="p-8 space-y-8">
+                <Skeleton className="h-48 w-full" />
+                <div className="grid md:grid-cols-3 gap-8"><Skeleton className="h-48" /><Skeleton className="h-48" /><Skeleton className="h-48" /></div>
+                <Skeleton className="h-96 w-full" />
+            </div>
+        )
+    }
 
     return (
         <div className="bg-background">
@@ -89,7 +100,7 @@ export default function AboutPage() {
                         <p className="text-lg text-muted-foreground mt-2">{settings.aboutUsTeamDescription}</p>
                     </div>
                     <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 justify-center">
-                        {isLoading ? (
+                        {isDataLoading ? (
                             Array.from({ length: 2 }).map((_, i) => (
                                 <Card key={i}><CardContent className="p-6 space-y-4"><Skeleton className="h-72 w-full" /><Skeleton className="h-6 w-1/2" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-3/4" /></CardContent></Card>
                             ))

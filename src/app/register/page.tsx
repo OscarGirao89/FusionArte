@@ -59,6 +59,8 @@ export default function RegisterPage() {
     });
 
     const onSubmit = async (data: RegisterFormValues) => {
+        if (!settings) return; // Should not happen if page is rendered
+
         try {
             const response = await fetch('/api/users', {
                 method: 'POST',
@@ -89,7 +91,7 @@ export default function RegisterPage() {
             `;
             
             await sendEmail({
-              from: `FusionArte <no-reply@fusionarte.com>`,
+              from: `${settings.academyName} <no-reply@fusionarte.com>`,
               to: data.email,
               subject: `¡Bienvenido/a a ${settings.academyName}!`,
               html: emailHtml,
@@ -104,6 +106,8 @@ export default function RegisterPage() {
             });
         }
     };
+    
+    if (!settings) return null; // or a loading skeleton
 
     return (
         <div className="flex flex-1 items-center justify-center p-4">

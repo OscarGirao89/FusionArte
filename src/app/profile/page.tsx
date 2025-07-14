@@ -102,7 +102,7 @@ export default function ProfilePage() {
     
     const myEnrolledClasses = useMemo(() => {
         if (!currentUser || !allData) return [];
-        return allData.danceClasses.filter(c => c.enrolledStudentIds.includes(currentUser.id));
+        return allData.danceClasses.filter(c => c.enrolledStudentIds && c.enrolledStudentIds.includes(currentUser.id));
     }, [currentUser, allData]);
     
     const upcomingClassesToShow = isMembershipActive ? myEnrolledClasses : [];

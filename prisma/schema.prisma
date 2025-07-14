@@ -10,6 +10,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                  Int                 @id @default(autoincrement())
+  email               String              @unique
+  name                String
+  password            String
+  role                String
+  joined              DateTime            @default(now())
+  avatar              String
+  dob                 String?
+  mobile              String?
+  isVisibleToStudents Boolean?            @default(false)
+  isPartner           Boolean?            @default(false)
+  bio                 String?
+  specialties         String[]
+  paymentDetailsJson  Json?               @map("paymentDetails")
+  taughtClasses       DanceClass[]        @relation("TeacherClasses")
+  enrolledClasses     DanceClass[]        @relation("EnrolledStudents")
+  memberships         StudentMembership[]
+  payments            StudentPayment[]
+  assignedTasks       TaskNote[]          @relation("AssignedTasks")
+  attendanceHistory   AttendanceRecord[]
+}
+
 model DanceStyle {
   id          String       @id @default(cuid())
   name        String       @unique
@@ -24,42 +47,17 @@ model DanceLevel {
   classes     DanceClass[]
 }
 
-model User {
-  id                  Int                 @id @default(autoincrement())
-  name                String
-  email               String              @unique
-  password            String
-  role                String              @default("Estudiante")
-  joined              DateTime            @default(now())
-  avatar              String
-  dob                 DateTime?
-  mobile              String?
-  isVisibleToStudents Boolean?
-  isPartner           Boolean?
-  bio                 String?
-  specialties         String[]
-  paymentDetailsJson  Json?
-  
-  taughtClasses       DanceClass[]        @relation("TeacherClasses")
-  enrolledClasses     DanceClass[]        @relation("EnrolledStudents")
-  memberships         StudentMembership[]
-  payments            StudentPayment[]
-  assignedTasks       TaskNote[]          @relation("AssignedTasks")
-  attendanceHistory   AttendanceRecord[]
-}
-
 model DanceClass {
   id                      String   @id @default(cuid())
   name                    String
   type                    String
-  styleId                 String
-  levelId                 String
   day                     String?
   time                    String
   room                    String
   duration                String
   capacity                Int
-  date                    DateTime?
+  cancellationPolicyHours Int?
+  date                    String?
   status                  String   @default("scheduled")
   isCancelledAndHidden    Boolean?
   isVisibleToStudents     Boolean?
@@ -67,50 +65,32 @@ model DanceClass {
   rentalPrice             Float?
   workshopPaymentType     String?
   workshopPaymentValue    Float?
-  cancellationPolicyHours Int?
 
-  style            DanceStyle @relation(fields: [styleId], references: [id])
-  level            DanceLevel @relation(fields: [levelId], references: [id])
-  teachers         User[]     @relation("TeacherClasses")
-  enrolledStudents User[]     @relation("EnrolledStudents")
-}
+  style   DanceStyle @relation(fields: [styleId], references: [id])
+  styleId String
 
-model MembershipPlan {
-  id             String   @id @default(cuid())
-  title          String
-  price          Float?
-  description    String
-  features       String[]
-  isPopular      Boolean?
-  durationUnit   String
-  durationValue  Int
-  accessType     String
-  classCount     Int?
-  visibility     String
-  allowedClasses String[]
-  priceTiersJson Json?
+  level   DanceLevel @relation(fields: [levelId], references: [id])
+  levelId String
 
-  StudentMembership StudentMembership[]
-  StudentPayment    StudentPayment[]
-  coupons           Coupon[]          @relation("CouponApplicablePlans")
+  teachers         User[] @relation("TeacherClasses")
+  enrolledStudents User[] @relation("EnrolledStudents")
 }
 
 model StudentMembership {
+  id               String   @id @default(cuid())
+  userId           Int
+  planId           String
   startDate        DateTime
   endDate          DateTime
   classesRemaining Int?
-
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId  Int
-  plan    MembershipPlan @relation(fields: [planId], references: [id])
-  planId  String
-
-  @@id([userId, planId])
+  user             User     @relation(fields: [userId], references: [id])
 }
 
 model StudentPayment {
   id              String   @id @default(cuid())
-  invoiceDate     DateTime @default(now())
+  studentId       Int
+  planId          String
+  invoiceDate     DateTime
   totalAmount     Float
   status          String
   amountPaid      Float
@@ -118,24 +98,42 @@ model StudentPayment {
   notes           String?
   lastUpdatedBy   String?
   lastUpdatedDate DateTime?
-
-  student   User           @relation(fields: [studentId], references: [id])
-  studentId Int
-  plan      MembershipPlan @relation(fields: [planId], references: [id])
-  planId    String
+  student         User     @relation(fields: [studentId], references: [id])
 }
 
 model Coupon {
-  id             String   @id @default(cuid())
-  code           String   @unique
-  discountType   String
-  discountValue  Float
-  expirationDate DateTime?
-  usageLimit     Int?
-  status         String
-  applicableTo   String
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  discountType       String
+  discountValue      Float
+  expirationDate     DateTime?
+  usageLimit         Int?
+  status             String
+  applicableTo       String
+  specificPlanIds    String[]
+  specificClassIds   String[]
+}
 
-  specificPlans MembershipPlan[] @relation("CouponApplicablePlans")
+model MembershipPlan {
+  id               String   @id @default(cuid())
+  title            String
+  description      String
+  price            Float?
+  features         String[]
+  isPopular        Boolean? @default(false)
+  durationUnit     String
+  durationValue    Int
+  accessType       String
+  classCount       Int?
+  priceTiersJson   Json?    @map("priceTiers")
+  visibility       String   @default("public")
+  allowedClasses   String[]
+}
+
+model Role {
+  id          String   @id
+  name        String   @unique
+  permissions String[]
 }
 
 model Transaction {
@@ -148,12 +146,6 @@ model Transaction {
   receiptUrl  String?
 }
 
-model Role {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  permissions String[]
-}
-
 model TaskNote {
   id             String    @id @default(cuid())
   title          String
@@ -161,20 +153,48 @@ model TaskNote {
   status         String
   category       String
   priority       String?
+  assignees      User[]    @relation("AssignedTasks")
   createdAt      DateTime  @default(now())
   dueDate        DateTime?
   alertDateTime  DateTime?
-  alertDismissed Boolean   @default(false)
-
-  assignees User[] @relation("AssignedTasks")
+  alertDismissed Boolean?
 }
 
 model AttendanceRecord {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
+  userId    Int
   classId   String
   date      DateTime
   status    String
+  user      User     @relation(fields: [userId], references: [id])
+}
 
-  student   User @relation(fields: [studentId], references: [id])
-  studentId Int
+model Settings {
+  id                       String @id @default("singleton")
+  academyName              String
+  contactEmail             String
+  phone                    String?
+  whatsappPhone            String?
+  address                  String?
+  welcomeMessage           String?
+  enableNewSignups         Boolean
+  maintenanceMode          Boolean
+  logoUrl                  String?
+  faviconUrl               String?
+  instagramUrl             String?
+  facebookUrl              String?
+  tiktokUrl                String?
+  openingHours             String?
+  registrationEmailMessage String?
+  membershipEmailMessage   String?
+  heroSlides               Json?
+  scheduleImages           Json?
+  aboutUsTitle             String?
+  aboutUsStory             String?
+  aboutUsMission           String?
+  aboutUsVision            String?
+  aboutUsValues            String?
+  aboutUsTeamTitle         String?
+  aboutUsTeamDescription   String?
+  updatedAt                DateTime @updatedAt
 }

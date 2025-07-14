@@ -95,12 +95,10 @@ function UserMenu() {
                     <>
                         <DropdownMenuSeparator />
                          <DropdownMenuGroup>
-                            {adminManagementNav.map((item) => (
-                                <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
-                                    <item.icon className="mr-2 h-4 w-4" />
-                                    <span>{item.label}</span>
-                                </DropdownMenuItem>
-                            ))}
+                            <DropdownMenuItem onClick={() => router.push('/admin/dashboard')}>
+                                <LayoutDashboard className="mr-2 h-4 w-4" />
+                                <span>Dashboard</span>
+                            </DropdownMenuItem>
                             {canManageNotes && (
                                 <DropdownMenuItem onClick={() => router.push('/admin/notes')}>
                                     <StickyNote className="mr-2 h-4 w-4" />
@@ -190,12 +188,12 @@ export function MainNav() {
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 no-print">
         <div className="container flex h-20 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 mr-6">
-            {settings.logoUrl ? (
+            {settings?.logoUrl ? (
                 <Image src={settings.logoUrl} alt={settings.academyName} width={40} height={40} className="h-8 w-auto" />
             ) : (
                 <LogoIcon className="h-8 w-8 text-primary" />
             )}
-            <span className="hidden sm:inline-block font-bold text-lg font-headline">{settings.academyName}</span>
+            <span className="hidden sm:inline-block font-bold text-lg font-headline">{settings?.academyName}</span>
           </Link>
           <div className="flex-1">
               <NavLinks />

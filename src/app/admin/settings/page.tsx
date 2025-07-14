@@ -43,6 +43,7 @@ const settingsFormSchema = z.object({
   enableNewSignups: z.boolean(),
   maintenanceMode: z.boolean(),
   logoUrl: z.string().optional(),
+  faviconUrl: z.string().optional(),
   instagramUrl: z.string().url("URL de Instagram inválida.").or(z.literal('')).optional(),
   facebookUrl: z.string().url("URL de Facebook inválida.").or(z.literal('')).optional(),
   tiktokUrl: z.string().url("URL de TikTok inválida.").or(z.literal('')).optional(),
@@ -68,12 +69,13 @@ const settingsFormSchema = z.object({
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 export default function AdminSettingsPage() {
-    const { settings, updateSettings } = useSettings();
+    const { settings, updateSettings, isLoading } = useSettings();
     const logoInputRef = useRef<HTMLInputElement>(null);
+    const faviconInputRef = useRef<HTMLInputElement>(null);
 
     const form = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsFormSchema),
-        defaultValues: { ...settings, scheduleImages: settings.scheduleImages || [] },
+        values: settings || undefined,
         mode: "onChange",
     });
 
@@ -89,13 +91,16 @@ export default function AdminSettingsPage() {
 
 
     useEffect(() => {
-        form.reset({ ...settings, scheduleImages: settings.scheduleImages || [] });
+        if(settings) {
+            form.reset({ ...settings, scheduleImages: settings.scheduleImages || [] });
+        }
     }, [settings, form]);
     
     const watchedLogo = form.watch('logoUrl');
+    const watchedFavicon = form.watch('faviconUrl');
 
-    function onSubmit(data: SettingsFormValues) {
-        updateSettings(data);
+    async function onSubmit(data: SettingsFormValues) {
+        await updateSettings(data);
         toast({
             title: "Configuración Guardada",
             description: "Tus cambios han sido guardados exitosamente.",
@@ -116,6 +121,10 @@ export default function AdminSettingsPage() {
             reader.readAsDataURL(file);
         }
     };
+    
+    if (isLoading || !settings) {
+        return <div>Cargando configuración...</div>
+    }
 
   return (
     <div className="p-4 md:p-8">
@@ -125,9 +134,9 @@ export default function AdminSettingsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Identidad Visual</CardTitle>
-                    <CardDescription>Gestiona el logo de tu academia.</CardDescription>
+                    <CardDescription>Gestiona el logo y el ícono de tu academia.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="grid md:grid-cols-2 gap-8">
                     <FormField
                         control={form.control}
                         name="logoUrl"
@@ -145,6 +154,27 @@ export default function AdminSettingsPage() {
                                     </div>
                                 </FormControl>
                                 <FormDescription>Haz clic en el logo o en el botón para subir una nueva imagen (PNG, JPG, SVG).</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="faviconUrl"
+                        render={() => (
+                            <FormItem>
+                                <FormLabel>Ícono del Navegador (Favicon)</FormLabel>
+                                <FormControl>
+                                    <div className="flex items-center gap-4">
+                                        <Avatar className="h-20 w-20 rounded-md cursor-pointer hover:opacity-80 transition-opacity" onClick={() => handleImageClick(faviconInputRef)}>
+                                            <AvatarImage src={watchedFavicon} className="object-contain" />
+                                            <AvatarFallback className="rounded-md">ICO</AvatarFallback>
+                                        </Avatar>
+                                        <Button type="button" variant="outline" onClick={() => handleImageClick(faviconInputRef)}>Subir Ícono</Button>
+                                        <input type="file" ref={faviconInputRef} onChange={(e) => handleFileChange(e, 'faviconUrl')} className="hidden" accept="image/png, image/x-icon, image/svg+xml" />
+                                    </div>
+                                </FormControl>
+                                <FormDescription>Sube un ícono (ICO, PNG, SVG) para la pestaña del navegador.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -306,7 +336,7 @@ export default function AdminSettingsPage() {
                                         <FormLabel>Imagen Principal</FormLabel>
                                         <FormControl>
                                             <div className="flex items-center gap-4">
-                                                <Image src={watchedHeroImage || "https://placehold.co/800x1200.png"} alt="Previsualización de imagen principal" width={100} height={150} className="object-contain border rounded-md" />
+                                                <Image src={watchedHeroImage || "https://placehold.co/800x1200.png"} alt={form.getValues(`heroSlides.${index}.heroTitle`) || "Imagen de portada"} width={100} height={150} className="object-contain border rounded-md" />
                                                 <Button type="button" variant="outline" onClick={() => handleImageClick(heroImageInputRef)}>Subir Imagen</Button>
                                                 <input type="file" ref={heroImageInputRef} onChange={(e) => handleFileChange(e, `heroSlides.${index}.heroImageUrl`)} className="hidden" accept="image/png, image/jpeg, image/gif" />
                                             </div>
@@ -390,11 +420,12 @@ export default function AdminSettingsPage() {
             </Card>
             
             <div className="flex justify-start">
-                <Button type="submit">Guardar Cambios</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+                </Button>
             </div>
         </form>
       </Form>
     </div>
   );
 }
-

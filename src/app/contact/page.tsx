@@ -13,6 +13,7 @@ import { Mail, MapPin, Phone } from "lucide-react"
 import { useSettings } from "@/context/settings-context"
 import { TikTokIcon } from "@/components/icons/tiktok-icon"
 import Link from "next/link"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const contactFormSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
@@ -23,7 +24,7 @@ const contactFormSchema = z.object({
 type ContactFormValues = z.infer<typeof contactFormSchema>;
 
 export default function ContactPage() {
-    const { settings } = useSettings();
+    const { settings, isLoading } = useSettings();
     const form = useForm<ContactFormValues>({
         resolver: zodResolver(contactFormSchema),
         defaultValues: {
@@ -32,6 +33,18 @@ export default function ContactPage() {
             message: "",
         },
     });
+
+    if (isLoading || !settings) {
+        return (
+             <div className="p-8 space-y-8">
+                <Skeleton className="h-24 w-full" />
+                <div className="grid md:grid-cols-2 gap-8">
+                    <Skeleton className="h-96" />
+                    <Skeleton className="h-96" />
+                </div>
+            </div>
+        )
+    }
 
     const whatsAppUrl = settings.whatsappPhone ? `https://wa.me/${settings.whatsappPhone.replace(/\D/g, '')}` : '';
 

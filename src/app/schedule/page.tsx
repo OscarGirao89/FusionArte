@@ -34,11 +34,11 @@ function ClassListCard({ danceClass, onEnrollRequest, allStyles, allUsers }: { d
     return (
         <Card className={cn(
             "transition-shadow hover:shadow-lg w-full flex flex-col",
-            danceClass.status.startsWith('cancelled') && "opacity-60"
+            danceClass.status && danceClass.status.startsWith('cancelled') && "opacity-60"
         )}>
             <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-5 items-center gap-4 text-sm flex-grow">
                 <div className="sm:col-span-2">
-                    <p className={cn("font-bold text-base", danceClass.status.startsWith('cancelled') && "line-through")}>{danceClass.name}</p>
+                    <p className={cn("font-bold text-base", danceClass.status && danceClass.status.startsWith('cancelled') && "line-through")}>{danceClass.name}</p>
                     <p className="text-muted-foreground">{style?.name}</p>
                 </div>
                 <div className="text-muted-foreground flex items-center gap-2">
@@ -126,10 +126,10 @@ function ScheduleCalendarView({ classes, isRecurring, allUsers, allStyles, allLe
                             const level = allLevels.find(l => l.id === c.levelId);
                             const style = allStyles.find(s => s.id === c.styleId);
                             return (
-                                <Card key={c.id} className={cn("overflow-hidden transition-shadow hover:shadow-lg bg-card/80 backdrop-blur-sm w-full", c.status.startsWith('cancelled') && "opacity-60")}>
+                                <Card key={c.id} className={cn("overflow-hidden transition-shadow hover:shadow-lg bg-card/80 backdrop-blur-sm w-full", c.status && c.status.startsWith('cancelled') && "opacity-60")}>
                                   <CardHeader className="p-4 flex flex-row items-start justify-between gap-4">
                                         <div>
-                                          <CardTitle className={cn("text-base font-bold", c.status.startsWith('cancelled') && "line-through")}>{c.name}</CardTitle>
+                                          <CardTitle className={cn("text-base font-bold", c.status && c.status.startsWith('cancelled') && "line-through")}>{c.name}</CardTitle>
                                           {c.type !== 'rental' && <CardDescription className="text-xs">{style?.name}</CardDescription>}
                                         </div>
                                         {c.type === 'rental' 
@@ -172,7 +172,7 @@ export default function SchedulePage() {
   const { userRole, isAuthenticated, userId } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const { settings } = useSettings();
+  const { settings, isLoading: isSettingsLoading } = useSettings();
   
   useEffect(() => {
     const fetchData = async () => {
@@ -248,7 +248,7 @@ export default function SchedulePage() {
     </div>
   );
   
-  if (isLoading) {
+  if (isLoading || isSettingsLoading) {
       return (
           <div className="p-4 md:p-8 space-y-8">
               <Skeleton className="h-12 w-1/2" />
@@ -333,7 +333,7 @@ export default function SchedulePage() {
             </TabsContent>
         </Tabs>
         
-        {settings.scheduleImages && settings.scheduleImages.length > 0 && (
+        {settings?.scheduleImages && settings.scheduleImages.length > 0 && (
             <section className="mt-12">
                 <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2 font-headline"><ImageIcon className="h-6 w-6 text-primary" />Horarios en Imagen</CardTitle></CardHeader>
@@ -350,5 +350,3 @@ export default function SchedulePage() {
     </div>
   );
 }
-
-    

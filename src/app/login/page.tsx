@@ -50,6 +50,8 @@ export default function LoginPage() {
     }
   };
 
+  if (!settings) return null; // or a loading skeleton
+
   return (
     <div className="flex flex-1 items-center justify-center p-4">
       <Card className="w-full max-w-sm">

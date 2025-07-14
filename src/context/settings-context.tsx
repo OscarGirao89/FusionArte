@@ -3,10 +3,12 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import type { AcademySettings } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export interface SettingsContextType {
-  settings: AcademySettings;
-  updateSettings: (newSettings: Partial<AcademySettings>) => void;
+  settings: AcademySettings | null;
+  updateSettings: (newSettings: Partial<AcademySettings>) => Promise<void>;
+  isLoading: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -21,6 +23,7 @@ const initialSettings: AcademySettings = {
   enableNewSignups: true,
   maintenanceMode: false,
   logoUrl: "",
+  faviconUrl: "/favicon.ico",
   instagramUrl: "https://www.instagram.com",
   facebookUrl: "https://www.facebook.com",
   tiktokUrl: "https://www.tiktok.com",
@@ -59,33 +62,56 @@ const initialSettings: AcademySettings = {
 
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
-  const [settings, setSettings] = useState<AcademySettings>(initialSettings);
+  const [settings, setSettings] = useState<AcademySettings | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
+    const fetchSettings = async () => {
+        try {
+            const response = await fetch('/api/settings');
+            if (response.ok) {
+                const data = await response.json();
+                // Merge with initial settings to ensure all keys are present
+                setSettings({ ...initialSettings, ...data });
+            } else {
+                setSettings(initialSettings);
+            }
+        } catch (error) {
+            console.error("Could not fetch settings, using defaults.", error);
+            setSettings(initialSettings);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchSettings();
+  }, []);
+
+  const updateSettings = useCallback(async (newSettings: Partial<AcademySettings>) => {
+    setSettings(prev => prev ? { ...prev, ...newSettings } : null);
+    
     try {
-      const storedSettings = localStorage.getItem('academySettings');
-      if (storedSettings) {
-        setSettings({ ...initialSettings, ...JSON.parse(storedSettings) });
-      }
+        const response = await fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newSettings),
+        });
+        if (response.ok) {
+            const data = await response.json();
+            setSettings(prev => ({...prev!, ...data}));
+        } else {
+            console.error("Failed to save settings to the server.");
+        }
     } catch (error) {
-      console.error("Could not access localStorage for settings", error);
+         console.error("Error saving settings:", error);
     }
   }, []);
 
-  const updateSettings = useCallback((newSettings: Partial<AcademySettings>) => {
-    setSettings(prev => {
-        const updated = { ...prev, ...newSettings };
-        try {
-            localStorage.setItem('academySettings', JSON.stringify(updated));
-        } catch (error) {
-            console.error("Could not access localStorage for settings", error);
-        }
-        return updated;
-    });
-  }, []);
+  if (isLoading || !settings) {
+    return <div className="flex h-screen w-screen items-center justify-center"><Skeleton className="h-20 w-20 rounded-full" /></div>
+  }
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings }}>
+    <SettingsContext.Provider value={{ settings, updateSettings, isLoading }}>
       {children}
     </SettingsContext.Provider>
   );
