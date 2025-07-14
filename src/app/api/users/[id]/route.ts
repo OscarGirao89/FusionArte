@@ -59,10 +59,10 @@ export async function PUT(
         role: validatedData.role,
         bio: validatedData.bio,
         specialties: validatedData.specialties?.split(',').map(s => s.trim()) || [],
-        paymentDetailsJson: validatedData.paymentDetails,
         avatar: validatedData.avatar,
         isVisibleToStudents: validatedData.isVisibleToStudents,
         isPartner: validatedData.role === 'Socio',
+        ...(validatedData.paymentDetails && { paymentDetailsJson: validatedData.paymentDetails }),
     };
     
     if (validatedData.role !== 'Profesor' && validatedData.role !== 'Socio') {

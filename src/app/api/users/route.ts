@@ -8,16 +8,15 @@ import { paymentDetailsSchema } from '@/lib/types';
 
 
 const userCreateSchema = z.object({
-    name: z.string().min(3),
-    email: z.string().email(),
+    id: z.number().optional(),
+    name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
+    email: z.string().email("Email inválido."),
     role: z.string(),
-    password: z.string().min(8),
-    bio: z.string().optional().nullable(),
-    specialties: z.string().optional().nullable(),
+    bio: z.string().optional(),
+    specialties: z.string().optional(),
     paymentDetails: paymentDetailsSchema.optional().nullable(),
-    avatar: z.string().optional().nullable(),
-    isVisibleToStudents: z.boolean().optional(),
-    isPartner: z.boolean().optional(),
+    avatar: z.string().optional(),
+    isVisibleToStudents: z.boolean().default(false).optional(),
 });
 
 
@@ -48,7 +47,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'El email ya está en uso.' }, { status: 409 });
     }
 
-    const hashedPassword = await bcrypt.hash(validatedData.password, 10);
+    const hashedPassword = await bcrypt.hash(data.password || 'password123', 10);
     
     const initials = validatedData.name.split(' ').map(n => n[0]).join('');
     const avatarUrl = validatedData.avatar || `https://placehold.co/100x100.png?text=${initials}`;
@@ -62,7 +61,7 @@ export async function POST(request: Request) {
             avatar: avatarUrl,
             bio: validatedData.bio,
             specialties: validatedData.specialties?.split(',').map(s => s.trim()) || [],
-            paymentDetailsJson: validatedData.paymentDetails,
+            ...(validatedData.paymentDetails && { paymentDetailsJson: validatedData.paymentDetails }),
             isVisibleToStudents: validatedData.isVisibleToStudents,
             isPartner: validatedData.role === 'Socio',
         }
@@ -78,4 +77,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-
