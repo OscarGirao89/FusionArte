@@ -16,7 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { LoginRequiredDialog } from '@/components/shared/login-required-dialog';
 import Link from 'next/link';
 import { useSettings } from '@/context/settings-context';
-import { format, parseISO } from 'date-fns';
+import { add, format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -84,7 +84,7 @@ export default function MembershipsPage() {
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { userRole, userId, isAuthenticated } = useAuth();
+  const { userRole, userId, isAuthenticated, addStudentPayment, updateStudentMembership } = useAuth();
   const { settings } = useSettings();
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
@@ -151,6 +151,32 @@ export default function MembershipsPage() {
             const errorData = await response.json();
             throw new Error(errorData.error || 'No se pudo completar la compra.');
         }
+
+        // --- Start of fix: Update local state ---
+        const finalPrice = customConfig?.totalPrice ?? ('price' in planToPurchase ? planToPurchase.price : 0);
+        
+        // 1. Update StudentPayment state
+        addStudentPayment({
+            id: `inv-${Date.now()}`, // Temporary ID, real one is in DB
+            studentId: userId,
+            planId: planToPurchase.id,
+            invoiceDate: new Date().toISOString(),
+            totalAmount: finalPrice,
+            status: 'pending',
+            amountPaid: 0,
+            amountDue: finalPrice,
+        });
+
+        // 2. Update StudentMembership state
+        const startDate = new Date();
+        const endDate = add(startDate, { [planToPurchase.durationUnit]: planToPurchase.durationValue });
+        updateStudentMembership(userId, {
+            planId: planToPurchase.id,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            classesRemaining: customConfig?.classCount ?? ('classCount' in planToPurchase ? planToPurchase.classCount : undefined),
+        });
+        // --- End of fix ---
 
         toast({
             title: "¡Membresía adquirida con éxito!",
