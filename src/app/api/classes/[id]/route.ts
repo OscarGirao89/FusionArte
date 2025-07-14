@@ -34,7 +34,7 @@ export async function PUT(
 ) {
   try {
     const data = await request.json();
-    const { teacherIds, enrolledStudentIds, ...classData } = data;
+    const { teacherIds, enrolledStudentIds, styleId, levelId, ...classData } = data;
 
     const updatedClass = await prisma.danceClass.update({
       where: { id: params.id },
@@ -46,6 +46,8 @@ export async function PUT(
         enrolledStudents: enrolledStudentIds ? {
           set: enrolledStudentIds.map((id: number) => ({ id })),
         } : undefined,
+        ...(styleId && { style: { connect: { id: styleId } } }),
+        ...(levelId && { level: { connect: { id: levelId } } }),
       },
       include: {
         teachers: true,

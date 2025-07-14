@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-// We'll keep a basic schema here for validation
 const classSchema = z.object({
   name: z.string(),
   type: z.string(),
@@ -10,7 +9,9 @@ const classSchema = z.object({
   room: z.string(),
   duration: z.string(),
   teacherIds: z.array(z.number()),
-  // Other fields are optional and will be passed through
+  styleId: z.string(),
+  levelId: z.string(),
+  capacity: z.number(),
 }).passthrough();
 
 export async function GET() {
@@ -21,7 +22,6 @@ export async function GET() {
         enrolledStudents: true,
       }
     });
-    // We map the relations to simple ID arrays for the frontend
     const response = classes.map(c => ({
       ...c,
       teacherIds: c.teachers.map(t => t.id),
@@ -37,11 +37,17 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const { teacherIds, enrolledStudentIds, ...classData } = classSchema.parse(data);
+    const { teacherIds, enrolledStudentIds, styleId, levelId, ...classData } = classSchema.parse(data);
 
     const newClass = await prisma.danceClass.create({
       data: {
         ...classData,
+        style: {
+          connect: { id: styleId }
+        },
+        level: {
+          connect: { id: levelId }
+        },
         teachers: {
           connect: teacherIds.map((id: number) => ({ id })),
         },
