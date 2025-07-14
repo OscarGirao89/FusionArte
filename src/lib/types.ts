@@ -117,9 +117,9 @@ export type AttendanceRecord = {
 };
 
 export const paymentDetailsSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("per_class"), payRate: z.coerce.number(), cancelledClassPay: z.coerce.number() }),
-  z.object({ type: z.literal("monthly"), monthlySalary: z.coerce.number(), cancelledClassPay: z.coerce.number() }),
-  z.object({ type: z.literal("percentage"), payRate: z.coerce.number(), cancelledClassPay: z.coerce.number() })
+  z.object({ type: z.literal("per_class"), payRate: z.coerce.number().optional().nullable(), cancelledClassPay: z.coerce.number().optional().nullable() }),
+  z.object({ type: z.literal("monthly"), monthlySalary: z.coerce.number().optional().nullable(), cancelledClassPay: z.coerce.number().optional().nullable() }),
+  z.object({ type: z.literal("percentage"), payRate: z.coerce.number().optional().nullable(), cancelledClassPay: z.coerce.number().optional().nullable() })
 ]);
 
 export type PaymentDetails = z.infer<typeof paymentDetailsSchema>;

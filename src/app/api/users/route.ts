@@ -16,7 +16,6 @@ const userCreateSchema = z.object({
     paymentDetails: paymentDetailsSchema.optional().nullable(),
     avatar: z.string().optional().nullable(),
     isVisibleToStudents: z.boolean().optional(),
-    isPartner: z.boolean().optional(),
 });
 
 
@@ -49,18 +48,21 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(validatedData.password, 10);
     
+    const initials = validatedData.name.split(' ').map(n => n[0]).join('');
+    const avatarUrl = validatedData.avatar || `https://placehold.co/100x100.png?text=${initials}`;
+
     const newUser = await prisma.user.create({
         data: {
             name: validatedData.name,
             email: validatedData.email,
             password: hashedPassword,
             role: validatedData.role,
-            avatar: validatedData.avatar,
+            avatar: avatarUrl,
             bio: validatedData.bio,
             specialties: validatedData.specialties?.split(',').map(s => s.trim()) || [],
             paymentDetails: validatedData.paymentDetails,
             isVisibleToStudents: validatedData.isVisibleToStudents,
-            isPartner: validatedData.isPartner,
+            isPartner: validatedData.role === 'Socio',
         }
     });
 

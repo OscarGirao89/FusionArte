@@ -40,7 +40,6 @@ const userFormSchema = z.object({
     paymentDetails: paymentDetailsSchema.optional().nullable(),
     avatar: z.string().optional(),
     isVisibleToStudents: z.boolean().default(false).optional(),
-    isPartner: z.boolean().default(false).optional(),
   });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -108,7 +107,6 @@ export default function AdminUsersPage() {
         resolver: zodResolver(userFormSchema),
         defaultValues: {
             isVisibleToStudents: false,
-            isPartner: false,
         }
     });
 
@@ -130,7 +128,6 @@ export default function AdminUsersPage() {
             paymentDetails: user.paymentDetails,
             avatar: user.avatar,
             isVisibleToStudents: user.isVisibleToStudents,
-            isPartner: user.isPartner,
           });
         } else {
           form.reset({
@@ -139,10 +136,9 @@ export default function AdminUsersPage() {
             role: 'Estudiante',
             bio: '',
             specialties: '',
-            paymentDetails: { type: 'per_class', payRate: 20, cancelledClassPay: 8 },
+            paymentDetails: { type: 'per_class' },
             avatar: '',
             isVisibleToStudents: false,
-            isPartner: false,
           });
         }
         setIsDialogOpen(true);
@@ -474,19 +470,6 @@ export default function AdminUsersPage() {
                                     <FormLabel>Visible para Alumnos</FormLabel>
                                     <FormDescription>
                                         Si se activa, el perfil de este profesor aparecerá en la página pública de profesores.
-                                    </FormDescription>
-                                </div>
-                                <FormControl>
-                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                </FormControl>
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="isPartner" render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                                <div className="space-y-0.5">
-                                    <FormLabel>Socio de la Academia</FormLabel>
-                                    <FormDescription>
-                                        Marcar si el profesor es socio. Esto afectará a los cálculos financieros.
                                     </FormDescription>
                                 </div>
                                 <FormControl>
