@@ -95,7 +95,7 @@ export default function ProfilePage() {
     }, [currentUser, form]);
     
     
-    const membership = currentUser && allData ? allData.studentMemberships.find(m => m.userId === currentUser.id) : null;
+    const membership = currentUser && allData ? allData.studentMemberships.find(m => m.userId === currentUser.id) as StudentMembership | null : null;
     const plan = membership && allData ? allData.membershipPlans.find(p => p.id === membership.planId) : null;
     const payment = currentUser && allData ? allData.studentPayments.find(p => p.studentId === currentUser.id && p.planId === membership?.planId) : null;
     const isMembershipActive = membership ? isBefore(new Date(), parseISO(membership.endDate)) : false;
