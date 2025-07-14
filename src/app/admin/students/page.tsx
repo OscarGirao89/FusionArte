@@ -248,7 +248,7 @@ export default function AdminStudentsPage() {
             printWindow.document.write('<table>');
             printWindow.document.write(`<tr><td><strong>Alumno:</strong></td><td>${selectedStudent.name}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Plan:</strong></td><td>${currentPlan.title}</td></tr>`);
-            if ('price' in currentPlan) {
+            if (typeof currentPlan.price === 'number') {
               printWindow.document.write(`<tr><td><strong>Precio:</strong></td><td>€${currentPlan.price.toFixed(2)}</td></tr>`);
             }
             printWindow.document.write(`<tr><td><strong>Fecha de Inicio:</strong></td><td>${format(parseISO(currentMembership.startDate), 'PPP', { locale: es })}</td></tr>`);
