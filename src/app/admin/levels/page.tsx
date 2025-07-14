@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -34,6 +35,7 @@ export default function AdminLevelsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLevel, setEditingLevel] = useState<DanceLevel | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchLevels = async () => {
@@ -96,6 +98,10 @@ export default function AdminLevelsPage() {
     });
   }
 
+  const handleBackToClasses = () => {
+    router.push(`/admin/classes?refresh=${new Date().getTime()}`);
+  }
+
   if (isLoading) {
     return (
         <div className="p-4 md:p-8 space-y-4">
@@ -120,10 +126,7 @@ export default function AdminLevelsPage() {
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Niveles</h1>
-        <Button onClick={() => handleOpenDialog()}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Añadir Nivel
-        </Button>
+        <Button onClick={handleBackToClasses}>Volver a Clases</Button>
       </div>
       <Card>
         <CardHeader>
@@ -131,6 +134,12 @@ export default function AdminLevelsPage() {
           <CardDescription>Define los niveles de habilidad para las clases.</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => handleOpenDialog()}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Añadir Nivel
+            </Button>
+          </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>

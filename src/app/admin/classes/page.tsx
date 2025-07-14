@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -120,6 +120,7 @@ export default function AdminClassesPage() {
 
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -144,7 +145,7 @@ export default function AdminClassesPage() {
         }
     }
     fetchData();
-  }, [toast]);
+  }, [toast, searchParams]);
 
 
   const teachers = users.filter(u => u.role === 'Profesor' || u.role === 'Socio');

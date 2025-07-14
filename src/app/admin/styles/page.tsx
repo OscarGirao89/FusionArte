@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -34,6 +35,7 @@ export default function AdminStylesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStyle, setEditingStyle] = useState<DanceStyle | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchStyles = async () => {
@@ -97,6 +99,10 @@ export default function AdminStylesPage() {
     });
   }
 
+  const handleBackToClasses = () => {
+    router.push(`/admin/classes?refresh=${new Date().getTime()}`);
+  }
+
   if (isLoading) {
     return (
         <div className="p-4 md:p-8 space-y-4">
@@ -121,10 +127,7 @@ export default function AdminStylesPage() {
     <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Estilos de Baile</h1>
-        <Button onClick={() => handleOpenDialog()}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Añadir Estilo
-        </Button>
+        <Button onClick={handleBackToClasses}>Volver a Clases</Button>
       </div>
       <Card>
         <CardHeader>
@@ -132,6 +135,12 @@ export default function AdminStylesPage() {
           <CardDescription>Añade, edita o elimina los estilos de baile de la academia.</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => handleOpenDialog()}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Añadir Estilo
+            </Button>
+          </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>

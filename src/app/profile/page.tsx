@@ -145,7 +145,7 @@ export default function ProfilePage() {
     return (
             <div className="p-4 md:p-8 space-y-8">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight font-headline">Panel de Estudiante</h1>
+                    <h1 className="text-3xl font-bold tracking-tight font-headline">Mi Perfil</h1>
                     <p className="text-lg text-muted-foreground">Bienvenido/a de nuevo, {currentUser.name.split(' ')[0]}.</p>
                 </div>
                 
