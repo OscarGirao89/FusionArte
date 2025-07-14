@@ -84,7 +84,7 @@ export default function MembershipsPage() {
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { userRole, userId, isAuthenticated, currentUser, addStudentPayment, updateStudentMembership } = useAuth();
+  const { userRole, userId, isAuthenticated } = useAuth();
   const { settings } = useSettings();
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
@@ -114,7 +114,7 @@ export default function MembershipsPage() {
 
 
   const handlePurchaseRequest = (plan: MembershipPlan) => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !userId) {
         setIsLoginDialogOpen(true);
         return;
     }
@@ -125,74 +125,62 @@ export default function MembershipsPage() {
     
     setSelectedPlan(plan);
 
-    if (plan.accessType === 'unlimited' || plan.accessType === 'course_pass') {
+    if (plan.accessType === 'unlimited' || plan.accessType === 'class_pack' || plan.accessType === 'trial_class' || plan.accessType === 'course_pass') {
         setPlanToConfirm(plan);
     } else if (plan.accessType === 'custom_pack') {
         setIsCustomPackOpen(true);
-    } else {
-        setIsSelectorOpen(true);
     }
   };
 
-  const processPurchase = async (planToPurchase: MembershipPlan, finalPrice: number, finalClassCount?: number) => {
-    if (!currentUser) return;
+  const processPurchase = async (planToPurchase: MembershipPlan, customConfig?: { classCount: number, totalPrice: number }) => {
+    if (!userId) return;
     
-    // In a real app, this would be an API call
-    console.log(`Processing purchase for user ${currentUser.id}`, { planToPurchase, finalPrice, finalClassCount });
-    
-    toast({
-        title: "¡Membresía adquirida con éxito!",
-        description: "Se ha generado tu factura. Revisa tu perfil para más detalles.",
-    });
+    try {
+        const response = await fetch('/api/purchase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                userId, 
+                planId: planToPurchase.id,
+                classCount: customConfig?.classCount,
+                totalPrice: customConfig?.totalPrice
+            }),
+        });
 
-    router.push('/profile');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'No se pudo completar la compra.');
+        }
+
+        toast({
+            title: "¡Membresía adquirida con éxito!",
+            description: "Se ha generado tu factura. Revisa tu perfil para más detalles.",
+        });
+
+        router.push('/profile');
+
+    } catch (error) {
+        toast({
+            title: "Error en la compra",
+            description: (error as Error).message,
+            variant: "destructive",
+        });
+    }
   };
 
-  const handleConfirmUnlimitedPurchase = () => {
-    if (!planToConfirm || !('price' in planToConfirm)) return;
-    processPurchase(planToConfirm, planToConfirm.price);
+  const handleConfirmPurchase = () => {
+    if (!planToConfirm) return;
+    processPurchase(planToConfirm);
     setPlanToConfirm(null);
   };
   
   const handleCustomPackTierSelected = (tier: PriceTier) => {
     if (!selectedPlan || selectedPlan.accessType !== 'custom_pack') return;
 
-    setCustomPackConfig({ classCount: tier.classCount, totalPrice: tier.price });
+    // For custom packs, we now directly process the purchase with the selected tier info
+    processPurchase(selectedPlan, { classCount: tier.classCount, totalPrice: tier.price });
     setIsCustomPackOpen(false);
-    setIsSelectorOpen(true);
-  };
-  
-  const handleConfirmSelection = (classIds: string[]) => {
-     if (!selectedPlan || !userId) {
-        toast({ title: "Error", description: "No se pudo procesar la compra.", variant: "destructive" });
-        return;
-     }
-
-     let finalPrice: number;
-     let finalClassCount: number | undefined;
-
-     if (selectedPlan.accessType === 'class_pack' || selectedPlan.accessType === 'trial_class') {
-        finalPrice = selectedPlan.price;
-        finalClassCount = selectedPlan.classCount;
-     } else if (selectedPlan.accessType === 'custom_pack' && customPackConfig) {
-        finalPrice = customPackConfig.totalPrice;
-        finalClassCount = customPackConfig.classCount;
-     } else if ('price' in selectedPlan) {
-        finalPrice = selectedPlan.price;
-     } else {
-        toast({ title: "Error", description: "El plan seleccionado no tiene un precio válido.", variant: "destructive" });
-        return;
-     }
-
-     if (finalClassCount && classIds.length !== finalClassCount) {
-         toast({ title: "Selección Incompleta", description: `Debes seleccionar exactamente ${finalClassCount} clases.`, variant: "destructive" });
-         return;
-     }
-
-    processPurchase(selectedPlan, finalPrice, finalClassCount);
-    setIsSelectorOpen(false);
     setSelectedPlan(null);
-    setCustomPackConfig(null);
   };
   
   const coursePassPlan = membershipPlans.find(p => p.id === 'course-salsa-1');
@@ -257,20 +245,10 @@ export default function MembershipsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setPlanToConfirm(null)}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmUnlimitedPurchase}>Confirmar y Adquirir</AlertDialogAction>
+            <AlertDialogAction onClick={handleConfirmPurchase}>Confirmar y Adquirir</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {selectedPlan && (selectedPlan.accessType === 'class_pack' || selectedPlan.accessType === 'trial_class' || selectedPlan.accessType === 'custom_pack') && (
-        <ClassSelectorModal
-          plan={selectedPlan}
-          isOpen={isSelectorOpen}
-          onClose={() => setIsSelectorOpen(false)}
-          onConfirm={handleConfirmSelection}
-          overrideClassCount={selectedPlan.accessType === 'custom_pack' ? customPackConfig?.classCount : undefined}
-        />
-      )}
 
       {selectedPlan && selectedPlan.accessType === 'custom_pack' && (
         <CustomPackModal
@@ -283,7 +261,3 @@ export default function MembershipsPage() {
     </>
   );
 }
-
-    
-
-    
