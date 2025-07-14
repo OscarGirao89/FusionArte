@@ -133,7 +133,7 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                             payDescription = `${durationHours}h a €${paymentDetails.payRate}/h`;
                         }
                      } else if (instance.status === 'cancelled-low-attendance') {
-                         classPay = paymentDetails.cancelledClassPay / numTeachers;
+                         classPay = (paymentDetails.cancelledClassPay || 0) / numTeachers;
                          payDescription = `Compensación por cancelación`;
                      }
                 }
