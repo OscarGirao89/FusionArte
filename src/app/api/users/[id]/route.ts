@@ -14,7 +14,6 @@ const userUpdateSchema = z.object({
     paymentDetails: paymentDetailsSchema.optional().nullable(),
     avatar: z.string().optional().nullable(),
     isVisibleToStudents: z.boolean().optional(),
-    isPartner: z.boolean().optional(),
     password: z.string().min(8).optional().nullable(),
 });
 
@@ -60,14 +59,14 @@ export async function PUT(
         role: validatedData.role,
         bio: validatedData.bio,
         specialties: validatedData.specialties?.split(',').map(s => s.trim()) || [],
-        paymentDetails: validatedData.paymentDetails,
+        paymentDetailsJson: validatedData.paymentDetails,
         avatar: validatedData.avatar,
         isVisibleToStudents: validatedData.isVisibleToStudents,
-        isPartner: validatedData.isPartner,
+        isPartner: validatedData.role === 'Socio',
     };
     
     if (validatedData.role !== 'Profesor' && validatedData.role !== 'Socio') {
-      dataToUpdate.paymentDetails = null;
+      dataToUpdate.paymentDetailsJson = null;
     }
     
     if (validatedData.password) {

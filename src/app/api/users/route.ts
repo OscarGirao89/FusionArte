@@ -60,7 +60,7 @@ export async function POST(request: Request) {
             avatar: avatarUrl,
             bio: validatedData.bio,
             specialties: validatedData.specialties?.split(',').map(s => s.trim()) || [],
-            paymentDetails: validatedData.paymentDetails,
+            paymentDetailsJson: validatedData.paymentDetails,
             isVisibleToStudents: validatedData.isVisibleToStudents,
             isPartner: validatedData.role === 'Socio',
         }
