@@ -15,8 +15,8 @@ const userUpdateSchema = z.object({
     avatar: z.string().optional().nullable(),
     isVisibleToStudents: z.boolean().optional(),
     isPartner: z.boolean().optional(),
-    password: z.string().min(8).optional().nullable(), // For password changes
-}).passthrough();
+    password: z.string().min(8).optional().nullable(),
+});
 
 
 export async function GET(
@@ -66,7 +66,10 @@ export async function PUT(
         isPartner: validatedData.isPartner,
     };
     
-    // Handle password change if provided
+    if (validatedData.role !== 'Profesor' && validatedData.role !== 'Socio') {
+      dataToUpdate.paymentDetails = null;
+    }
+    
     if (validatedData.password) {
         dataToUpdate.password = await bcrypt.hash(validatedData.password, 10);
     }

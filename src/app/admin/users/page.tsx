@@ -26,27 +26,9 @@ import { useToast } from '@/hooks/use-toast';
 import { MoreVertical, UserPlus, Pencil, Trash2, ShieldCheck, Download, Printer } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { paymentDetailsSchema } from '@/lib/types';
 
-const paymentDetailsSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("per_class"),
-    payRate: z.coerce.number().min(0, "La tarifa por hora debe ser un número positivo."),
-    cancelledClassPay: z.coerce.number().min(0, "El valor no puede ser negativo."),
-  }),
-  z.object({
-    type: z.literal("monthly"),
-    monthlySalary: z.coerce.number().min(0, "El salario mensual debe ser un número positivo."),
-    cancelledClassPay: z.coerce.number().min(0, "El valor no puede ser negativo."),
-  }),
-  z.object({
-    type: z.literal("percentage"),
-    payRate: z.coerce.number().min(0, "El porcentaje debe ser un número positivo."),
-    cancelledClassPay: z.coerce.number().min(0, "El valor no puede ser negativo."),
-  })
-]);
-
-
-const userRolesEnum = z.enum(['Estudiante', 'Profesor', 'Administrador', 'Administrativo', 'Socio']);
+const userRolesEnum = z.enum(['Estudiante', 'Profesor', 'Admin', 'Administrativo', 'Socio']);
 
 const userFormSchema = z.object({
     id: z.number().optional(),
@@ -60,26 +42,26 @@ const userFormSchema = z.object({
     isVisibleToStudents: z.boolean().default(false).optional(),
     isPartner: z.boolean().default(false).optional(),
   }).refine(data => {
-    if (data.role === 'Profesor' && !data.paymentDetails) {
-      return false; // Professor must have payment details
+    if ((data.role === 'Profesor' || data.role === 'Socio') && !data.paymentDetails) {
+      return false; 
     }
     return true;
   }, {
-    message: "Los detalles de pago son obligatorios para los profesores.",
+    message: "Los detalles de pago son obligatorios para los profesores y socios.",
     path: ["paymentDetails"],
   });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
 const roleVariant: { [key: string]: "default" | "secondary" | "destructive" } = {
-    'Administrador': 'destructive',
+    'Admin': 'destructive',
     'Socio': 'destructive',
     'Profesor': 'default',
     'Estudiante': 'secondary',
     'Administrativo': 'secondary'
 }
 
-const userRoles: z.infer<typeof userRolesEnum>[] = ['Estudiante', 'Profesor', 'Administrador', 'Administrativo', 'Socio'];
+const userRoles: z.infer<typeof userRolesEnum>[] = ['Estudiante', 'Profesor', 'Admin', 'Administrativo', 'Socio'];
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<User[]>([]);
@@ -111,7 +93,6 @@ export default function AdminUsersPage() {
         fetchUsers();
     }, [toast]);
     
-    // Permission flags
     const canManageRoles = userRole === 'Admin' || userRole === 'Socio';
     const canCreateUser = userRole === 'Admin' || userRole === 'Socio';
     const canDeleteUser = userRole === 'Admin' || userRole === 'Socio';
@@ -174,7 +155,6 @@ export default function AdminUsersPage() {
         const url = editingUser ? `/api/users/${editingUser.id}` : '/api/users';
         const method = editingUser ? 'PUT' : 'POST';
 
-        // For new users, a default password is required by the API.
         const body = editingUser ? JSON.stringify(data) : JSON.stringify({ ...data, password: 'password123' });
 
         try {
@@ -356,9 +336,9 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      <Badge variant={roleVariant[user.role] || 'secondary'}>{user.role}</Badge>
+                      <Badge variant={roleVariant[user.role as keyof typeof roleVariant] || 'secondary'}>{user.role}</Badge>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{user.joined}</TableCell>
+                    <TableCell className="hidden md:table-cell">{new Date(user.joined).toLocaleDateString('es-ES')}</TableCell>
                     <TableCell className="no-print">
                       <DropdownMenu>
                           <DropdownMenuTrigger asChild>
