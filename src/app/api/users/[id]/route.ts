@@ -26,7 +26,7 @@ const userUpdateSchema = z.object({
     avatar: z.string().optional().nullable(),
     isVisibleToStudents: z.boolean().optional(),
     password: z.string().min(8).optional().nullable(),
-    paymentDetails: paymentDetailsSchema.optional().nullable(),
+    paymentDetails: paymentDetailsSchema.optional().nullable().default(null),
 });
 
 
