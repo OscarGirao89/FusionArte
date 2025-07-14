@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -122,30 +121,31 @@ export default function AdminClassesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  useEffect(() => {
-    const fetchData = async () => {
-        setIsLoading(true);
-        try {
-            const [classesRes, usersRes, stylesRes, levelsRes] = await Promise.all([
-                fetch('/api/classes'),
-                fetch('/api/users'),
-                fetch('/api/styles'),
-                fetch('/api/levels'),
-            ]);
-            
-            if (classesRes.ok) setClasses(await classesRes.json());
-            if (usersRes.ok) setUsers(await usersRes.json());
-            if (stylesRes.ok) setDanceStyles(await stylesRes.json());
-            if (levelsRes.ok) setDanceLevels(await levelsRes.json());
-        } catch (error) {
-            console.error("Failed to fetch initial data for classes page", error);
-            toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
-        } finally {
-            setIsLoading(false);
-        }
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+        const [classesRes, usersRes, stylesRes, levelsRes] = await Promise.all([
+            fetch('/api/classes'),
+            fetch('/api/users'),
+            fetch('/api/styles'),
+            fetch('/api/levels'),
+        ]);
+        
+        if (classesRes.ok) setClasses(await classesRes.json());
+        if (usersRes.ok) setUsers(await usersRes.json());
+        if (stylesRes.ok) setDanceStyles(await stylesRes.json());
+        if (levelsRes.ok) setDanceLevels(await levelsRes.json());
+    } catch (error) {
+        console.error("Failed to fetch initial data for classes page", error);
+        toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
+    } finally {
+        setIsLoading(false);
     }
+  }
+
+  useEffect(() => {
     fetchData();
-  }, [toast, searchParams]);
+  }, [searchParams]);
 
 
   const teachers = users.filter(u => u.role === 'Profesor' || u.role === 'Socio');
@@ -184,6 +184,8 @@ export default function AdminClassesPage() {
         rentalPrice: danceClass.rentalPrice || undefined,
         workshopPaymentValue: danceClass.workshopPaymentValue || undefined,
         cancellationPolicyHours: danceClass.cancellationPolicyHours || 24,
+        // Make sure teacherIds is an array of numbers
+        teacherIds: Array.isArray(danceClass.teacherIds) ? danceClass.teacherIds : [],
       });
     } else {
       form.reset({
@@ -223,44 +225,17 @@ export default function AdminClassesPage() {
         return;
     }
     
-    // Explicitly build the data object to ensure type safety
     let finalData: any = {
-        id: data.id,
-        name: data.name,
-        type: data.type,
-        time: data.time,
-        room: data.room,
-        duration: data.duration,
-        enrolledStudentIds: data.enrolledStudentIds,
-        cancellationPolicyHours: data.cancellationPolicyHours,
-        status: 'scheduled',
+      ...data,
+      date: data.date ? data.date.toISOString() : undefined,
+      status: 'scheduled',
     };
 
-    if (data.type === 'rental') {
-        finalData.rentalContact = data.rentalContact;
-        finalData.rentalPrice = data.rentalPrice;
-        finalData.isVisibleToStudents = data.isVisibleToStudents;
-        finalData.date = data.date?.toISOString();
+    if (finalData.type === 'rental') {
         finalData.teacherIds = [];
         finalData.styleId = 'practica'; // Default for rentals
         finalData.levelId = 'todos';    // Default for rentals
         finalData.capacity = 0;
-    } else {
-        finalData.styleId = data.styleId;
-        finalData.levelId = data.levelId;
-        finalData.teacherIds = data.teacherIds;
-        finalData.capacity = data.capacity;
-        
-        if (data.type === 'recurring') {
-            finalData.day = data.day;
-        } else { // one-time or workshop
-            finalData.date = data.date?.toISOString();
-        }
-
-        if (data.type === 'workshop') {
-            finalData.workshopPaymentType = data.workshopPaymentType;
-            finalData.workshopPaymentValue = data.workshopPaymentValue;
-        }
     }
     
     const url = editingClass ? `/api/classes/${editingClass.id}` : '/api/classes';
@@ -269,18 +244,15 @@ export default function AdminClassesPage() {
     try {
         const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(finalData) });
         if (!response.ok) throw new Error(`Failed to ${method} class`);
-        const savedClass = await response.json();
+        
+        await fetchData(); // Refetch data from the server
 
-        if (editingClass) {
-          setClasses(classes.map(c => c.id === editingClass.id ? savedClass : c));
-        } else {
-          setClasses([...classes, savedClass]);
-        }
         toast({ title: `Evento ${editingClass ? 'actualizado' : 'creado'}`, description: `El evento "${data.name}" ha sido guardado.` });
     } catch (error) {
         toast({ title: "Error", description: "No se pudo guardar el evento.", variant: "destructive" });
     } finally {
-        setIsDialogOpen(false); setEditingClass(null);
+        setIsDialogOpen(false); 
+        setEditingClass(null);
     }
   };
   
@@ -301,7 +273,9 @@ export default function AdminClassesPage() {
         const updatedClass = { ...classToCancel, status: cancelReason, isCancelledAndHidden: hideOnSchedule };
         const response = await fetch(`/api/classes/${classToCancel.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedClass) });
         if (!response.ok) throw new Error("Failed to cancel");
-        setClasses(classes.map(c => c.id === classToCancel.id ? updatedClass : c));
+        
+        await fetchData(); // Refetch data
+
         toast({ title: "Clase cancelada" });
     } catch(e) {
         toast({ title: "Error", description: "No se pudo cancelar la clase.", variant: "destructive" });
@@ -403,7 +377,7 @@ export default function AdminClassesPage() {
               </TableHeader>
               <TableBody>
                 {classes.map((danceClass) => (
-                  <TableRow key={danceClass.id} className={danceClass.status.startsWith('cancelled') ? 'bg-red-50/50 dark:bg-red-900/10' : ''}>
+                  <TableRow key={danceClass.id} className={danceClass.status && danceClass.status.startsWith('cancelled') ? 'bg-red-50/50 dark:bg-red-900/10' : ''}>
                     <TableCell>
                       <p className="font-medium">{danceClass.name}</p>
                       {danceClass.type !== 'rental' && (

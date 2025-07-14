@@ -16,7 +16,12 @@ export async function GET(
     if (!danceClass) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
     }
-    return NextResponse.json(danceClass);
+    const response = {
+      ...danceClass,
+      teacherIds: danceClass.teachers.map(t => t.id),
+      enrolledStudentIds: danceClass.enrolledStudents.map(s => s.id)
+    }
+    return NextResponse.json(response);
   } catch (error) {
     console.error(`Error fetching class ${params.id}:`, error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -47,7 +52,13 @@ export async function PUT(
         enrolledStudents: true,
       }
     });
-    return NextResponse.json(updatedClass);
+
+    const response = {
+      ...updatedClass,
+      teacherIds: updatedClass.teachers.map(t => t.id),
+      enrolledStudentIds: updatedClass.enrolledStudents.map(s => s.id)
+    }
+    return NextResponse.json(response);
   } catch (error) {
     console.error(`Error updating class ${params.id}:`, error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
