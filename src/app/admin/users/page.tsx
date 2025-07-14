@@ -447,21 +447,21 @@ export default function AdminUsersPage() {
                             )} />
                             {watchedPaymentType === 'per_class' && (
                                 <FormField control={form.control} name="paymentDetails.payRate" render={({ field }) => (
-                                    <FormItem><FormLabel>Tarifa por Hora (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Tarifa por Hora (€)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )} />
                             )}
                              {watchedPaymentType === 'monthly' && (
                                 <FormField control={form.control} name="paymentDetails.monthlySalary" render={({ field }) => (
-                                    <FormItem><FormLabel>Salario Mensual (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Salario Mensual (€)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )} />
                             )}
                              {watchedPaymentType === 'percentage' && (
                                 <FormField control={form.control} name="paymentDetails.payRate" render={({ field }) => (
-                                    <FormItem><FormLabel>Porcentaje (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Porcentaje (%)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )} />
                             )}
                              <FormField control={form.control} name="paymentDetails.cancelledClassPay" render={({ field }) => (
-                                <FormItem><FormLabel>Pago por Clase Cancelada (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>Poner 0 si no se paga.</FormDescription><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Pago por Clase Cancelada (€)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Poner 0 si no se paga.</FormDescription><FormMessage /></FormItem>
                             )} />
                         </div>
                         <FormField control={form.control} name="isVisibleToStudents" render={({ field }) => (
