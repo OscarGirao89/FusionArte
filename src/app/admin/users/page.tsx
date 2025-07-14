@@ -70,7 +70,12 @@ export default function AdminUsersPage() {
         try {
             const res = await fetch('/api/users');
             if (res.ok) {
-                setUsers(await res.json());
+                const fetchedUsers = await res.json();
+                // Fetch full details for each user since the main endpoint is now leaner
+                const detailedUsers = await Promise.all(
+                    fetchedUsers.map((u: User) => fetch(`/api/users/${u.id}`).then(res => res.json()))
+                );
+                setUsers(detailedUsers);
             } else {
                 toast({ title: "Error", description: "No se pudieron cargar los usuarios.", variant: "destructive" });
             }
@@ -147,13 +152,14 @@ export default function AdminUsersPage() {
         const url = editingUser ? `/api/users/${editingUser.id}` : '/api/users';
         const method = editingUser ? 'PUT' : 'POST';
 
-        const body = editingUser ? JSON.stringify(data) : JSON.stringify({ ...data, password: 'password123' });
+        // Add a default password only when creating a new user
+        const bodyPayload = editingUser ? data : { ...data, password: 'password123' };
 
         try {
             const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body,
+                body: JSON.stringify(bodyPayload),
             });
 
             if (!response.ok) {
@@ -488,7 +494,6 @@ export default function AdminUsersPage() {
                                 </FormControl>
                             </FormItem>
                         )} />
-                         <FormMessage>{form.formState.errors.paymentDetails?.message}</FormMessage>
                     </div>
                 )}
 
