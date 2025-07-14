@@ -37,18 +37,19 @@ export default function AdminLevelsPage() {
   const { toast } = useToast();
   const router = useRouter();
 
+  const fetchLevels = async () => {
+    setIsLoading(true);
+    try {
+        const res = await fetch('/api/levels');
+        if (res.ok) setLevels(await res.json());
+    } catch (e) {
+        toast({ title: "Error", description: "No se pudieron cargar los niveles." });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchLevels = async () => {
-        setIsLoading(true);
-        try {
-            const res = await fetch('/api/levels');
-            if (res.ok) setLevels(await res.json());
-        } catch (e) {
-            toast({ title: "Error", description: "No se pudieron cargar los niveles." });
-        } finally {
-            setIsLoading(false);
-        }
-    };
     fetchLevels();
   }, [toast]);
 
@@ -67,35 +68,45 @@ export default function AdminLevelsPage() {
     setIsDialogOpen(true);
   };
 
-  const onSubmit = (data: LevelFormValues) => {
-    // In a real app, this would be an API call
-    toast({
-      title: `Nivel ${editingLevel ? 'actualizado' : 'creado'} con éxito`,
-      description: `El nivel "${data.name}" ha sido guardado.`,
-    });
-    
-    if (editingLevel) {
-      setLevels(levels.map(l => l.id === editingLevel.id ? { ...editingLevel, ...data } : l));
-    } else {
-      const newLevel: DanceLevel = {
-        ...data,
-        id: data.name.toLowerCase().replace(/\s+/g, '-'),
-      };
-      setLevels([...levels, newLevel]);
+  const onSubmit = async (data: LevelFormValues) => {
+    const url = editingLevel ? `/api/levels/${editingLevel.id}` : '/api/levels';
+    const method = editingLevel ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to ${method} level`);
+        }
+
+        toast({
+            title: `Nivel ${editingLevel ? 'actualizado' : 'creado'} con éxito`,
+            description: `El nivel "${data.name}" ha sido guardado.`,
+        });
+
+        await fetchLevels(); // Refetch data
+    } catch (error) {
+        toast({ title: "Error", description: "No se pudo guardar el nivel.", variant: "destructive" });
+    } finally {
+        setIsDialogOpen(false);
+        setEditingLevel(null);
     }
-    
-    setIsDialogOpen(false);
-    setEditingLevel(null);
   };
   
-  const handleDelete = (levelId: string) => {
-    // In a real app, this would be an API call
-    setLevels(levels.filter(l => l.id !== levelId));
-    toast({
-      title: "Nivel eliminado",
-      description: `El nivel ha sido eliminado exitosamente.`,
-      variant: "destructive"
-    });
+  const handleDelete = async (levelId: string) => {
+    try {
+        const response = await fetch(`/api/levels/${levelId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error("Failed to delete level");
+
+        toast({ title: "Nivel eliminado", variant: "destructive" });
+        await fetchLevels(); // Refetch data
+    } catch (error) {
+        toast({ title: "Error", description: "No se pudo eliminar el nivel.", variant: "destructive" });
+    }
   }
 
   const handleBackToClasses = () => {

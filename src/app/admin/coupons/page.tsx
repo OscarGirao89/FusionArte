@@ -62,25 +62,26 @@ export default function AdminCouponsPage() {
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const { toast } = useToast();
 
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+        const [couponsRes, plansRes, classesRes] = await Promise.all([
+            fetch('/api/coupons'),
+            fetch('/api/memberships'),
+            fetch('/api/classes'),
+        ]);
+        if (couponsRes.ok) setCoupons(await couponsRes.json());
+        if (plansRes.ok) setMembershipPlans(await plansRes.json());
+        if (classesRes.ok) setDanceClasses(await classesRes.json());
+    } catch (error) {
+        console.error("Failed to fetch coupon data", error);
+        toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-        setIsLoading(true);
-        try {
-            const [couponsRes, plansRes, classesRes] = await Promise.all([
-                fetch('/api/coupons'),
-                fetch('/api/memberships'),
-                fetch('/api/classes'),
-            ]);
-            if (couponsRes.ok) setCoupons(await couponsRes.json());
-            if (plansRes.ok) setMembershipPlans(await plansRes.json());
-            if (classesRes.ok) setDanceClasses(await classesRes.json());
-        } catch (error) {
-            console.error("Failed to fetch coupon data", error);
-            toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
-        } finally {
-            setIsLoading(false);
-        }
-    };
     fetchData();
   }, [toast]);
 
@@ -101,7 +102,11 @@ export default function AdminCouponsPage() {
   const handleOpenDialog = (coupon: Coupon | null = null) => {
     setEditingCoupon(coupon);
     if (coupon) {
-      form.reset(coupon);
+      form.reset({
+        ...coupon,
+        discountValue: coupon.discountValue || 0,
+        expirationDate: coupon.expirationDate ? format(parseISO(coupon.expirationDate), 'yyyy-MM-dd') : undefined,
+      });
     } else {
       form.reset({
         code: '',
@@ -117,38 +122,44 @@ export default function AdminCouponsPage() {
   };
 
   const onSubmit = async (data: CouponFormValues) => {
-    const couponToSave: Coupon = {
-        ...data,
-        id: editingCoupon?.id || `coupon-${Date.now()}`,
-        specificPlanIds: data.applicableTo === 'specific_memberships' ? (data.specificPlanIds || []) : [],
-        specificClassIds: data.applicableTo === 'specific_classes' ? (data.specificClassIds || []) : [],
-    };
-    
-    // In a real app, this would be an API call
-    console.log("Saving coupon:", couponToSave);
+    const url = editingCoupon ? `/api/coupons/${editingCoupon.id}` : '/api/coupons';
+    const method = editingCoupon ? 'PUT' : 'POST';
 
-    toast({
-      title: `Cupón ${editingCoupon ? 'actualizado' : 'creado'} con éxito`,
-      description: `El cupón "${couponToSave.code}" ha sido guardado.`,
-    });
-    
-    if (editingCoupon) {
-      setCoupons(coupons.map(c => c.id === editingCoupon.id ? couponToSave : c));
-    } else {
-      setCoupons([...coupons, couponToSave]);
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to ${method} coupon`);
+        }
+
+        toast({
+            title: `Cupón ${editingCoupon ? 'actualizado' : 'creado'} con éxito`,
+            description: `El cupón "${data.code}" ha sido guardado.`,
+        });
+
+        await fetchData(); // Refetch data
+    } catch (error) {
+        toast({ title: "Error", description: "No se pudo guardar el cupón.", variant: "destructive" });
+    } finally {
+        setIsDialogOpen(false);
+        setEditingCoupon(null);
     }
-    
-    setIsDialogOpen(false);
-    setEditingCoupon(null);
   };
   
-  const handleDelete = (couponId: string) => {
-    setCoupons(coupons.filter(c => c.id !== couponId));
-    toast({
-      title: "Cupón eliminado",
-      description: `El cupón ha sido eliminado.`,
-      variant: "destructive"
-    });
+  const handleDelete = async (couponId: string) => {
+    try {
+        const response = await fetch(`/api/coupons/${couponId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error("Failed to delete coupon");
+
+        toast({ title: "Cupón eliminado", variant: "destructive" });
+        await fetchData(); // Refetch data
+    } catch (error) {
+        toast({ title: "Error", description: "No se pudo eliminar el cupón.", variant: "destructive" });
+    }
   }
 
   const getApplicabilityText = (coupon: Coupon) => {

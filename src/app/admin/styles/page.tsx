@@ -37,18 +37,19 @@ export default function AdminStylesPage() {
   const { toast } = useToast();
   const router = useRouter();
 
+  const fetchStyles = async () => {
+    setIsLoading(true);
+    try {
+        const res = await fetch('/api/styles');
+        if (res.ok) setStyles(await res.json());
+    } catch (e) {
+        toast({ title: "Error", description: "No se pudieron cargar los estilos." });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchStyles = async () => {
-        setIsLoading(true);
-        try {
-            const res = await fetch('/api/styles');
-            if (res.ok) setStyles(await res.json());
-        } catch (e) {
-            toast({ title: "Error", description: "No se pudieron cargar los estilos." });
-        } finally {
-            setIsLoading(false);
-        }
-    };
     fetchStyles();
   }, [toast]);
 
@@ -67,36 +68,45 @@ export default function AdminStylesPage() {
     setIsDialogOpen(true);
   };
 
-  const onSubmit = (data: StyleFormValues) => {
-    // In a real app, this would be an API call
-    toast({
-      title: `Estilo ${editingStyle ? 'actualizado' : 'creado'} con éxito`,
-      description: `El estilo "${data.name}" ha sido guardado.`,
-    });
-    
-    if (editingStyle) {
-      setStyles(styles.map(s => s.id === editingStyle.id ? { ...editingStyle, ...data } : s));
-    } else {
-      const newStyle: DanceStyle = {
-        id: data.name.toLowerCase().replace(/\s+/g, '-'),
-        name: data.name,
-        description: data.description,
-      };
-      setStyles([...styles, newStyle]);
+  const onSubmit = async (data: StyleFormValues) => {
+    const url = editingStyle ? `/api/styles/${editingStyle.id}` : '/api/styles';
+    const method = editingStyle ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to ${method} style`);
+        }
+
+        toast({
+            title: `Estilo ${editingStyle ? 'actualizado' : 'creado'} con éxito`,
+            description: `El estilo "${data.name}" ha sido guardado.`,
+        });
+
+        await fetchStyles(); // Refetch data
+    } catch (error) {
+        toast({ title: "Error", description: `No se pudo guardar el estilo. ${error instanceof Error ? error.message : ''}`, variant: "destructive" });
+    } finally {
+        setIsDialogOpen(false);
+        setEditingStyle(null);
     }
-    
-    setIsDialogOpen(false);
-    setEditingStyle(null);
   };
   
-  const handleDelete = (styleId: string) => {
-    // In a real app, this would be an API call
-    setStyles(styles.filter(s => s.id !== styleId));
-    toast({
-      title: "Estilo eliminado",
-      description: `El estilo de baile ha sido eliminado.`,
-      variant: "destructive"
-    });
+  const handleDelete = async (styleId: string) => {
+    try {
+        const response = await fetch(`/api/styles/${styleId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error("Failed to delete style");
+
+        toast({ title: "Estilo eliminado", variant: "destructive" });
+        await fetchStyles(); // Refetch data
+    } catch (error) {
+        toast({ title: "Error", description: "No se pudo eliminar el estilo.", variant: "destructive" });
+    }
   }
 
   const handleBackToClasses = () => {
