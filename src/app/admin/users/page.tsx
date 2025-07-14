@@ -37,18 +37,10 @@ const userFormSchema = z.object({
     role: userRolesEnum,
     bio: z.string().optional(),
     specialties: z.string().optional(),
-    paymentDetails: paymentDetailsSchema.optional(),
+    paymentDetails: paymentDetailsSchema.optional().nullable(),
     avatar: z.string().optional(),
     isVisibleToStudents: z.boolean().default(false).optional(),
     isPartner: z.boolean().default(false).optional(),
-  }).refine(data => {
-    if ((data.role === 'Profesor' || data.role === 'Socio') && !data.paymentDetails) {
-      return false; 
-    }
-    return true;
-  }, {
-    message: "Los detalles de pago son obligatorios para los profesores y socios.",
-    path: ["paymentDetails"],
   });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -91,7 +83,7 @@ export default function AdminUsersPage() {
 
     useEffect(() => {
         fetchUsers();
-    }, [toast]);
+    }, []);
     
     const canManageRoles = userRole === 'Admin' || userRole === 'Socio';
     const canCreateUser = userRole === 'Admin' || userRole === 'Socio';
@@ -440,7 +432,7 @@ export default function AdminUsersPage() {
                         )} />
                         
                         <div className="space-y-2 p-3 border rounded-md">
-                           <FormLabel>Detalles de Pago</FormLabel>
+                           <FormLabel>Detalles de Pago (Opcional)</FormLabel>
                             <FormField control={form.control} name="paymentDetails.type" render={({ field }) => (
                                 <FormItem><FormLabel>Tipo de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
