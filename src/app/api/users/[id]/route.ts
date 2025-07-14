@@ -2,16 +2,24 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { paymentDetailsSchema } from '@/lib/types';
 import bcrypt from 'bcryptjs';
 
 const userUpdateSchema = z.object({
     name: z.string().min(3),
     email: z.string().email(),
-    role: z.string(),
+    mobile: z.string().optional(),
+    dob: z.string().optional(),
+    role: z.string().optional(), // Role might not always be updated from student page
+    
+    // Membership fields
+    membershipPlanId: z.string().optional().nullable(),
+    membershipStartDate: z.date().optional().nullable(),
+    membershipEndDate: z.date().optional().nullable(),
+    membershipClassesRemaining: z.number().optional().nullable(),
+
+    // Teacher/Admin specific fields that might come from other forms
     bio: z.string().optional().nullable(),
     specialties: z.string().optional().nullable(),
-    paymentDetails: paymentDetailsSchema.optional().nullable(),
     avatar: z.string().optional().nullable(),
     isVisibleToStudents: z.boolean().optional(),
     password: z.string().min(8).optional().nullable(),
@@ -23,8 +31,13 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const userId = parseInt(params.id, 10);
+    if (isNaN(userId)) {
+      return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: parseInt(params.id, 10) },
+      where: { id: userId },
       include: {
         taughtClasses: true,
         enrolledClasses: true,
@@ -50,37 +63,83 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const data = await request.json();
-    const validatedData = userUpdateSchema.parse(data);
+    const userId = parseInt(params.id, 10);
+    if (isNaN(userId)) {
+      return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
+    }
+
+    const json = await request.json();
+    // Manually handle date conversion before parsing with Zod
+    if (json.membershipStartDate) json.membershipStartDate = new Date(json.membershipStartDate);
+    if (json.membershipEndDate) json.membershipEndDate = new Date(json.membershipEndDate);
+    const validatedData = userUpdateSchema.parse(json);
 
     const dataToUpdate: any = {
         name: validatedData.name,
         email: validatedData.email,
-        role: validatedData.role,
+        mobile: validatedData.mobile,
+        dob: validatedData.dob,
         bio: validatedData.bio,
-        specialties: validatedData.specialties?.split(',').map(s => s.trim()) || [],
+        specialties: validatedData.specialties?.split(',').map(s => s.trim()),
         avatar: validatedData.avatar,
         isVisibleToStudents: validatedData.isVisibleToStudents,
-        isPartner: validatedData.role === 'Socio',
-        ...(validatedData.paymentDetails && { paymentDetailsJson: validatedData.paymentDetails }),
     };
     
-    if (validatedData.role !== 'Profesor' && validatedData.role !== 'Socio') {
-      dataToUpdate.paymentDetailsJson = null;
+    if (validatedData.role) {
+      dataToUpdate.role = validatedData.role;
+      dataToUpdate.isPartner = validatedData.role === 'Socio';
     }
-    
+
     if (validatedData.password) {
         dataToUpdate.password = await bcrypt.hash(validatedData.password, 10);
     }
+    
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      // 1. Update user profile data
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: dataToUpdate,
+      });
 
-    const updatedUser = await prisma.user.update({
-      where: { id: parseInt(params.id, 10) },
-      data: dataToUpdate,
+      const planId = validatedData.membershipPlanId;
+      const startDate = validatedData.membershipStartDate;
+      const endDate = validatedData.membershipEndDate;
+
+      // 2. Manage student membership
+      if (planId && planId !== 'none' && startDate && endDate) {
+        // Create or update membership
+        await tx.studentMembership.upsert({
+          where: { userId: userId },
+          create: {
+            userId: userId,
+            planId: planId,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            classesRemaining: validatedData.membershipClassesRemaining,
+          },
+          update: {
+            planId: planId,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            classesRemaining: validatedData.membershipClassesRemaining,
+          }
+        });
+      } else {
+        // No plan selected, remove existing membership if it exists
+        const existingMembership = await tx.studentMembership.findUnique({ where: { userId } });
+        if (existingMembership) {
+          await tx.studentMembership.delete({ where: { userId } });
+        }
+      }
+      
+      return user;
     });
+
     const { password, ...userWithoutPassword } = updatedUser;
     return NextResponse.json(userWithoutPassword);
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('Validation Error:', error.errors);
       return NextResponse.json({ error: 'Invalid data', details: error.errors }, { status: 400 });
     }
     console.error(`Error updating user ${params.id}:`, error);
@@ -93,12 +152,36 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await prisma.user.delete({
-      where: { id: parseInt(params.id, 10) },
+    const userId = parseInt(params.id, 10);
+    if (isNaN(userId)) {
+      return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
+    }
+    
+    // Use transaction to delete user and related data
+    await prisma.$transaction(async (tx) => {
+      await tx.studentMembership.deleteMany({ where: { userId } });
+      await tx.studentPayment.deleteMany({ where: { studentId: userId } });
+      await tx.taskNote.updateMany({
+        where: { assigneeIds: { has: userId } },
+        data: {
+          assigneeIds: {
+            set: (await tx.taskNote.findMany({ where: { assigneeIds: { has: userId } } }))
+              .map(note => note.assigneeIds.filter(id => id !== userId))
+              .flat()
+          }
+        }
+      });
+      // You may need to handle other relations like taughtClasses, enrolledClasses etc.
+      // For now, we assume cascade deletes or manual cleanup is handled elsewhere if needed.
+      await tx.user.delete({
+        where: { id: userId },
+      });
     });
+
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error(`Error deleting user ${params.id}:`, error);
+    // Prisma error for foreign key constraint can be caught here
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

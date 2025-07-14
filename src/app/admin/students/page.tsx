@@ -39,7 +39,7 @@ const studentEditFormSchema = z.object({
     membershipClassesRemaining: z.coerce.number().optional().nullable(),
 }).refine(data => {
     // If a plan is selected, dates must be present.
-    if (data.membershipPlanId && (!data.membershipStartDate || !data.membershipEndDate)) {
+    if (data.membershipPlanId && data.membershipPlanId !== 'none' && (!data.membershipStartDate || !data.membershipEndDate)) {
         return false;
     }
     return true;
@@ -65,33 +65,34 @@ export default function AdminStudentsPage() {
     const [isEditing, setIsEditing] = useState(false);
     const { toast } = useToast();
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                const [usersRes, membershipsRes, plansRes, classesRes] = await Promise.all([
-                    fetch('/api/users'), fetch('/api/student-memberships'), 
-                    fetch('/api/memberships'), fetch('/api/classes')
-                ]);
-                
-                if (usersRes.ok) {
-                    const allUsers = await usersRes.json();
-                    setUsers(allUsers);
-                    setStudents(allUsers.filter((u: User) => u.role === 'Estudiante'));
-                }
-                if (membershipsRes.ok) setStudentMemberships(await membershipsRes.json());
-                if (plansRes.ok) setMembershipPlans(await plansRes.json());
-                if (classesRes.ok) setDanceClasses(await classesRes.json());
-                
-            } catch (error) {
-                console.error("Failed to fetch student data:", error);
-                toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
-            } finally {
-                setIsLoading(false);
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [usersRes, membershipsRes, plansRes, classesRes] = await Promise.all([
+                fetch('/api/users'), fetch('/api/student-memberships'), 
+                fetch('/api/memberships'), fetch('/api/classes')
+            ]);
+            
+            if (usersRes.ok) {
+                const allUsers = await usersRes.json();
+                setUsers(allUsers);
+                setStudents(allUsers.filter((u: User) => u.role === 'Estudiante'));
             }
-        };
+            if (membershipsRes.ok) setStudentMemberships(await membershipsRes.json());
+            if (plansRes.ok) setMembershipPlans(await plansRes.json());
+            if (classesRes.ok) setDanceClasses(await classesRes.json());
+            
+        } catch (error) {
+            console.error("Failed to fetch student data:", error);
+            toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchData();
-    }, [toast]);
+    }, []);
 
 
     const form = useForm<StudentEditFormValues>({
@@ -113,7 +114,7 @@ export default function AdminStudentsPage() {
             email: student.email,
             mobile: student.mobile || '',
             dob: student.dob || '',
-            membershipPlanId: membership?.planId || null,
+            membershipPlanId: membership?.planId || 'none',
             membershipStartDate: membership ? parseISO(membership.startDate) : null,
             membershipEndDate: membership ? parseISO(membership.endDate) : null,
             membershipClassesRemaining: membership?.classesRemaining ?? undefined,
@@ -123,60 +124,38 @@ export default function AdminStudentsPage() {
         setIsDetailOpen(true);
     };
     
-    const onSubmit = (data: StudentEditFormValues) => {
-        // Update student personal details in the main users array
-        setStudents(prevStudents => 
-            prevStudents.map(student => 
-                student.id === data.id ? { ...student, name: data.name, email: data.email, mobile: data.mobile, dob: data.dob } : student
-            )
-        );
+    const onSubmit = async (data: StudentEditFormValues) => {
+        try {
+            const response = await fetch(`/api/users/${data.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
 
-        // Update or create student membership
-        setStudentMemberships(prevMemberships => {
-            const existingMembershipIndex = prevMemberships.findIndex(sm => sm.userId === data.id);
-
-            // Case 1: No plan selected, so remove any existing membership
-            if (!data.membershipPlanId || !data.membershipStartDate || !data.membershipEndDate) {
-                if (existingMembershipIndex > -1) {
-                    return prevMemberships.filter((_, index) => index !== existingMembershipIndex);
-                }
-                return prevMemberships; // No change needed
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'No se pudo actualizar el alumno.');
             }
-
-            // Case 2: A plan is selected, create or update membership
-            const newMembershipData: StudentMembership = {
-                userId: data.id,
-                planId: data.membershipPlanId,
-                startDate: format(data.membershipStartDate, 'yyyy-MM-dd'),
-                endDate: format(data.membershipEndDate, 'yyyy-MM-dd'),
-                classesRemaining: data.membershipClassesRemaining ?? undefined,
-            };
             
-            if (existingMembershipIndex > -1) {
-                const updatedMemberships = [...prevMemberships];
-                updatedMemberships[existingMembershipIndex] = newMembershipData;
-                return updatedMemberships;
-            } else {
-                return [...prevMemberships, newMembershipData];
-            }
-        });
+            toast({
+                title: "Alumno actualizado",
+                description: "Los datos del alumno han sido guardados en la base de datos."
+            });
+            
+            await fetchData(); // Reload all data from the database
+            
+            // This is to update the static view after saving without re-fetching everything
+            const updatedStudentDetails = await response.json();
+            setSelectedStudent(updatedStudentDetails);
 
-        toast({
-            title: "Alumno actualizado",
-            description: "Los datos del alumno han sido guardados."
-        });
-        
-        // This is to update the static view after saving without re-fetching
-        const updatedStudent = {
-            ...selectedStudent!,
-            name: data.name,
-            email: data.email,
-            mobile: data.mobile,
-            dob: data.dob
-        };
-        setSelectedStudent(updatedStudent);
-
-        setIsEditing(false);
+            setIsEditing(false);
+        } catch (error) {
+            toast({
+                title: "Error al guardar",
+                description: (error as Error).message,
+                variant: "destructive"
+            });
+        }
     }
 
     const getStudentMembershipInfo = (studentId: number) => {
@@ -186,8 +165,8 @@ export default function AdminStudentsPage() {
         }
         
         const plan = membershipPlans.find(p => p.id === membership.planId);
-        const endDate = new Date(membership.endDate);
-        const isActive = endDate >= new Date();
+        const endDate = parseISO(membership.endDate);
+        const isActive = isBefore(new Date(), endDate);
 
         let statusText = `Expira el ${format(endDate, 'PPP', { locale: es })}`;
         if (!isActive) {
@@ -231,7 +210,7 @@ export default function AdminStudentsPage() {
             `"${student.name}"`,
             student.email,
             `"${membershipInfo.planTitle}"`,
-            membership ? (isBefore(new Date(), new Date(membership.endDate)) ? 'Activa' : 'Expirada') : 'Sin membresía',
+            membership ? (isBefore(new Date(), parseISO(membership.endDate)) ? 'Activa' : 'Expirada') : 'Sin membresía',
             membership ? membership.endDate : 'N/A',
             (plan?.accessType === 'class_pack' && membership?.classesRemaining !== undefined) ? membership.classesRemaining : 'N/A'
           ].map(field => (typeof field === 'string' ? field.replace(/"/g, '""') : field)).join(',');
@@ -398,7 +377,7 @@ export default function AdminStudentsPage() {
                             </Avatar>
                             <div>
                                 <DialogTitle className="text-2xl font-headline">{form.getValues('name')}</DialogTitle>
-                                <DialogDescription>{form.getValues('email')} - Miembro desde {format(new Date(selectedStudent.joined), 'PPP', { locale: es })}</DialogDescription>
+                                <DialogDescription>{form.getValues('email')} - Miembro desde {format(parseISO(selectedStudent.joined), 'PPP', { locale: es })}</DialogDescription>
                             </div>
                         </div>
                         <Button variant={isEditing ? "default" : "outline"} size="icon" onClick={() => setIsEditing(!isEditing)}>
@@ -422,10 +401,10 @@ export default function AdminStudentsPage() {
                                         )} />
                                         <div className="grid grid-cols-2 gap-4">
                                             <FormField control={form.control} name="mobile" render={({ field }) => (
-                                                <FormItem><FormLabel>Móvil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                                <FormItem><FormLabel>Móvil</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                                             )} />
                                             <FormField control={form.control} name="dob" render={({ field }) => (
-                                                <FormItem><FormLabel>Fecha de Nacimiento</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+                                                <FormItem><FormLabel>Fecha de Nacimiento</FormLabel><FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                                             )} />
                                         </div>
                                     </CardContent>
@@ -437,7 +416,7 @@ export default function AdminStudentsPage() {
                                         <FormField control={form.control} name="membershipPlanId" render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Plan de Membresía</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value || ''}>
+                                                <Select onValueChange={field.onChange} value={field.value || 'none'}>
                                                     <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="none">Sin membresía</SelectItem>
@@ -511,14 +490,14 @@ export default function AdminStudentsPage() {
                                     <CardContent className="text-sm space-y-2">
                                         <p className="font-semibold text-base">{currentPlan.title}</p>
                                         <div className="flex items-center gap-2">
-                                            <Badge variant={isBefore(new Date(), new Date(currentMembership.endDate)) ? 'default' : 'destructive'}>
-                                                {isBefore(new Date(), new Date(currentMembership.endDate)) ? 'Activa' : 'Expirada'}
+                                            <Badge variant={isBefore(new Date(), parseISO(currentMembership.endDate)) ? 'default' : 'destructive'}>
+                                                {isBefore(new Date(), parseISO(currentMembership.endDate)) ? 'Activa' : 'Expirada'}
                                             </Badge>
                                         </div>
-                                        <p><span className="font-medium">Válida desde:</span> {format(new Date(currentMembership.startDate), 'PPP', { locale: es })}</p>
-                                        <p><span className="font-medium">Hasta:</span> {format(new Date(currentMembership.endDate), 'PPP', { locale: es })}</p>
+                                        <p><span className="font-medium">Válida desde:</span> {format(parseISO(currentMembership.startDate), 'PPP', { locale: es })}</p>
+                                        <p><span className="font-medium">Hasta:</span> {format(parseISO(currentMembership.endDate), 'PPP', { locale: es })}</p>
                                         {currentPlan.accessType === 'class_pack' && (
-                                            <p><span className="font-medium">Clases restantes:</span> {currentMembership.classesRemaining || 0}</p>
+                                            <p><span className="font-medium">Clases restantes:</span> {currentMembership.classesRemaining ?? 0}</p>
                                         )}
                                     </CardContent>
                                 ) : (
@@ -549,7 +528,7 @@ export default function AdminStudentsPage() {
                                         <ul className="space-y-3">
                                             {selectedStudent.attendanceHistory.map((att, index) => (
                                                 <li key={index} className="text-sm flex justify-between items-center">
-                                                    <div><p className="font-medium">{getClassNameById(att.classId)}</p><p className="text-muted-foreground">{format(new Date(att.date), 'PPP', { locale: es })}</p></div>
+                                                    <div><p className="font-medium">{getClassNameById(att.classId)}</p><p className="text-muted-foreground">{format(parseISO(att.date), 'PPP', { locale: es })}</p></div>
                                                     <Badge variant={att.status === 'presente' ? 'default' : 'destructive'} className="capitalize">
                                                         {att.status === 'presente' ? <CalendarCheck className="mr-1 h-3 w-3" /> : <CalendarX className="mr-1 h-3 w-3" />}
                                                         {att.status}
@@ -568,7 +547,7 @@ export default function AdminStudentsPage() {
                 <DialogFooter className="no-print">
                     {isEditing && (
                         <>
-                            <Button type="button" variant="ghost" onClick={() => { setIsEditing(false); handleViewProfile(selectedStudent)}}>Cancelar</Button>
+                            <Button type="button" variant="ghost" onClick={() => { setIsEditing(false); }}>Cancelar</Button>
                             <Button type="submit" form="student-edit-form" onClick={form.handleSubmit(onSubmit)}>Guardar Cambios</Button>
                         </>
                     )}
