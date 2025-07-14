@@ -26,7 +26,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Plan no encontrado' }, { status: 404 });
     }
 
-    const finalPrice = totalPrice ?? ('price' in plan ? plan.price : 0);
+    let finalPrice: number;
+    if (totalPrice !== undefined) {
+      finalPrice = totalPrice;
+    } else if ('price' in plan) {
+      finalPrice = plan.price;
+    } else {
+      finalPrice = 0; // Default safe value
+    }
+    
     const classesRemaining = classCount ?? ('classCount' in plan ? plan.classCount : undefined);
 
     const startDate = new Date();
