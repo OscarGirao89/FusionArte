@@ -159,25 +159,13 @@ export async function DELETE(
     
     // Use transaction to delete user and related data
     await prisma.$transaction(async (tx) => {
-      // Disconnect user from tasks they are assigned to
-      await tx.taskNote.updateMany({
-        where: {
-          assignees: {
-            some: { id: userId }
-          }
-        },
-        data: {
-          assignees: {
-            disconnect: { id: userId }
-          }
-        }
-      });
       
       await tx.studentMembership.deleteMany({ where: { userId } });
       await tx.studentPayment.deleteMany({ where: { studentId: userId } });
       
       // You may need to handle other relations like taughtClasses, enrolledClasses etc.
       // For now, we assume cascade deletes or manual cleanup is handled elsewhere if needed.
+      // The relation to TaskNote assignees is handled by the database schema.
       await tx.user.delete({
         where: { id: userId },
       });
