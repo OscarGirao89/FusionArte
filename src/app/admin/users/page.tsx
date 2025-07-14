@@ -91,22 +91,23 @@ export default function AdminUsersPage() {
     const { userRole } = useAuth();
     const avatarInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            setIsLoading(true);
-            try {
-                const res = await fetch('/api/users');
-                if (res.ok) {
-                    setUsers(await res.json());
-                } else {
-                    toast({ title: "Error", description: "No se pudieron cargar los usuarios.", variant: "destructive" });
-                }
-            } catch (e) {
+    const fetchUsers = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch('/api/users');
+            if (res.ok) {
+                setUsers(await res.json());
+            } else {
                 toast({ title: "Error", description: "No se pudieron cargar los usuarios.", variant: "destructive" });
-            } finally {
-                setIsLoading(false);
             }
-        };
+        } catch (e) {
+            toast({ title: "Error", description: "No se pudieron cargar los usuarios.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchUsers();
     }, [toast]);
     
@@ -169,45 +170,62 @@ export default function AdminUsersPage() {
         setIsDialogOpen(true);
       };
 
-    const onSubmit = (data: UserFormValues) => {
-        toast({
-          title: `Usuario ${editingUser ? 'actualizado' : 'creado'}`,
-          description: `El usuario "${data.name}" ha sido guardado (simulación).`,
-        });
+    const onSubmit = async (data: UserFormValues) => {
+        const url = editingUser ? `/api/users/${editingUser.id}` : '/api/users';
+        const method = editingUser ? 'PUT' : 'POST';
 
-        const dataToSave = {
-            name: data.name,
-            email: data.email,
-            role: data.role,
-            avatar: data.avatar || `https://placehold.co/100x100.png?text=${data.name.split(' ').map(n=>n[0]).join('')}`,
-            bio: data.bio,
-            specialties: data.specialties?.split(',').map(s => s.trim()) || [],
-            paymentDetails: data.paymentDetails,
-            isVisibleToStudents: data.isVisibleToStudents,
-            isPartner: data.isPartner
-        };
+        // For new users, a default password is required by the API.
+        const body = editingUser ? JSON.stringify(data) : JSON.stringify({ ...data, password: 'password123' });
 
-        if (editingUser) {
-            setUsers(users.map(u => u.id === editingUser.id ? { ...editingUser, ...dataToSave } : u));
-        } else {
-            const newUser: User = {
-                ...dataToSave,
-                id: Math.max(...users.map(u => u.id)) + 1,
-                joined: new Date().toISOString().split('T')[0],
-            };
-            setUsers([...users, newUser]);
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Failed to ${method} user`);
+            }
+
+            toast({
+                title: `Usuario ${editingUser ? 'actualizado' : 'creado'}`,
+                description: `El usuario "${data.name}" ha sido guardado.`,
+            });
+            
+            await fetchUsers();
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: (error as Error).message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsDialogOpen(false);
+            setEditingUser(null);
         }
-        setIsDialogOpen(false);
-        setEditingUser(null);
     };
 
-    const handleDelete = (userId: number) => {
-        setUsers(users.filter(u => u.id !== userId));
-        toast({
-            title: "Usuario eliminado",
-            description: `El usuario ha sido eliminado exitosamente (simulación).`,
-            variant: "destructive"
-        });
+    const handleDelete = async (userId: number) => {
+        try {
+            const response = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+            if (!response.ok) {
+                throw new Error("Failed to delete user");
+            }
+            toast({
+                title: "Usuario eliminado",
+                description: `El usuario ha sido eliminado exitosamente.`,
+                variant: "destructive"
+            });
+            await fetchUsers();
+        } catch (error) {
+            toast({
+                title: "Error al eliminar",
+                description: (error as Error).message,
+                variant: "destructive"
+            });
+        }
     }
     
     const handleAvatarFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -514,5 +532,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-
-    

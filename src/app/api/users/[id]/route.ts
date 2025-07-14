@@ -1,5 +1,23 @@
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+import { paymentDetailsSchema } from '@/lib/types';
+import bcrypt from 'bcryptjs';
+
+const userUpdateSchema = z.object({
+    name: z.string().min(3),
+    email: z.string().email(),
+    role: z.string(),
+    bio: z.string().optional().nullable(),
+    specialties: z.string().optional().nullable(),
+    paymentDetails: paymentDetailsSchema.optional().nullable(),
+    avatar: z.string().optional().nullable(),
+    isVisibleToStudents: z.boolean().optional(),
+    isPartner: z.boolean().optional(),
+    password: z.string().min(8).optional().nullable(), // For password changes
+}).passthrough();
+
 
 export async function GET(
   request: NextRequest,
@@ -34,13 +52,35 @@ export async function PUT(
 ) {
   try {
     const data = await request.json();
+    const validatedData = userUpdateSchema.parse(data);
+
+    const dataToUpdate: any = {
+        name: validatedData.name,
+        email: validatedData.email,
+        role: validatedData.role,
+        bio: validatedData.bio,
+        specialties: validatedData.specialties?.split(',').map(s => s.trim()) || [],
+        paymentDetails: validatedData.paymentDetails,
+        avatar: validatedData.avatar,
+        isVisibleToStudents: validatedData.isVisibleToStudents,
+        isPartner: validatedData.isPartner,
+    };
+    
+    // Handle password change if provided
+    if (validatedData.password) {
+        dataToUpdate.password = await bcrypt.hash(validatedData.password, 10);
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: parseInt(params.id, 10) },
-      data,
+      data: dataToUpdate,
     });
     const { password, ...userWithoutPassword } = updatedUser;
     return NextResponse.json(userWithoutPassword);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Invalid data', details: error.errors }, { status: 400 });
+    }
     console.error(`Error updating user ${params.id}:`, error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
