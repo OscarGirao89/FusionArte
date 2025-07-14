@@ -31,7 +31,7 @@ const baseSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, "El título es obligatorio."),
   description: z.string().min(1, "La descripción es obligatoria."),
-  features: z.string().min(10, "Añade al menos una característica."),
+  features: z.string().min(1, "Añade al menos una característica."),
   isPopular: z.boolean().default(false),
   durationUnit: z.enum(['days', 'weeks', 'months'], { required_error: "Debes seleccionar una unidad." }),
   durationValue: z.coerce.number().int().min(1, "La duración debe ser al menos 1."),
@@ -221,11 +221,10 @@ export default function AdminMembershipsPage() {
 
   const allowedClassesDescription = (
     <>
-      Selecciona las clases a las que dará acceso este plan.
-      {accessType === 'course_pass' ? 
-      " Es obligatorio seleccionar al menos una." :
-      " Si no marcas ninguna, se permitirá el acceso a todas."
-      }
+      Si no marcas ninguna clase, se permitirá el acceso a todas. Si marcas una o más, el acceso se limitará solo a esas clases.
+      {accessType === 'course_pass' && (
+        <span className="font-bold block"> Es obligatorio seleccionar al menos una clase para este tipo de pase.</span>
+      )}
     </>
   );
 
@@ -385,62 +384,63 @@ export default function AdminMembershipsPage() {
                   </div>
               </div>
 
-              {(accessType === 'class_pack' || accessType === 'trial_class' || accessType === 'course_pass' || accessType === 'custom_pack') && (
+              {(accessType === 'class_pack' || accessType === 'trial_class') && 'classCount' in form.getValues() && (
                   <div className="space-y-4 p-4 border rounded-md">
-                     {(accessType === 'class_pack' || accessType === 'trial_class') && 'classCount' in form.getValues() && (
-                         <FormField control={form.control} name="classCount" render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Cantidad de Clases</FormLabel>
-                                <FormControl><Input type="number" min="1" {...field} /></FormControl>
-                                <FormDescription>
-                                  {accessType === 'trial_class' ? 'Normalmente 1.' : 'Número de clases incluidas.'}
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                          )} />
-                      )}
-                      <FormField
-                        control={form.control} name="allowedClasses"
-                        render={() => (
-                          <FormItem>
-                            <div className="mb-4">
-                              <FormLabel className="text-base">Clases Permitidas</FormLabel>
-                              <FormDescription>{allowedClassesDescription}</FormDescription>
-                            </div>
-                            <ScrollArea className="h-40 rounded-md border p-4">
-                            <div className="flex items-center space-x-2 mb-4">
-                               <Checkbox id="select-all-classes" checked={form.watch('allowedClasses')?.length === allClassIds.length}
-                                    onCheckedChange={(checked) => form.setValue('allowedClasses', checked ? allClassIds : [])} />
-                                <label htmlFor="select-all-classes" className="text-sm font-medium leading-none">Seleccionar todas</label>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {danceClasses.map((item) => (
-                              <FormField key={item.id} control={form.control} name="allowedClasses"
-                                render={({ field }) => {
-                                  const fieldValue = Array.isArray(field.value) ? field.value : [];
-                                  return (
-                                    <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
-                                      <FormControl>
-                                        <Checkbox checked={fieldValue.includes(item.id)}
-                                          onCheckedChange={(checked) => {
-                                            return checked ? field.onChange([...fieldValue, item.id])
-                                              : field.onChange(fieldValue.filter((v) => v !== item.id))
-                                          }} />
-                                      </FormControl>
-                                      <FormLabel className="font-normal text-sm">{item.name} ({item.day} - {item.time})</FormLabel>
-                                    </FormItem>
-                                  )
-                                }}
-                              />
-                            ))}
-                            </div>
-                            </ScrollArea>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <FormField control={form.control} name="classCount" render={({ field }) => (
+                           <FormItem>
+                             <FormLabel>Cantidad de Clases</FormLabel>
+                             <FormControl><Input type="number" min="1" {...field} /></FormControl>
+                             <FormDescription>
+                               {accessType === 'trial_class' ? 'Normalmente 1.' : 'Número de clases incluidas.'}
+                             </FormDescription>
+                             <FormMessage />
+                           </FormItem>
+                       )} />
                   </div>
               )}
+
+              <div className="space-y-4 p-4 border rounded-md">
+                 <FormField
+                   control={form.control} name="allowedClasses"
+                   render={() => (
+                     <FormItem>
+                       <div className="mb-4">
+                         <FormLabel className="text-base">Restringir Clases (Opcional)</FormLabel>
+                         <FormDescription>{allowedClassesDescription}</FormDescription>
+                       </div>
+                       <ScrollArea className="h-40 rounded-md border p-4">
+                       <div className="flex items-center space-x-2 mb-4">
+                          <Checkbox id="select-all-classes" checked={form.watch('allowedClasses')?.length === allClassIds.length}
+                               onCheckedChange={(checked) => form.setValue('allowedClasses', checked ? allClassIds : [])} />
+                           <label htmlFor="select-all-classes" className="text-sm font-medium leading-none">Seleccionar todas</label>
+                       </div>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                       {danceClasses.map((item) => (
+                         <FormField key={item.id} control={form.control} name="allowedClasses"
+                           render={({ field }) => {
+                             const fieldValue = Array.isArray(field.value) ? field.value : [];
+                             return (
+                               <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                                 <FormControl>
+                                   <Checkbox checked={fieldValue.includes(item.id)}
+                                     onCheckedChange={(checked) => {
+                                       return checked ? field.onChange([...fieldValue, item.id])
+                                         : field.onChange(fieldValue.filter((v) => v !== item.id))
+                                     }} />
+                                 </FormControl>
+                                 <FormLabel className="font-normal text-sm">{item.name} ({item.day} - {item.time})</FormLabel>
+                               </FormItem>
+                             )
+                           }}
+                         />
+                       ))}
+                       </div>
+                       </ScrollArea>
+                       <FormMessage />
+                     </FormItem>
+                   )}
+                 />
+              </div>
 
               {accessType === 'custom_pack' && 'priceTiersJson' in form.getValues() && (
                 <div className="space-y-4 p-4 border rounded-md">
