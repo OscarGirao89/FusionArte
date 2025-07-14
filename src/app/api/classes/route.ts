@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
@@ -12,6 +13,7 @@ const classSchema = z.object({
   styleId: z.string(),
   levelId: z.string(),
   capacity: z.number(),
+  enrolledStudentIds: z.array(z.number()).optional(),
 }).passthrough();
 
 export async function GET() {

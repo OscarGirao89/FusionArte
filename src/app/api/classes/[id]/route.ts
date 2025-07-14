@@ -1,5 +1,19 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+
+const classSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+  time: z.string(),
+  room: z.string(),
+  duration: z.string(),
+  teacherIds: z.array(z.number()),
+  styleId: z.string(),
+  levelId: z.string(),
+  capacity: z.number(),
+  enrolledStudentIds: z.array(z.number()).optional(),
+}).passthrough();
 
 export async function GET(
   request: NextRequest,
@@ -34,7 +48,7 @@ export async function PUT(
 ) {
   try {
     const data = await request.json();
-    const { teacherIds, enrolledStudentIds, styleId, levelId, ...classData } = data;
+    const { teacherIds, enrolledStudentIds, styleId, levelId, ...classData } = classSchema.parse(data);
 
     const updatedClass = await prisma.danceClass.update({
       where: { id: params.id },
@@ -63,6 +77,10 @@ export async function PUT(
     return NextResponse.json(response);
   } catch (error) {
     console.error(`Error updating class ${params.id}:`, error);
+    if (error instanceof z.ZodError) {
+      console.error('Validation error:', error.errors);
+      return NextResponse.json({ error: 'Invalid data', details: error.errors }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
