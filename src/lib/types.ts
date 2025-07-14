@@ -1,5 +1,3 @@
-
-
 import { z } from "zod";
 
 export type DanceStyle = {
@@ -242,6 +240,7 @@ export type AcademySettings = {
   enableNewSignups: boolean;
   maintenanceMode: boolean;
   logoUrl?: string;
+  faviconUrl?: string;
   instagramUrl?: string;
   facebookUrl?: string;
   tiktokUrl?: string;
