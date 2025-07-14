@@ -38,13 +38,14 @@ const studentEditFormSchema = z.object({
     membershipEndDate: z.date().optional().nullable(),
     membershipClassesRemaining: z.coerce.number().optional().nullable(),
 }).refine(data => {
-    // If a plan is selected, dates must be present.
-    if (data.membershipPlanId && data.membershipPlanId !== 'none' && (!data.membershipStartDate || !data.membershipEndDate)) {
-        return false;
+    // If a plan is selected AND one of the dates is filled, then both dates must be filled.
+    if (data.membershipPlanId && data.membershipPlanId !== 'none' && (data.membershipStartDate || data.membershipEndDate)) {
+        return !!data.membershipStartDate && !!data.membershipEndDate;
     }
+    // Otherwise, it's valid (no plan, or a plan with no dates yet).
     return true;
 }, {
-    message: "Las fechas de inicio y fin son obligatorias si se selecciona un plan.",
+    message: "Si se define una fecha, ambas (inicio y fin) son obligatorias.",
     path: ["membershipStartDate"],
 });
 
