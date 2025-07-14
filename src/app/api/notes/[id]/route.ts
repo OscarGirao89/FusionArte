@@ -13,7 +13,7 @@ const taskNoteUpdateSchema = z.object({
   category: z.string().min(1, "La categoría es obligatoria.").optional(),
   assigneeIds: z.array(z.number()).optional(),
   dueDate: z.string().datetime().optional().nullable(),
-  alertDateTime: z.string().datetime().optional().nullable(),
+  alertDateTime: z.string().optional().nullable(),
 }).partial();
 
 export async function PUT(

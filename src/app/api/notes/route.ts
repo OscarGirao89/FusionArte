@@ -30,7 +30,7 @@ const taskNoteCreateSchema = z.object({
   category: z.string().min(1, "La categoría es obligatoria."),
   assigneeIds: z.array(z.number()).default([]),
   dueDate: z.string().datetime().optional().nullable(),
-  alertDateTime: z.string().datetime().optional().nullable(),
+  alertDateTime: z.string().optional().nullable(),
 });
 
 export async function POST(request: Request) {
@@ -61,4 +61,3 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
-
