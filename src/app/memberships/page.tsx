@@ -152,8 +152,7 @@ export default function MembershipsPage() {
             throw new Error(errorData.error || 'No se pudo completar la compra.');
         }
 
-        // --- Start of fix: Update local state ---
-        const finalPrice = customConfig?.totalPrice ?? ('price' in planToPurchase ? planToPurchase.price : 0);
+        const finalPrice = customConfig?.totalPrice ?? planToPurchase.price ?? 0;
         
         // 1. Update StudentPayment state
         addStudentPayment({
@@ -176,7 +175,6 @@ export default function MembershipsPage() {
             endDate: endDate.toISOString(),
             classesRemaining: customConfig?.classCount ?? ('classCount' in planToPurchase ? planToPurchase.classCount : undefined),
         });
-        // --- End of fix ---
 
         toast({
             title: "¡Membresía adquirida con éxito!",
