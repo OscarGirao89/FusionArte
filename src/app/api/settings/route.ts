@@ -3,18 +3,32 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import type { HeroSlide, ScheduleImage } from '@/lib/types';
 
-// Define a schema for validation that matches the Settings model in Prisma
+const heroSlideSchema = z.object({
+  id: z.string().optional(),
+  heroTitle: z.string().min(1),
+  heroSubtitle: z.string().optional(),
+  heroDescription: z.string().optional(),
+  heroButtonText: z.string().min(1),
+  heroButtonLink: z.string(),
+  heroImageUrl: z.string().optional(),
+});
+
+const scheduleImageSchema = z.object({
+    id: z.string().optional(),
+    url: z.string().min(1),
+    alt: z.string().optional(),
+});
+
 const settingsSchema = z.object({
-  academyName: z.string().min(1),
-  contactEmail: z.string().email(),
+  academyName: z.string().min(1).optional(),
+  contactEmail: z.string().email().optional(),
   phone: z.string().optional(),
   whatsappPhone: z.string().optional(),
   address: z.string().optional(),
   welcomeMessage: z.string().optional(),
-  enableNewSignups: z.boolean(),
-  maintenanceMode: z.boolean(),
+  enableNewSignups: z.boolean().optional(),
+  maintenanceMode: z.boolean().optional(),
   logoUrl: z.string().optional(),
   faviconUrl: z.string().optional(),
   instagramUrl: z.string().url().or(z.literal('')).optional(),
@@ -23,8 +37,8 @@ const settingsSchema = z.object({
   openingHours: z.string().optional(),
   registrationEmailMessage: z.string().optional(),
   membershipEmailMessage: z.string().optional(),
-  heroSlides: z.any().optional(),
-  scheduleImages: z.any().optional(),
+  heroSlides: z.array(heroSlideSchema).optional(),
+  scheduleImages: z.array(scheduleImageSchema).optional(),
   aboutUsTitle: z.string().optional(),
   aboutUsStory: z.string().optional(),
   aboutUsMission: z.string().optional(),
@@ -32,9 +46,8 @@ const settingsSchema = z.object({
   aboutUsValues: z.string().optional(),
   aboutUsTeamTitle: z.string().optional(),
   aboutUsTeamDescription: z.string().optional(),
-});
+}).partial();
 
-// There will only ever be one row in the Settings table with a fixed ID.
 const SETTINGS_ID = 'singleton';
 
 export async function GET() {
@@ -43,7 +56,6 @@ export async function GET() {
       where: { id: SETTINGS_ID },
     });
 
-    // If no settings exist, create with default values
     if (!settings) {
         settings = await prisma.settings.create({
             data: {
@@ -73,7 +85,7 @@ export async function PUT(request: Request) {
     const settings = await prisma.settings.upsert({
       where: { id: SETTINGS_ID },
       update: validatedData,
-      create: { id: SETTINGS_ID, ...validatedData },
+      create: { id: SETTINGS_ID, ...validatedData, academyName: 'FusionArte', contactEmail: 'change@me.com' },
     });
 
     return NextResponse.json(settings);

@@ -23,15 +23,6 @@ const publicNav = [
     { href: '/contact', label: 'Contacto' },
 ];
 
-const adminManagementNav = [
-    { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/admin/users', label: 'Usuarios', icon: User },
-    { href: '/admin/students', label: 'Alumnos', icon: GraduationCap },
-    { href: '/admin/classes', label: 'Clases', icon: ClipboardList },
-    { href: '/admin/memberships', label: 'Membresías', icon: CreditCard },
-    { href: '/admin/finances', label: 'Finanzas', icon: Banknote },
-];
-
 export const userProfiles: Record<UserRole, { id: number; name: string; role: string; avatar: string }> = {
     Estudiante: { id: 1, name: 'Ana López', role: 'Estudiante', avatar: 'https://placehold.co/100x100.png?text=AL' },
     Profesor: { id: 10, name: 'Alexandra', role: 'Profesor/a', avatar: 'https://placehold.co/100x100.png?text=A' },
@@ -41,7 +32,7 @@ export const userProfiles: Record<UserRole, { id: number; name: string; role: st
 };
 
 function UserMenu() {
-    const { userRole, logout, currentUser, isAuthenticated } = useAuth();
+    const { logout, currentUser, isAuthenticated } = useAuth();
     const router = useRouter();
 
     if (!isAuthenticated || !currentUser) {
@@ -57,14 +48,15 @@ function UserMenu() {
         );
     }
     
-    // Correct role names from the database
+    const role = currentUser.role;
+    
     const managementRoles = ['Admin', 'Socio', 'Administrativo'];
     const teacherAreaRoles = ['Profesor', 'Socio'];
     
-    const canManage = userRole && managementRoles.includes(currentUser.role);
-    const canAccessTeacherArea = userRole && teacherAreaRoles.includes(currentUser.role);
-    const canManageNotes = userRole && (currentUser.role === 'Admin' || currentUser.role === 'Socio');
-    const canManageSettings = userRole && (currentUser.role === 'Admin' || currentUser.role === 'Socio');
+    const canManage = managementRoles.includes(role);
+    const canAccessTeacherArea = teacherAreaRoles.includes(role);
+    const canManageNotes = role === 'Admin' || role === 'Socio';
+    const canManageSettings = role === 'Admin' || role === 'Socio';
 
     return (
         <DropdownMenu>
