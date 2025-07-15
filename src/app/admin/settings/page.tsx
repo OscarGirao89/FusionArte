@@ -126,14 +126,14 @@ export default function AdminSettingsPage() {
   return (
     <div className="p-4 md:p-8">
       <h1 className="text-3xl font-bold tracking-tight font-headline mb-8">Configuración</h1>
+       <Form {...form}>
       <div className="space-y-8">
+            <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ logoUrl: data.logoUrl, faviconUrl: data.faviconUrl }))}>
             <Card>
                 <CardHeader>
                     <CardTitle>Identidad Visual</CardTitle>
                     <CardDescription>Gestiona el logo y el ícono de tu academia.</CardDescription>
                 </CardHeader>
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ logoUrl: data.logoUrl, faviconUrl: data.faviconUrl }))}>
                     <CardContent className="grid md:grid-cols-2 gap-8">
                         <FormField control={form.control} name="logoUrl" render={() => (
                             <FormItem>
@@ -171,17 +171,15 @@ export default function AdminSettingsPage() {
                         )} />
                     </CardContent>
                     <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Identidad Visual</Button></CardFooter>
-                </form>
-                </Form>
             </Card>
+            </form>
 
+            <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ academyName: data.academyName, welcomeMessage: data.welcomeMessage }))}>
             <Card>
                 <CardHeader>
                     <CardTitle>Ajustes Generales</CardTitle>
                     <CardDescription>Configura los ajustes generales de la academia.</CardDescription>
                 </CardHeader>
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ academyName: data.academyName, welcomeMessage: data.welcomeMessage }))}>
                     <CardContent className="space-y-6">
                         <FormField control={form.control} name="academyName" render={({ field }) => (
                             <FormItem><FormLabel>Nombre de la Academia</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -191,17 +189,15 @@ export default function AdminSettingsPage() {
                         )} />
                     </CardContent>
                     <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Ajustes Generales</Button></CardFooter>
-                </form>
-                </Form>
             </Card>
+            </form>
             
+            <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ contactEmail: data.contactEmail, phone: data.phone, whatsappPhone: data.whatsappPhone, address: data.address, openingHours: data.openingHours, instagramUrl: data.instagramUrl, facebookUrl: data.facebookUrl, tiktokUrl: data.tiktokUrl }))}>
             <Card>
                 <CardHeader>
                     <CardTitle>Datos de Contacto y Horarios</CardTitle>
                     <CardDescription>Esta información se mostrará en las páginas públicas.</CardDescription>
                 </CardHeader>
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ contactEmail: data.contactEmail, phone: data.phone, whatsappPhone: data.whatsappPhone, address: data.address, openingHours: data.openingHours, instagramUrl: data.instagramUrl, facebookUrl: data.facebookUrl, tiktokUrl: data.tiktokUrl }))}>
                     <CardContent className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <FormField control={form.control} name="contactEmail" render={({ field }) => (
@@ -233,17 +229,15 @@ export default function AdminSettingsPage() {
                         </div>
                     </CardContent>
                     <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Datos de Contacto</Button></CardFooter>
-                </form>
-                </Form>
             </Card>
+            </form>
 
+            <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ registrationEmailMessage: data.registrationEmailMessage, membershipEmailMessage: data.membershipEmailMessage }))}>
             <Card>
                 <CardHeader>
                     <CardTitle>Plantillas de Email</CardTitle>
                     <CardDescription>Personaliza los mensajes automáticos que se envían a los usuarios.</CardDescription>
                 </CardHeader>
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ registrationEmailMessage: data.registrationEmailMessage, membershipEmailMessage: data.membershipEmailMessage }))}>
                     <CardContent className="space-y-6">
                         <FormField control={form.control} name="registrationEmailMessage" render={({ field }) => (
                             <FormItem><FormLabel>Mensaje de Bienvenida (Registro)</FormLabel><FormControl><Textarea {...field} rows={5} /></FormControl><FormDescription>Este mensaje se enviará a los nuevos usuarios al registrarse. Usa {'{{name}}'} para insertar el nombre del usuario.</FormDescription><FormMessage /></FormItem>
@@ -253,17 +247,15 @@ export default function AdminSettingsPage() {
                         )} />
                     </CardContent>
                     <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Plantillas de Email</Button></CardFooter>
-                </form>
-                </Form>
             </Card>
+            </form>
 
+            <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ enableNewSignups: data.enableNewSignups, maintenanceMode: data.maintenanceMode }))}>
             <Card>
                 <CardHeader>
                     <CardTitle>Ajustes de la Aplicación</CardTitle>
                     <CardDescription>Controla el comportamiento de la aplicación.</CardDescription>
                 </CardHeader>
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ enableNewSignups: data.enableNewSignups, maintenanceMode: data.maintenanceMode }))}>
                     <CardContent className="space-y-6">
                         <FormField control={form.control} name="enableNewSignups" render={({ field }) => (
                             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
@@ -279,17 +271,15 @@ export default function AdminSettingsPage() {
                         )} />
                     </CardContent>
                     <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Ajustes de Aplicación</Button></CardFooter>
-                </form>
-                </Form>
             </Card>
+            </form>
 
+            <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ aboutUsTitle: data.aboutUsTitle, aboutUsStory: data.aboutUsStory, aboutUsMission: data.aboutUsMission, aboutUsVision: data.aboutUsVision, aboutUsValues: data.aboutUsValues, aboutUsTeamTitle: data.aboutUsTeamTitle, aboutUsTeamDescription: data.aboutUsTeamDescription }))}>
             <Card>
                 <CardHeader>
                     <CardTitle>Página 'Acerca de Nosotros'</CardTitle>
                     <CardDescription>Gestiona el contenido que se muestra en la página "Acerca de Nosotros".</CardDescription>
                 </CardHeader>
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ aboutUsTitle: data.aboutUsTitle, aboutUsStory: data.aboutUsStory, aboutUsMission: data.aboutUsMission, aboutUsVision: data.aboutUsVision, aboutUsValues: data.aboutUsValues, aboutUsTeamTitle: data.aboutUsTeamTitle, aboutUsTeamDescription: data.aboutUsTeamDescription }))}>
                     <CardContent className="space-y-6">
                         <FormField control={form.control} name="aboutUsTitle" render={({ field }) => (<FormItem><FormLabel>Título Principal ("Nuestra Historia")</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="aboutUsStory" render={({ field }) => (<FormItem><FormLabel>Párrafo de la Historia</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -300,17 +290,15 @@ export default function AdminSettingsPage() {
                         <FormField control={form.control} name="aboutUsTeamDescription" render={({ field }) => (<FormItem><FormLabel>Descripción de la Sección de Equipo</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </CardContent>
                     <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Contenido 'Acerca de'</Button></CardFooter>
-                </form>
-                </Form>
             </Card>
+            </form>
 
+            <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ heroSlides: data.heroSlides }))}>
             <Card>
                 <CardHeader>
                     <CardTitle>Diapositivas de la Página Principal</CardTitle>
                     <CardDescription>Gestiona el contenido del carrusel en la página de inicio. Añade, edita o elimina diapositivas.</CardDescription>
                 </CardHeader>
-                 <Form {...form}>
-                <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ heroSlides: data.heroSlides }))}>
                     <CardContent className="space-y-6">
                     <div className="space-y-4">
                         {heroFields.map((field, index) => {
@@ -362,17 +350,15 @@ export default function AdminSettingsPage() {
                     <FormMessage>{form.formState.errors.heroSlides?.message}</FormMessage>
                     </CardContent>
                     <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Diapositivas</Button></CardFooter>
-                </form>
-                </Form>
             </Card>
+            </form>
 
+            <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ scheduleImages: data.scheduleImages }))}>
             <Card>
                 <CardHeader>
                     <CardTitle>Imágenes de Horarios</CardTitle>
                     <CardDescription>Sube imágenes de tus horarios para mostrarlas en la página de "Clases y Horarios". Puedes subir hasta 3.</CardDescription>
                 </CardHeader>
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(data => handlePartialSubmit({ scheduleImages: data.scheduleImages }))}>
                     <CardContent className="space-y-6">
                         <div className="space-y-4">
                             {scheduleImageFields.map((field, index) => {
@@ -422,10 +408,11 @@ export default function AdminSettingsPage() {
                         )}
                     </CardContent>
                     <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Imágenes de Horario</Button></CardFooter>
-                </form>
-                </Form>
             </Card>
+            </form>
       </div>
+      </Form>
     </div>
   );
 }
+

@@ -117,8 +117,26 @@ export default function ProfilePage() {
         return [...sameStyleSuggestions, ...otherStyleSuggestions].filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i).slice(0, 3);
     }, [currentUser, myEnrolledClasses, allData]);
 
-    const onSubmit = (data: ProfileFormValues) => {
-        if (currentUser) { updateCurrentUser(data); setIsEditing(false); toast({ title: "Perfil actualizado" }); }
+    const onSubmit = async (data: ProfileFormValues) => {
+        if (currentUser) {
+            try {
+                const response = await fetch(`/api/users/${currentUser.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                 if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'No se pudo actualizar el perfil.');
+                }
+                const updatedUser = await response.json();
+                updateCurrentUser(updatedUser);
+                setIsEditing(false);
+                toast({ title: "Perfil actualizado" });
+            } catch (error) {
+                 toast({ title: "Error", description: (error as Error).message, variant: 'destructive' });
+            }
+        }
     }
 
     const handleAvatarClick = () => { if (isEditing) { fileInputRef.current?.click(); } };

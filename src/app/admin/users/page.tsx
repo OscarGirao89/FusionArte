@@ -61,7 +61,7 @@ export default function AdminUsersPage() {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const { toast } = useToast();
     const router = useRouter();
-    const { userRole } = useAuth();
+    const { userRole, currentUser, updateCurrentUser } = useAuth();
     const avatarInputRef = useRef<HTMLInputElement>(null);
 
     const fetchUsers = async () => {
@@ -167,6 +167,11 @@ export default function AdminUsersPage() {
                 title: `Usuario ${editingUser ? 'actualizado' : 'creado'}`,
                 description: `El usuario "${data.name}" ha sido guardado.`,
             });
+
+            if (editingUser && currentUser && editingUser.id === currentUser.id) {
+                const updatedDetails = await response.json();
+                updateCurrentUser(updatedDetails);
+            }
             
             await fetchUsers();
         } catch (error) {
@@ -492,3 +497,4 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+

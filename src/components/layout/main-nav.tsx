@@ -32,7 +32,7 @@ export const userProfiles: Record<UserRole, { id: number; name: string; role: st
 };
 
 function UserMenu() {
-    const { logout, currentUser, isAuthenticated } = useAuth();
+    const { logout, currentUser, isAuthenticated, userRole } = useAuth();
     const router = useRouter();
 
     if (!isAuthenticated || !currentUser) {
@@ -48,15 +48,13 @@ function UserMenu() {
         );
     }
     
-    const role = currentUser.role;
-    
     const managementRoles = ['Admin', 'Socio', 'Administrativo'];
     const teacherAreaRoles = ['Profesor', 'Socio'];
     
-    const canManage = managementRoles.includes(role);
-    const canAccessTeacherArea = teacherAreaRoles.includes(role);
-    const canManageNotes = role === 'Admin' || role === 'Socio';
-    const canManageSettings = role === 'Admin' || role === 'Socio';
+    const canManage = userRole && managementRoles.includes(userRole);
+    const canAccessTeacherArea = userRole && teacherAreaRoles.includes(userRole);
+    const canManageNotes = userRole === 'Admin' || userRole === 'Socio';
+    const canManageSettings = userRole === 'Admin' || userRole === 'Socio';
 
     return (
         <DropdownMenu>

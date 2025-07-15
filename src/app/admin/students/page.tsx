@@ -25,6 +25,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth-context';
+
 
 const studentEditFormSchema = z.object({
     id: z.number(),
@@ -65,6 +67,7 @@ export default function AdminStudentsPage() {
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const { toast } = useToast();
+    const { currentUser, updateCurrentUser } = useAuth();
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -138,16 +141,20 @@ export default function AdminStudentsPage() {
                 throw new Error(errorData.error || 'No se pudo actualizar el alumno.');
             }
             
+            const updatedStudentDetails: User = await response.json();
+            
             toast({
                 title: "Alumno actualizado",
                 description: "Los datos del alumno han sido guardados en la base de datos."
             });
             
-            await fetchData(); // Reload all data from the database
-            
-            // This is to update the static view after saving without re-fetching everything
-            const updatedStudentDetails = await response.json();
+            await fetchData();
             setSelectedStudent(updatedStudentDetails);
+
+            // If the admin is editing their own student profile, update the context
+            if (currentUser && currentUser.id === updatedStudentDetails.id) {
+                updateCurrentUser(updatedStudentDetails);
+            }
 
             setIsEditing(false);
         } catch (error) {
@@ -560,3 +567,4 @@ export default function AdminStudentsPage() {
     </div>
   );
 }
+
