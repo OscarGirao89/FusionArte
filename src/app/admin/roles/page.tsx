@@ -21,6 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BackButton } from '@/components/shared/back-button';
 
 const roleFormSchema = z.object({
   id: z.string().optional(),
@@ -151,6 +152,9 @@ export default function AdminRolesPage() {
 
   return (
     <div className="p-4 md:p-8">
+      <div className="mb-4">
+        <BackButton href="/admin/users">Volver a Usuarios</BackButton>
+      </div>
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold tracking-tight font-headline flex items-center gap-2">
             <ShieldCheck className="h-8 w-8 text-primary" />

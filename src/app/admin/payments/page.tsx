@@ -24,6 +24,7 @@ import { DollarSign, Download, Edit, Printer, TrendingDown, TrendingUp, Wallet, 
 import { userProfiles } from '@/components/layout/main-nav';
 import { StudentPaymentsTable } from '@/components/admin/student-payments-table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BackButton } from '@/components/shared/back-button';
 
 const newInvoiceSchema = z.object({
   studentId: z.string().min(1, "Debes seleccionar un alumno."),
@@ -184,12 +185,11 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="p-4 md:p-8">
+      <div className="mb-4">
+        <BackButton href="/admin/finances">Volver a Finanzas</BackButton>
+      </div>
       <div className="flex items-start justify-between mb-8 flex-wrap gap-2 no-print">
         <div>
-            <Button variant="ghost" onClick={() => router.push('/admin/finanzas')} className="mb-2">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Volver a Finanzas
-            </Button>
             <h1 className="text-3xl font-bold tracking-tight font-headline">Pagos de Alumnos (Estudio)</h1>
         </div>
          {canCreate && (
@@ -276,7 +276,3 @@ export default function AdminPaymentsPage() {
     </div>
   );
 }
-
-    
-
-    

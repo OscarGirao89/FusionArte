@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { MoreHorizontal, PlusCircle, Pencil, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BackButton } from '@/components/shared/back-button';
 
 const styleFormSchema = z.object({
   id: z.string().optional(),
@@ -109,10 +110,6 @@ export default function AdminStylesPage() {
     }
   }
 
-  const handleBackToClasses = () => {
-    router.push(`/admin/classes?refresh=${new Date().getTime()}`);
-  }
-
   if (isLoading) {
     return (
         <div className="p-4 md:p-8 space-y-4">
@@ -135,9 +132,11 @@ export default function AdminStylesPage() {
 
   return (
     <div className="p-4 md:p-8">
+      <div className="mb-4">
+        <BackButton href="/admin/classes">Volver a Clases</BackButton>
+      </div>
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Gestión de Estilos de Baile</h1>
-        <Button onClick={handleBackToClasses}>Volver a Clases</Button>
       </div>
       <Card>
         <CardHeader>

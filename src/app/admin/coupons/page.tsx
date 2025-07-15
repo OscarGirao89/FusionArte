@@ -25,6 +25,7 @@ import { MoreHorizontal, PlusCircle, Pencil, Trash2, TicketPercent } from 'lucid
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BackButton } from '@/components/shared/back-button';
 
 const couponFormSchema = z.object({
   id: z.string().optional(),
@@ -194,6 +195,9 @@ export default function AdminCouponsPage() {
 
   return (
     <div className="p-4 md:p-8">
+      <div className="mb-4">
+        <BackButton href="/admin/memberships">Volver a Membresías</BackButton>
+      </div>
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold tracking-tight font-headline flex items-center gap-2">
             <TicketPercent className="h-8 w-8 text-primary"/>
