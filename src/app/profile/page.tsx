@@ -27,31 +27,25 @@ import { useSettings } from '@/context/settings-context';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const paymentStatusLabels: Record<StudentPayment['status'], string> = {
-    paid: 'Pagado',
-    pending: 'Pendiente',
-    deposit: 'Adelanto',
-};
-
 const profileFormSchema = z.object({
   name: z.string().min(3, "El nombre es obligatorio."),
   email: z.string().email("Email inválido."),
   mobile: z.string().optional(),
   avatar: z.string().optional(),
-  password: z.string().optional(),
-  confirmPassword: z.string().optional()
-}).refine(data => {
-    if (data.password && data.password.length > 0) {
-        if(data.password.length < 8) return false;
-        return data.password === data.confirmPassword;
-    }
-    return true;
-}, {
-    message: "Las contraseñas no coinciden o tienen menos de 8 caracteres.",
-    path: ["confirmPassword"],
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
+const passwordFormSchema = z.object({
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+    message: "Las contraseñas no coinciden.",
+    path: ["confirmPassword"],
+});
+
+type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+
 
 export default function ProfilePage() {
     const { currentUser, updateCurrentUser } = useAuth();
@@ -70,8 +64,13 @@ export default function ProfilePage() {
     } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const form = useForm<ProfileFormValues>({
+    const profileForm = useForm<ProfileFormValues>({
         resolver: zodResolver(profileFormSchema),
+    });
+
+    const passwordForm = useForm<PasswordFormValues>({
+        resolver: zodResolver(passwordFormSchema),
+        defaultValues: { password: '', confirmPassword: '' }
     });
 
     useEffect(() => {
@@ -99,13 +98,12 @@ export default function ProfilePage() {
 
     useEffect(() => {
       if (currentUser) {
-        form.reset({
+        profileForm.reset({
           name: currentUser.name || '', email: currentUser.email || '',
           mobile: currentUser.mobile || '', avatar: currentUser.avatar || '',
-          password: '', confirmPassword: '',
         });
       }
-    }, [currentUser, form]);
+    }, [currentUser, profileForm]);
     
     
     const membership = currentUser && allData ? allData.studentMemberships.find(m => m.userId === currentUser.id) as StudentMembership | null : null;
@@ -130,36 +128,43 @@ export default function ProfilePage() {
         return [...sameStyleSuggestions, ...otherStyleSuggestions].filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i).slice(0, 3);
     }, [currentUser, myEnrolledClasses, allData]);
 
-    const onSubmit = async (data: ProfileFormValues) => {
-        if (currentUser) {
-            const dataToSubmit: Partial<User> & { password?: string } = {
-                name: data.name,
-                email: data.email,
-                mobile: data.mobile,
-                avatar: data.avatar
-            };
-
-            if (data.password && data.password.length > 0) {
-                dataToSubmit.password = data.password;
+    const onProfileSubmit = async (data: ProfileFormValues) => {
+        if (!currentUser) return;
+        try {
+            const response = await fetch(`/api/users/${currentUser.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+             if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'No se pudo actualizar el perfil.');
             }
+            const updatedUser = await response.json();
+            updateCurrentUser(updatedUser);
+            setIsEditing(false);
+            toast({ title: "Perfil actualizado" });
+        } catch (error) {
+             toast({ title: "Error", description: (error as Error).message, variant: 'destructive' });
+        }
+    }
 
-            try {
-                const response = await fetch(`/api/users/${currentUser.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dataToSubmit),
-                });
-                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'No se pudo actualizar el perfil.');
-                }
-                const updatedUser = await response.json();
-                updateCurrentUser(updatedUser);
-                setIsEditing(false);
-                toast({ title: "Perfil actualizado" });
-            } catch (error) {
-                 toast({ title: "Error", description: (error as Error).message, variant: 'destructive' });
+    const onPasswordSubmit = async (data: PasswordFormValues) => {
+        if (!currentUser) return;
+        try {
+            const response = await fetch(`/api/users/${currentUser.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: data.password }),
+            });
+             if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'No se pudo actualizar la contraseña.');
             }
+            toast({ title: "Contraseña actualizada con éxito" });
+            passwordForm.reset();
+        } catch (error) {
+             toast({ title: "Error", description: (error as Error).message, variant: 'destructive' });
         }
     }
 
@@ -170,7 +175,7 @@ export default function ProfilePage() {
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                form.setValue('avatar', reader.result as string, { shouldDirty: true });
+                profileForm.setValue('avatar', reader.result as string, { shouldDirty: true });
             };
             reader.readAsDataURL(file);
         }
@@ -180,9 +185,9 @@ export default function ProfilePage() {
         return <div className="p-8"><Skeleton className="h-screen w-full" /></div>;
     }
     
-    const watchedAvatar = form.watch('avatar');
+    const watchedAvatar = profileForm.watch('avatar');
     const handleEditToggle = (e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); setIsEditing(prev => !prev); }
-    const handleSaveSubmit = (e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); form.handleSubmit(onSubmit)(); }
+    const handleSaveProfile = (e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); profileForm.handleSubmit(onProfileSubmit)(); }
 
     return (
             <div className="p-4 md:p-8 space-y-8">
@@ -254,71 +259,82 @@ export default function ProfilePage() {
                     </TabsContent>
 
                     <TabsContent value="details" className="mt-6">
-                        <Form {...form}>
-                            <form id="profile-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <div className="lg:col-span-1 space-y-6">
-                                    <Card>
-                                        <CardHeader><div className="flex w-full items-start justify-between"><CardTitle className="font-headline text-xl">Mis Datos</CardTitle><Button variant="ghost" size="icon" className="h-7 w-7" type="button" onClick={isEditing ? handleSaveSubmit : handleEditToggle}>{isEditing ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}<span className="sr-only">{isEditing ? 'Guardar' : 'Editar'}</span></Button></div></CardHeader>
-                                        <CardContent>
-                                            <div className="flex flex-col items-center text-center -mt-4 mb-6"><Avatar className={cn("h-24 w-24 mb-4", isEditing && "cursor-pointer hover:opacity-80")} onClick={handleAvatarClick}><AvatarImage src={watchedAvatar} alt={currentUser.name}/><AvatarFallback>{currentUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback></Avatar><input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" /></div>
-                                            <div className="text-sm text-muted-foreground space-y-2">
-                                                <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Miembro desde {format(parseISO(currentUser.joined), 'MMMM yyyy', {locale: es})}</div>
-                                                {isEditing ? (
-                                                    <div className="space-y-4 pt-4">
-                                                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Móvil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                    <div><p className="font-medium text-foreground">{form.getValues('name')}</p></div>
-                                                    <div><p className="font-medium text-foreground">{form.getValues('email')}</p></div>
-                                                    {currentUser.mobile && <div><p className="font-medium text-foreground">{currentUser.mobile}</p></div>}
-                                                    {currentUser.dob && <div>{format(parseISO(currentUser.dob), 'd MMMM, yyyy', {locale: es})}</div>}
-                                                    </>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                        {isEditing && <CardFooter><Button type="submit" className="w-full">Guardar Cambios</Button></CardFooter>}
-                                    </Card>
-                                    
-                                     {isEditing && (
-                                        <Card>
-                                            <CardHeader><CardTitle className="font-headline text-xl flex items-center gap-2"><Shield className="h-5 w-5"/>Seguridad</CardTitle></CardHeader>
-                                            <CardContent className="space-y-4">
-                                                <FormField control={form.control} name="password" render={({ field }) => ( <FormItem><FormLabel>Nueva Contraseña</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                                <FormField control={form.control} name="confirmPassword" render={({ field }) => ( <FormItem><FormLabel>Confirmar Contraseña</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                                            </CardContent>
-                                        </Card>
-                                    )}
-                                </div>
-                                <div className="lg:col-span-2">
-                                    <Card className="flex flex-col h-full">
-                                        <CardHeader><CardTitle className="flex items-center gap-2 font-headline"><TicketPercent className="h-6 w-6 text-primary"/> Detalles de Membresía</CardTitle><CardDescription>El estado actual de tu plan y pagos.</CardDescription></CardHeader>
-                                        <CardContent className="flex-grow">
-                                            {membership && plan && payment ? (
-                                                <div className="space-y-4">
-                                                    <h3 className="text-xl font-semibold">{plan.title}</h3>
-                                                    <div className="flex items-center gap-2">{isMembershipActive ? <Badge><BadgeCheck className="mr-1 h-4 w-4"/>Activa</Badge> : <Badge variant="destructive"><XCircle className="mr-1 h-4 w-4"/>Expirada</Badge>}<Badge variant={payment.status === 'paid' ? 'default' : payment.status === 'pending' ? 'destructive' : 'secondary'}>{paymentStatusLabels[payment.status]}</Badge></div>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm border-t pt-4">
-                                                        <div><p className="font-medium">Periodo</p><p className="text-muted-foreground">{format(parseISO(membership.startDate), 'dd/MM/yy')} - {format(parseISO(membership.endDate), 'dd/MM/yy')}</p></div>
-                                                        {plan.accessType === 'class_pack' && (<div><p className="font-medium">Clases Restantes</p><p className="text-muted-foreground">{membership.classesRemaining ?? 0} / {plan.classCount}</p></div>)}
-                                                        <div><p className="font-medium">Total Facturado</p><p className="text-muted-foreground">€{payment.totalAmount.toFixed(2)}</p></div>
-                                                        <div><p className="font-medium">Total Pagado</p><p className="text-muted-foreground">€{payment.amountPaid.toFixed(2)}</p></div>
-                                                        {payment.amountDue > 0 && (<div><p className="font-medium text-destructive">Saldo Pendiente</p><p className="text-destructive font-bold">€{payment.amountDue.toFixed(2)}</p></div>)}
-                                                    </div>
-                                                    {payment.notes && <div className="text-sm pt-4 border-t"><p className="font-medium">Notas</p><p className="text-muted-foreground whitespace-pre-wrap">{payment.notes}</p></div>}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-1 space-y-6">
+                                <Card>
+                                    <Form {...profileForm}>
+                                        <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
+                                            <CardHeader><div className="flex w-full items-start justify-between"><CardTitle className="font-headline text-xl">Mis Datos</CardTitle><Button variant="ghost" size="icon" className="h-7 w-7" type="button" onClick={isEditing ? handleSaveProfile : handleEditToggle}>{isEditing ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}<span className="sr-only">{isEditing ? 'Guardar' : 'Editar'}</span></Button></div></CardHeader>
+                                            <CardContent>
+                                                <div className="flex flex-col items-center text-center -mt-4 mb-6"><Avatar className={cn("h-24 w-24 mb-4", isEditing && "cursor-pointer hover:opacity-80")} onClick={handleAvatarClick}><AvatarImage src={watchedAvatar} alt={currentUser.name}/><AvatarFallback>{currentUser.name.split(' ').map(n => n[0]).join('')}</AvatarFallback></Avatar><input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" /></div>
+                                                <div className="text-sm text-muted-foreground space-y-2">
+                                                    <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Miembro desde {format(parseISO(currentUser.joined), 'MMMM yyyy', {locale: es})}</div>
+                                                    {isEditing ? (
+                                                        <div className="space-y-4 pt-4">
+                                                            <FormField control={profileForm.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                                            <FormField control={profileForm.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                                            <FormField control={profileForm.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Móvil</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                        <div><p className="font-medium text-foreground">{profileForm.getValues('name')}</p></div>
+                                                        <div><p className="font-medium text-foreground">{profileForm.getValues('email')}</p></div>
+                                                        {currentUser.mobile && <div><p className="font-medium text-foreground">{currentUser.mobile}</p></div>}
+                                                        {currentUser.dob && <div>{format(parseISO(currentUser.dob), 'd MMMM, yyyy', {locale: es})}</div>}
+                                                        </>
+                                                    )}
                                                 </div>
-                                            ) : (
-                                                <div className="text-center py-8"><p className="text-muted-foreground">No tienes una membresía activa.</p><Button className="mt-4" onClick={() => router.push('/memberships')}>Ver Planes</Button></div>
-                                            )}
-                                        </CardContent>
+                                            </CardContent>
+                                            {isEditing && <CardFooter><Button type="submit" className="w-full">Guardar Cambios de Perfil</Button></CardFooter>}
+                                        </form>
+                                    </Form>
+                                </Card>
+                                
+                                {isEditing && (
+                                    <Card>
+                                        <Form {...passwordForm}>
+                                            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
+                                                <CardHeader><CardTitle className="font-headline text-xl flex items-center gap-2"><Shield className="h-5 w-5"/>Seguridad</CardTitle></CardHeader>
+                                                <CardContent className="space-y-4">
+                                                    <FormField control={passwordForm.control} name="password" render={({ field }) => ( <FormItem><FormLabel>Nueva Contraseña</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                                    <FormField control={passwordForm.control} name="confirmPassword" render={({ field }) => ( <FormItem><FormLabel>Confirmar Contraseña</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                                </CardContent>
+                                                <CardFooter>
+                                                    <Button type="submit" className="w-full" variant="secondary" disabled={passwordForm.formState.isSubmitting}>Cambiar Contraseña</Button>
+                                                </CardFooter>
+                                            </form>
+                                        </Form>
                                     </Card>
-                                </div>
-                            </form>
-                        </Form>
+                                )}
+                            </div>
+                            <div className="lg:col-span-2">
+                                <Card className="flex flex-col h-full">
+                                    <CardHeader><CardTitle className="flex items-center gap-2 font-headline"><TicketPercent className="h-6 w-6 text-primary"/> Detalles de Membresía</CardTitle><CardDescription>El estado actual de tu plan y pagos.</CardDescription></CardHeader>
+                                    <CardContent className="flex-grow">
+                                        {membership && plan && payment ? (
+                                            <div className="space-y-4">
+                                                <h3 className="text-xl font-semibold">{plan.title}</h3>
+                                                <div className="flex items-center gap-2">{isMembershipActive ? <Badge><BadgeCheck className="mr-1 h-4 w-4"/>Activa</Badge> : <Badge variant="destructive"><XCircle className="mr-1 h-4 w-4"/>Expirada</Badge>}<Badge variant={payment.status === 'paid' ? 'default' : payment.status === 'pending' ? 'destructive' : 'secondary'}>{paymentStatusLabels[payment.status]}</Badge></div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm border-t pt-4">
+                                                    <div><p className="font-medium">Periodo</p><p className="text-muted-foreground">{format(parseISO(membership.startDate), 'dd/MM/yy')} - {format(parseISO(membership.endDate), 'dd/MM/yy')}</p></div>
+                                                    {plan.accessType === 'class_pack' && (<div><p className="font-medium">Clases Restantes</p><p className="text-muted-foreground">{membership.classesRemaining ?? 0} / {plan.classCount}</p></div>)}
+                                                    <div><p className="font-medium">Total Facturado</p><p className="text-muted-foreground">€{payment.totalAmount.toFixed(2)}</p></div>
+                                                    <div><p className="font-medium">Total Pagado</p><p className="text-muted-foreground">€{payment.amountPaid.toFixed(2)}</p></div>
+                                                    {payment.amountDue > 0 && (<div><p className="font-medium text-destructive">Saldo Pendiente</p><p className="text-destructive font-bold">€{payment.amountDue.toFixed(2)}</p></div>)}
+                                                </div>
+                                                {payment.notes && <div className="text-sm pt-4 border-t"><p className="font-medium">Notas</p><p className="text-muted-foreground whitespace-pre-wrap">{payment.notes}</p></div>}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-8"><p className="text-muted-foreground">No tienes una membresía activa.</p><Button className="mt-4" onClick={() => router.push('/memberships')}>Ver Planes</Button></div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
                     </TabsContent>
                 </Tabs>
             </div>
         )
 }
+
+    
