@@ -145,16 +145,20 @@ export default function AdminMembershipsPage() {
     const url = editingPlan ? `/api/memberships/${editingPlan.id}` : '/api/memberships';
     const method = editingPlan ? 'PUT' : 'POST';
 
+    // Before sending to API, convert features string back to string array
     const planToSave = {
         ...data,
         features: typeof data.features === 'string' ? data.features.split('\n').filter(f => f.trim() !== '') : [],
     }
 
     try {
+      // We use the original membershipPlanZodSchema for API validation
+      const validatedDataForApi = membershipPlanZodSchema.parse(planToSave);
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(planToSave),
+        body: JSON.stringify(validatedDataForApi),
       });
 
       if (!response.ok) {
@@ -250,7 +254,7 @@ export default function AdminMembershipsPage() {
                         </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {plan.accessType === 'custom_pack' ? `Desde €${(plan.priceTiersJson && plan.priceTiersJson.length > 0) ? plan.priceTiersJson[0].price : 0}` : `€${plan.price}`}
+                      {plan.accessType === 'custom_pack' ? `Desde €${(plan.priceTiersJson && plan.priceTiersJson.length > 0) ? plan.priceTiersJson[0].price : 0}` : `€${'price' in plan ? plan.price : 0}`}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                         <Badge variant={plan.visibility === 'public' ? 'default' : 'outline'}>
