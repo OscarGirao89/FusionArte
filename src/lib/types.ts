@@ -26,53 +26,61 @@ export type Coupon = {
   specificClassIds: string[];
 };
 
-type MembershipPlanBase = {
-  id: string;
-  title: string;
-  description: string;
-  price?: number; // Price is now optional in the base type
-  features: string[];
-  isPopular?: boolean;
-  durationUnit: 'days' | 'weeks' | 'months';
-  durationValue: number;
-  visibility: 'public' | 'unlisted';
-  allowedClasses: string[];
-};
-
-type UnlimitedPlan = MembershipPlanBase & {
-  accessType: 'unlimited';
-  price: number; // Required for this specific type
-};
-
-type ClassPackPlan = MembershipPlanBase & {
-  accessType: 'class_pack';
-  price: number; // Required for this specific type
-  classCount: number;
-};
-
-type TrialClassPlan = MembershipPlanBase & {
-  accessType: 'trial_class';
-  price: number; // Required for this specific type
-  classCount: number;
-};
-
-type CoursePassPlan = MembershipPlanBase & {
-  accessType: 'course_pass';
-  price: number; // Required for this specific type
-};
-
 export type PriceTier = {
   classCount: number;
   price: number;
 };
 
-type CustomPackPlan = MembershipPlanBase & {
-  accessType: 'custom_pack';
-  price?: never; // Explicitly disallow price for this type
-  priceTiersJson: PriceTier[];
-};
+// Base schema for all membership plans
+const membershipPlanBaseSchema = z.object({
+  id: z.string().optional(),
+  title: z.string(),
+  description: z.string(),
+  features: z.array(z.string()),
+  isPopular: z.boolean().optional(),
+  durationUnit: z.enum(['days', 'weeks', 'months']),
+  durationValue: z.number().int(),
+  visibility: z.enum(['public', 'unlisted']),
+  allowedClasses: z.array(z.string()).optional(),
+});
 
-export type MembershipPlan = UnlimitedPlan | ClassPackPlan | TrialClassPlan | CoursePassPlan | CustomPackPlan;
+const unlimitedPlanSchema = membershipPlanBaseSchema.extend({
+  accessType: z.literal('unlimited'),
+  price: z.number(),
+});
+
+const classPackPlanSchema = membershipPlanBaseSchema.extend({
+  accessType: z.literal('class_pack'),
+  price: z.number(),
+  classCount: z.number().int(),
+});
+
+const trialClassPlanSchema = membershipPlanBaseSchema.extend({
+  accessType: z.literal('trial_class'),
+  price: z.number(),
+  classCount: z.number().int(),
+});
+
+const coursePassPlanSchema = membershipPlanBaseSchema.extend({
+  accessType: z.literal('course_pass'),
+  price: z.number(),
+});
+
+const customPackPlanSchema = membershipPlanBaseSchema.extend({
+  accessType: z.literal('custom_pack'),
+  priceTiersJson: z.array(z.object({ classCount: z.number(), price: z.number() })),
+});
+
+// The final discriminated union type for MembershipPlan
+export const membershipPlanZodSchema = z.discriminatedUnion("accessType", [
+  unlimitedPlanSchema,
+  classPackPlanSchema,
+  trialClassPlanSchema,
+  coursePassPlanSchema,
+  customPackPlanSchema,
+]);
+
+export type MembershipPlan = z.infer<typeof membershipPlanZodSchema>;
 
 
 export type ClassType = 'recurring' | 'one-time' | 'workshop' | 'rental';

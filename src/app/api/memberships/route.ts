@@ -2,30 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-
-const priceTierSchema = z.object({
-  classCount: z.coerce.number().int().min(1),
-  price: z.coerce.number().min(0)
-});
-
-const baseSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().min(1),
-  features: z.array(z.string()),
-  isPopular: z.boolean().default(false),
-  durationUnit: z.enum(['days', 'weeks', 'months']),
-  durationValue: z.coerce.number().int().min(1),
-  visibility: z.enum(['public', 'unlisted']).default('public'),
-  allowedClasses: z.array(z.string()).optional().default([]),
-});
-
-const formSchema = z.discriminatedUnion("accessType", [
-  z.object({ accessType: z.literal("unlimited"), price: z.coerce.number().min(0) }).merge(baseSchema),
-  z.object({ accessType: z.literal("class_pack"), price: z.coerce.number().min(0), classCount: z.coerce.number().int().min(1) }).merge(baseSchema),
-  z.object({ accessType: z.literal("trial_class"), price: z.coerce.number().min(0), classCount: z.coerce.number().int().min(1) }).merge(baseSchema),
-  z.object({ accessType: z.literal("course_pass"), price: z.coerce.number().min(0) }).merge(baseSchema),
-  z.object({ accessType: z.literal("custom_pack"), priceTiersJson: z.array(priceTierSchema).min(1) }).merge(baseSchema)
-]);
+import { membershipPlanZodSchema } from '@/lib/types';
 
 export async function GET() {
   try {
@@ -40,10 +17,12 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const json = await request.json();
-    const validatedData = formSchema.parse(json);
+    const validatedData = membershipPlanZodSchema.parse(json);
 
+    // Prisma requires manual casting for discriminated unions on create
+    // The Zod schema has already validated the structure.
     const newPlan = await prisma.membershipPlan.create({
-      data: validatedData,
+      data: validatedData as any,
     });
     return NextResponse.json(newPlan, { status: 201 });
   } catch (error) {

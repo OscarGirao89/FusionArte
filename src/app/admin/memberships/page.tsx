@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useFieldArray } from "react-hook-form"
 import { z } from "zod"
-import type { MembershipPlan, DanceClass, DanceStyle, PriceTier } from '@/lib/types';
+import type { MembershipPlan, DanceClass, PriceTier } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,58 +26,18 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Skeleton } from '@/components/ui/skeleton';
+import { membershipPlanZodSchema } from '@/lib/types';
 
-const baseSchema = z.object({
-  id: z.string().optional(),
-  title: z.string().min(1, "El título es obligatorio."),
-  description: z.string().min(1, "La descripción es obligatoria."),
-  features: z.string().min(1, "Añade al menos una característica."),
-  isPopular: z.boolean().default(false),
-  durationUnit: z.enum(['days', 'weeks', 'months'], { required_error: "Debes seleccionar una unidad." }),
-  durationValue: z.coerce.number().int().min(1, "La duración debe ser al menos 1."),
-  visibility: z.enum(['public', 'unlisted']).default('public'),
-  allowedClasses: z.array(z.string()).default([]),
-});
 
-const formSchema = z.discriminatedUnion("accessType", [
-  z.object({ 
-    accessType: z.literal("unlimited"),
-    price: z.coerce.number().min(0, "El precio debe ser un número no negativo."),
-  }).merge(baseSchema),
-  z.object({
-    accessType: z.literal("class_pack"),
-    price: z.coerce.number().min(0, "El precio debe ser un número no negativo."),
-    classCount: z.coerce.number().int().min(1, "El número de clases debe ser al menos 1."),
-  }).merge(baseSchema),
-  z.object({
-    accessType: z.literal("trial_class"),
-    price: z.coerce.number().min(0, "El precio debe ser un número no negativo."),
-    classCount: z.coerce.number().int().min(1, "El número de clases debe ser al menos 1.").default(1),
-  }).merge(baseSchema),
-  z.object({
-    accessType: z.literal("course_pass"),
-    price: z.coerce.number().min(0, "El precio debe ser un número no negativo."),
-    allowedClasses: z.array(z.string()).refine((value) => value.length > 0, {
-        message: "Debes seleccionar al menos una clase.",
-    }),
-  }).merge(baseSchema),
-  z.object({
-    accessType: z.literal("custom_pack"),
-    priceTiersJson: z.array(z.object({
-      classCount: z.coerce.number().int().min(1, 'Debe ser al menos 1'),
-      price: z.coerce.number().min(0, 'Debe ser positivo')
-    })).min(1, "Debes añadir al menos un tramo de precios."),
-  }).merge(baseSchema)
-]);
+type MembershipFormValues = z.infer<typeof membershipPlanZodSchema>;
 
-type MembershipFormValues = z.infer<typeof formSchema>;
-
+// Helper to convert plan data from DB to a form-compatible format
 const planToForm = (plan: MembershipPlan): MembershipFormValues => {
     const baseData = {
         id: plan.id,
         title: plan.title,
         description: plan.description,
-        features: plan.features.join('\n'),
+        features: Array.isArray(plan.features) ? plan.features.join('\n') : '',
         isPopular: plan.isPopular ?? false,
         durationUnit: plan.durationUnit,
         durationValue: plan.durationValue,
@@ -96,6 +56,9 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
             return { ...baseData, accessType: 'course_pass', price: plan.price };
         case 'custom_pack':
             return { ...baseData, accessType: 'custom_pack', priceTiersJson: plan.priceTiersJson || [] };
+        default:
+             // Fallback for safety, though it shouldn't be reached with a discriminated union
+            return { ...baseData, accessType: 'unlimited', price: 0 } as MembershipFormValues;
     }
 };
 
@@ -129,13 +92,13 @@ export default function AdminMembershipsPage() {
   }, []);
 
   const form = useForm<MembershipFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(membershipPlanZodSchema),
     defaultValues: {
       accessType: 'unlimited',
       title: '',
       price: 0,
       description: '',
-      features: '',
+      features: [],
       isPopular: false,
       durationUnit: 'months',
       durationValue: 1,
@@ -146,7 +109,7 @@ export default function AdminMembershipsPage() {
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "priceTiersJson" as 'priceTiersJson',
+    name: "priceTiersJson",
   });
 
   const accessType = form.watch('accessType');
@@ -179,7 +142,7 @@ export default function AdminMembershipsPage() {
 
     const planToSave = {
         ...data,
-        features: data.features.split('\n').filter(f => f.trim() !== ''),
+        features: typeof data.features === 'string' ? data.features.split('\n').filter(f => f.trim() !== '') : [],
     }
 
     try {
@@ -190,7 +153,9 @@ export default function AdminMembershipsPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to ${method} plan.`);
+        const errorData = await response.json();
+        console.error("API Error:", errorData);
+        throw new Error(errorData.error || `Failed to ${method} plan.`);
       }
 
       toast({
@@ -200,7 +165,7 @@ export default function AdminMembershipsPage() {
 
       await fetchData();
     } catch (error) {
-       toast({ title: "Error", description: "No se pudo guardar el plan.", variant: "destructive" });
+       toast({ title: "Error", description: (error as Error).message, variant: "destructive" });
     } finally {
       setIsDialogOpen(false);
       setEditingPlan(null);
@@ -221,7 +186,7 @@ export default function AdminMembershipsPage() {
 
   const allowedClassesDescription = (
     <>
-      Si no marcas ninguna clase, se permitirá el acceso a todas. Si marcas una o más, el acceso se limitará solo a esas clases.
+      Si no marcas ninguna clase, se permitirá el acceso a todas las clases aplicables al tipo de plan. Si marcas una o más, el acceso se limitará solo a esas clases.
       {accessType === 'course_pass' && (
         <span className="font-bold block"> Es obligatorio seleccionar al menos una clase para este tipo de pase.</span>
       )}
@@ -342,11 +307,11 @@ export default function AdminMembershipsPage() {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un tipo" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="unlimited">Pase Ilimitado (Todas las clases)</SelectItem>
-                        <SelectItem value="course_pass">Pase por Curso/Estilo</SelectItem>
+                        <SelectItem value="unlimited">Pase Ilimitado / Por Curso</SelectItem>
                         <SelectItem value="class_pack">Bono de Clases</SelectItem>
                         <SelectItem value="custom_pack">Bono Personalizado</SelectItem>
                         <SelectItem value="trial_class">Clase de Prueba</SelectItem>
+                        <SelectItem value="course_pass">Pase por Curso (Legado)</SelectItem>
                       </SelectContent>
                     </Select><FormMessage />
                   </FormItem>
@@ -359,7 +324,7 @@ export default function AdminMembershipsPage() {
                 <FormItem><FormLabel>Descripción Corta</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               
-              { accessType !== 'custom_pack' && 'price' in form.getValues() && (
+              { (accessType === 'unlimited' || accessType === 'class_pack' || accessType === 'trial_class' || accessType === 'course_pass') && (
                 <FormField control={form.control} name="price" render={({ field }) => (
                   <FormItem><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
@@ -384,7 +349,7 @@ export default function AdminMembershipsPage() {
                   </div>
               </div>
 
-              {(accessType === 'class_pack' || accessType === 'trial_class') && 'classCount' in form.getValues() && (
+              {(accessType === 'class_pack' || accessType === 'trial_class') && (
                   <div className="space-y-4 p-4 border rounded-md">
                       <FormField control={form.control} name="classCount" render={({ field }) => (
                            <FormItem>
@@ -402,7 +367,7 @@ export default function AdminMembershipsPage() {
               <div className="space-y-4 p-4 border rounded-md">
                  <FormField
                    control={form.control} name="allowedClasses"
-                   render={() => (
+                   render={({ field }) => (
                      <FormItem>
                        <div className="mb-4">
                          <FormLabel className="text-base">Restringir Clases (Opcional)</FormLabel>
@@ -416,23 +381,16 @@ export default function AdminMembershipsPage() {
                        </div>
                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                        {danceClasses.map((item) => (
-                         <FormField key={item.id} control={form.control} name="allowedClasses"
-                           render={({ field }) => {
-                             const fieldValue = Array.isArray(field.value) ? field.value : [];
-                             return (
-                               <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
-                                 <FormControl>
-                                   <Checkbox checked={fieldValue.includes(item.id)}
-                                     onCheckedChange={(checked) => {
-                                       return checked ? field.onChange([...fieldValue, item.id])
-                                         : field.onChange(fieldValue.filter((v) => v !== item.id))
-                                     }} />
-                                 </FormControl>
-                                 <FormLabel className="font-normal text-sm">{item.name} ({item.day} - {item.time})</FormLabel>
-                               </FormItem>
-                             )
-                           }}
-                         />
+                         <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                            <Checkbox checked={field.value?.includes(item.id)}
+                                onCheckedChange={(checked) => {
+                                return checked ? field.onChange([...(field.value || []), item.id])
+                                    : field.onChange((field.value || []).filter((v) => v !== item.id))
+                                }} />
+                            </FormControl>
+                            <label htmlFor={`class-${item.id}`} className="font-normal text-sm">{item.name} ({item.day} - {item.time})</label>
+                         </FormItem>
                        ))}
                        </div>
                        </ScrollArea>
@@ -442,13 +400,13 @@ export default function AdminMembershipsPage() {
                  />
               </div>
 
-              {accessType === 'custom_pack' && 'priceTiersJson' in form.getValues() && (
+              {accessType === 'custom_pack' && (
                 <div className="space-y-4 p-4 border rounded-md">
                     <div>
                       <h3 className="font-medium mb-2">Tramos de Precios</h3>
                       <div className="space-y-3">
-                        {fields.map((field, index) => (
-                          <div key={field.id} className="flex items-end gap-3 p-2 border rounded-md">
+                        {fields.map((item, index) => (
+                          <div key={item.id} className="flex items-end gap-3 p-2 border rounded-md">
                               <GripVertical className="h-5 w-5 text-muted-foreground" />
                               <FormField control={form.control} name={`priceTiersJson.${index}.classCount`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Nº Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem> )} />
                               <FormField control={form.control} name={`priceTiersJson.${index}.price`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem> )} />
