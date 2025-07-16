@@ -18,10 +18,10 @@ export interface AuthContextType {
   logout: () => void;
   currentUser: User | null;
   updateCurrentUser: (data: Partial<User>) => void;
-  studentPayments: StudentPayment[];
-  addStudentPayment: (payment: StudentPayment, isUpdate?: boolean) => void;
-  studentMemberships: StudentMembership[];
-  updateStudentMembership: (userId: number, membership: Omit<StudentMembership, 'userId'>) => void;
+  // studentPayments: StudentPayment[];
+  // addStudentPayment: (payment: StudentPayment, isUpdate?: boolean) => void;
+  // studentMemberships: StudentMembership[];
+  // updateStudentMembership: (userId: number, membership: Omit<StudentMembership, 'userId'>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,43 +68,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { resetAttendance } = useAttendance();
 
-  const [studentPayments, setStudentPayments] = useState<StudentPayment[]>([]);
-  const [studentMemberships, setStudentMemberships] = useState<StudentMembership[]>([]);
-
   const router = useRouter();
   const pathname = usePathname();
-  
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/payments').then(res => res.json()),
-      fetch('/api/student-memberships').then(res => res.json())
-    ]).then(([payments, memberships]) => {
-      setStudentPayments(payments);
-      setStudentMemberships(memberships);
-    }).catch(console.error);
-  }, []);
-
-  const addStudentPayment = useCallback((payment: StudentPayment, isUpdate = false) => {
-    setStudentPayments(prev => {
-      if (isUpdate) {
-        return prev.map(p => p.id === payment.id ? payment : p);
-      }
-      return [...prev, payment];
-    });
-  }, []);
-
-  const updateStudentMembership = useCallback((userIdToUpdate: number, membership: Omit<StudentMembership, 'userId'>) => {
-    setStudentMemberships(prev => {
-        const existingIndex = prev.findIndex(m => m.userId === userIdToUpdate);
-        const newMembership = { ...membership, userId: userIdToUpdate };
-        if (existingIndex > -1) {
-            const updated = [...prev];
-            updated[existingIndex] = newMembership;
-            return updated;
-        }
-        return [...prev, newMembership];
-    });
-  }, []);
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -209,8 +174,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const value = {
     userRole, userId, isAuthenticated: !!userRole,
     isLoading, login, logout, currentUser, updateCurrentUser,
-    studentPayments, addStudentPayment,
-    studentMemberships, updateStudentMembership
   };
   
   if (isLoading) {

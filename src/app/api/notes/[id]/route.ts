@@ -12,7 +12,7 @@ const taskNoteUpdateSchema = z.object({
   priority: z.enum(['low', 'medium', 'high']).optional(),
   category: z.string().min(1, "La categoría es obligatoria.").optional(),
   assigneeIds: z.array(z.number()).optional(),
-  dueDate: z.string().datetime().optional().nullable(),
+  dueDate: z.date().or(z.string()).optional().nullable(),
   alertDateTime: z.string().optional().nullable(),
 }).partial();
 
@@ -22,15 +22,21 @@ export async function PUT(
 ) {
     try {
         const json = await request.json();
+        
+        // Handle date transformation before parsing
+        if (json.dueDate && typeof json.dueDate === 'string') {
+            json.dueDate = new Date(json.dueDate);
+        }
+
         const data = taskNoteUpdateSchema.parse(json);
 
         const dataToUpdate: Prisma.TaskNoteUpdateInput = {};
         if (data.title) dataToUpdate.title = data.title;
-        if (data.description) dataToUpdate.description = data.description;
+        if (data.description !== undefined) dataToUpdate.description = data.description;
         if (data.status) dataToUpdate.status = data.status;
         if (data.priority) dataToUpdate.priority = data.priority;
         if (data.category) dataToUpdate.category = data.category;
-        if (data.dueDate) dataToUpdate.dueDate = data.dueDate;
+        if (data.dueDate !== undefined) dataToUpdate.dueDate = data.dueDate as Date | null;
         if (data.alertDateTime !== undefined) dataToUpdate.alertDateTime = data.alertDateTime;
 
         if (data.assigneeIds) {

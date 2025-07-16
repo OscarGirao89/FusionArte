@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 
 const heroSlideSchema = z.object({
   id: z.string().optional(),
@@ -98,23 +99,22 @@ export async function PUT(request: Request) {
   try {
     const partialData = await request.json();
     const validatedPartialData = settingsSchema.parse(partialData);
+    
+    const dataToUpdate: Prisma.SettingsUpdateInput = {};
 
-    // 1. Fetch the current settings from the database
-    const currentSettings = await prisma.settings.findUnique({
-        where: { id: SETTINGS_ID },
-    });
-
-    if (!currentSettings) {
-        return NextResponse.json({ error: 'Settings not found. Cannot update.' }, { status: 404 });
+    // Map through the keys of the validated data and add them to the update object
+    for (const key in validatedPartialData) {
+        if (Object.prototype.hasOwnProperty.call(validatedPartialData, key)) {
+            const value = validatedPartialData[key as keyof typeof validatedPartialData];
+            if (value !== undefined) {
+                (dataToUpdate as any)[key] = value;
+            }
+        }
     }
-
-    // 2. Merge the incoming partial data with the existing data
-    const mergedSettings = { ...currentSettings, ...validatedPartialData };
-
-    // 3. Update the database with the complete, merged object
+    
     const updatedSettings = await prisma.settings.update({
         where: { id: SETTINGS_ID },
-        data: mergedSettings,
+        data: dataToUpdate,
     });
 
     return NextResponse.json(updatedSettings);

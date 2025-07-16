@@ -37,7 +37,7 @@ const taskNoteSchema = z.object({
   category: z.string().min(1, "La categoría es obligatoria."),
   assigneeIds: z.array(z.number()).default([]),
   dueDate: z.date().optional().nullable(),
-  alertDateTime: z.string().optional().nullable(), // Combines alertDate and alertTime
+  alertDateTime: z.string().optional().nullable(),
   createdAt: z.string().optional(),
 });
 

@@ -33,14 +33,15 @@ type PaymentEditFormValues = z.infer<typeof paymentEditSchema>;
 
 interface StudentPaymentsTableProps {
     payments: StudentPayment[];
+    onPaymentsUpdate: (payments: StudentPayment[]) => void;
     users: User[];
     membershipPlans: MembershipPlan[];
     title: string;
     description: string;
 }
 
-export function StudentPaymentsTable({ payments, users, membershipPlans, title, description }: StudentPaymentsTableProps) {
-  const { addStudentPayment, userRole } = useAuth();
+export function StudentPaymentsTable({ payments, onPaymentsUpdate, users, membershipPlans, title, description }: StudentPaymentsTableProps) {
+  const { userRole } = useAuth();
   const [editingPayment, setEditingPayment] = useState<StudentPayment | null>(null);
   const { toast } = useToast();
   
@@ -71,37 +72,33 @@ export function StudentPaymentsTable({ payments, users, membershipPlans, title, 
     });
   };
   
-  const onEditSubmit = (data: PaymentEditFormValues) => {
+  const onEditSubmit = async (data: PaymentEditFormValues) => {
     if (!editingPayment) return;
     
-    const totalAmount = editingPayment.totalAmount;
-    if (data.amountPaid > totalAmount) {
-        editForm.setError("amountPaid", { type: "manual", message: "El monto pagado no puede exceder el total."});
-        return;
+    try {
+        const response = await fetch(`/api/payments/${editingPayment.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to update payment');
+        }
+
+        const updatedPayment = await response.json();
+        
+        onPaymentsUpdate(
+            payments.map(p => p.id === updatedPayment.id ? updatedPayment : p)
+        );
+
+        toast({ title: "Pago actualizado", description: "El estado del pago ha sido guardado." });
+        setEditingPayment(null);
+    } catch (error) {
+        toast({ title: "Error", description: (error as Error).message, variant: "destructive" });
     }
-
-    const updatedPayment = {
-        ...editingPayment,
-        status: data.status,
-        amountPaid: data.amountPaid,
-        amountDue: totalAmount - data.amountPaid,
-        notes: data.notes,
-        lastUpdatedBy: 'Admin/Socio', // Simplified for this context
-        lastUpdatedDate: new Date().toISOString()
-    };
-    
-    addStudentPayment(updatedPayment, true); // true to indicate update
-
-    toast({ title: "Pago actualizado", description: "El estado del pago ha sido guardado." });
-    setEditingPayment(null);
   }
-
-  const handleExportCSV = () => {
-    // CSV export logic can be implemented here if needed
-    console.log("Exporting CSV for:", title);
-  };
-  
-  const handlePrint = () => window.print();
 
   return (
     <Card className="mt-6">
@@ -209,5 +206,3 @@ export function StudentPaymentsTable({ payments, users, membershipPlans, title, 
     </Card>
   );
 }
-
-    

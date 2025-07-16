@@ -21,7 +21,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { DollarSign, Download, Edit, Printer, TrendingDown, TrendingUp, Wallet, PlusCircle, ArrowLeft } from 'lucide-react';
-import { userProfiles } from '@/components/layout/main-nav';
 import { StudentPaymentsTable } from '@/components/admin/student-payments-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BackButton } from '@/components/shared/back-button';
@@ -33,7 +32,7 @@ const newInvoiceSchema = z.object({
 type NewInvoiceFormValues = z.infer<typeof newInvoiceSchema>;
 
 export default function AdminPaymentsPage() {
-  const { studentPayments: allPayments, addStudentPayment, updateStudentMembership, userRole } = useAuth();
+  const [studentPayments, setStudentPayments] = useState<StudentPayment[]>([]);
   const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -42,27 +41,32 @@ export default function AdminPaymentsPage() {
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
   const [danceClasses, setDanceClasses] = useState<DanceClass[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
+  const { userRole } = useAuth();
+  
+  const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [usersRes, plansRes, classesRes] = await Promise.all([
+        const [usersRes, plansRes, classesRes, paymentsRes] = await Promise.all([
           fetch('/api/users'),
           fetch('/api/memberships'),
           fetch('/api/classes'),
+          fetch('/api/payments'),
         ]);
         if (usersRes.ok) setUsers(await usersRes.json());
         if (plansRes.ok) setMembershipPlans(await plansRes.json());
         if (classesRes.ok) setDanceClasses(await classesRes.json());
+        if (paymentsRes.ok) setStudentPayments(await paymentsRes.json());
       } catch (error) {
         console.error("Failed to fetch data for payments page", error);
+        toast({ title: "Error", description: "No se pudieron cargar los datos.", variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
     };
+
+  useEffect(() => {
     fetchData();
-  }, []);
+  }, [toast]);
 
   const canCreate = userRole === 'Admin' || userRole === 'Administrativo' || userRole === 'Socio';
 
@@ -80,34 +84,30 @@ export default function AdminPaymentsPage() {
   }, [users, danceClasses]);
 
   const studioPayments = useMemo(() => {
-    return allPayments.filter(p => {
+    return studentPayments.filter(p => {
       const plan = membershipPlans.find(mp => mp.id === p.planId);
       if (!plan) return true;
 
-      // If a plan gives access to ANY non-partner class, it's a studio payment.
       if (plan.accessType === 'unlimited') return true; 
 
       if (plan.allowedClasses && plan.allowedClasses.length > 0) {
         return plan.allowedClasses.some(classId => !partnerClassIds.has(classId));
       }
       
-      // If a pack allows access to ALL classes (allowedClasses is empty), 
-      // we consider it a general studio income.
       if (!plan.allowedClasses || plan.allowedClasses.length === 0) {
         return true;
       }
       
-      // If all allowed classes are partner classes, it's NOT a studio payment.
       return false;
     });
-  }, [allPayments, membershipPlans, partnerClassIds]);
+  }, [studentPayments, membershipPlans, partnerClassIds]);
 
 
   const newInvoiceForm = useForm<NewInvoiceFormValues>({
       resolver: zodResolver(newInvoiceSchema),
   });
   
-  const getEditorName = () => userRole ? userProfiles[userRole].name : 'Sistema';
+  const getEditorName = () => userRole ? userRole : 'Sistema';
 
   const onNewInvoiceSubmit = (data: NewInvoiceFormValues) => {
       const student = users.find(u => u.id === Number(data.studentId));
@@ -139,23 +139,7 @@ export default function AdminPaymentsPage() {
           notes: '',
       };
 
-      addStudentPayment(newPayment);
-
-      const membershipEndDate = new Date();
-      if (plan.durationUnit === 'months') {
-          membershipEndDate.setMonth(membershipEndDate.getMonth() + plan.durationValue);
-      } else if (plan.durationUnit === 'weeks') {
-          membershipEndDate.setDate(membershipEndDate.getDate() + plan.durationValue * 7);
-      } else {
-          membershipEndDate.setDate(membershipEndDate.getDate() + plan.durationValue);
-      }
-      
-      updateStudentMembership(student.id, {
-          planId: plan.id,
-          startDate: new Date().toISOString(),
-          endDate: membershipEndDate.toISOString(),
-          classesRemaining: (plan.accessType === 'class_pack' || plan.accessType === 'trial_class') ? plan.classCount : undefined,
-      });
+      setStudentPayments(prev => [...prev, newPayment]);
 
       toast({ title: "Factura creada", description: `Se ha creado una factura para ${student.name}.` });
       setIsNewInvoiceOpen(false);
@@ -267,6 +251,7 @@ export default function AdminPaymentsPage() {
 
       <StudentPaymentsTable 
         payments={studioPayments}
+        onPaymentsUpdate={setStudentPayments}
         users={users}
         membershipPlans={membershipPlans}
         title="Listado de Pagos (Estudio)"

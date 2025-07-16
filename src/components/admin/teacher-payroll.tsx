@@ -13,7 +13,6 @@ import { useAttendance } from '@/context/attendance-context';
 import { format, parseISO, startOfMonth, endOfMonth, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { ClassInstance, StudentPayment, DanceClass, User, MembershipPlan } from '@/lib/types';
-import { useAuth } from '@/context/auth-context';
 import { StudentPaymentsTable } from './student-payments-table';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -43,34 +42,37 @@ type TeacherPayrollProps = {
 
 export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partnerId, teacherId }: TeacherPayrollProps) {
     const { generateInstancesForTeacher, classInstances } = useAttendance();
-    const { studentPayments } = useAuth();
+    const [studentPayments, setStudentPayments] = useState<StudentPayment[]>([]);
 
     const [users, setUsers] = useState<User[]>([]);
     const [danceClasses, setDanceClasses] = useState<DanceClass[]>([]);
     const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-      const fetchData = async () => {
-        setIsLoading(true);
-        try {
-          const [usersRes, classesRes, plansRes] = await Promise.all([
-            fetch('/api/users'),
-            fetch('/api/classes'),
-            fetch('/api/memberships'),
-          ]);
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [usersRes, classesRes, plansRes, paymentsRes] = await Promise.all([
+          fetch('/api/users'),
+          fetch('/api/classes'),
+          fetch('/api/memberships'),
+          fetch('/api/payments'),
+        ]);
 
-          if (usersRes.ok) setUsers(await usersRes.json());
-          if (classesRes.ok) setDanceClasses(await classesRes.json());
-          if (plansRes.ok) setMembershipPlans(await plansRes.json());
-          
-        } catch (error) {
-          console.error("Error fetching payroll data:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchData();
+        if (usersRes.ok) setUsers(await usersRes.json());
+        if (classesRes.ok) setDanceClasses(await classesRes.json());
+        if (plansRes.ok) setMembershipPlans(await plansRes.json());
+        if (paymentsRes.ok) setStudentPayments(await paymentsRes.json());
+        
+      } catch (error) {
+        console.error("Error fetching payroll data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    useEffect(() => {
+        fetchData();
     }, []);
 
     // Generate instances for all relevant teachers when the component mounts
@@ -312,6 +314,7 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                 <TabsContent value="individual" className="mt-6 space-y-6">
                      <StudentPaymentsTable 
                         payments={individualStudentsPayments} 
+                        onPaymentsUpdate={setStudentPayments}
                         users={users} 
                         membershipPlans={membershipPlans} 
                         title="Pagos de Alumnos (Clases Individuales)" 
@@ -356,6 +359,7 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
                                 <TabsContent key={partnerName} value={partnerName} className="mt-4 space-y-6">
                                     <StudentPaymentsTable 
                                         payments={sharedStudentsPaymentsByPartner[partnerName] || []}
+                                        onPaymentsUpdate={setStudentPayments}
                                         users={users}
                                         membershipPlans={membershipPlans}
                                         title={`Pagos de Alumnos (Clases con ${partnerName})`}
@@ -399,5 +403,3 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
 
     return null;
 });
-
-    
