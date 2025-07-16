@@ -29,15 +29,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { membershipPlanZodSchema } from '@/lib/types';
 
 
-type MembershipFormValues = z.infer<typeof membershipPlanZodSchema>;
+const formCompatibleSchema = membershipPlanZodSchema.extend({
+    features: z.string().optional(),
+});
+type MembershipFormValues = z.infer<typeof formCompatibleSchema>;
 
 // Helper to convert plan data from DB to a form-compatible format
 const planToForm = (plan: MembershipPlan): MembershipFormValues => {
+    const featuresAsString = Array.isArray(plan.features) ? plan.features.join('\n') : '';
+
     const baseData = {
         id: plan.id,
         title: plan.title,
         description: plan.description,
-        features: Array.isArray(plan.features) ? plan.features.join('\n') : '',
+        features: featuresAsString,
         isPopular: plan.isPopular ?? false,
         durationUnit: plan.durationUnit,
         durationValue: plan.durationValue,
@@ -92,13 +97,13 @@ export default function AdminMembershipsPage() {
   }, []);
 
   const form = useForm<MembershipFormValues>({
-    resolver: zodResolver(membershipPlanZodSchema),
+    resolver: zodResolver(formCompatibleSchema),
     defaultValues: {
       accessType: 'unlimited',
       title: '',
       price: 0,
       description: '',
-      features: [],
+      features: '',
       isPopular: false,
       durationUnit: 'months',
       durationValue: 1,
@@ -277,7 +282,7 @@ export default function AdminMembershipsPage() {
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDelete(plan.id)}>Eliminar</AlertDialogAction>
+                                      <AlertDialogAction onClick={() => handleDelete(plan.id!)}>Eliminar</AlertDialogAction>
                                   </AlertDialogFooter>
                               </AlertDialogContent>
                           </AlertDialog>
