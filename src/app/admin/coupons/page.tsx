@@ -337,15 +337,15 @@ export default function AdminCouponsPage() {
                           <FormItem>
                             <FormLabel>Seleccionar Membresías</FormLabel>
                             <ScrollArea className="h-40 rounded-md border p-4">
-                                {membershipPlans.map((plan) => (
+                                {membershipPlans.filter(plan => plan.id).map((plan) => (
                                     <FormItem key={plan.id} className="flex flex-row items-start space-x-3 space-y-0 mb-2">
                                         <FormControl>
                                             <Checkbox
-                                                checked={field.value?.includes(plan.id)}
+                                                checked={field.value?.includes(plan.id!)}
                                                 onCheckedChange={(checked) => {
                                                     const currentIds = field.value || [];
                                                     return checked
-                                                        ? field.onChange([...currentIds, plan.id])
+                                                        ? field.onChange([...currentIds, plan.id!])
                                                         : field.onChange(currentIds.filter((id) => id !== plan.id));
                                                 }}
                                             />
