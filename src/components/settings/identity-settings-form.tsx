@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/context/settings-context";
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { AcademySettings } from "@/lib/types";
@@ -32,11 +32,15 @@ export function IdentitySettingsForm({ settings }: Props) {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        values: {
+        defaultValues: {
             logoUrl: settings.logoUrl,
             faviconUrl: settings.faviconUrl,
         },
     });
+
+    useEffect(() => {
+        form.reset(settings);
+    }, [settings, form]);
 
     const watchedLogo = form.watch('logoUrl');
     const watchedFavicon = form.watch('faviconUrl');
@@ -62,7 +66,6 @@ export function IdentitySettingsForm({ settings }: Props) {
             title: "Configuración Guardada",
             description: "La identidad visual ha sido actualizada.",
         });
-        form.reset(data); // Resync form state after submission
     }
 
     return (

@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { useSettings } from "@/context/settings-context";
 import type { AcademySettings } from "@/lib/types";
+import { useEffect } from "react";
 
 const formSchema = z.object({
   registrationEmailMessage: z.string().optional(),
@@ -28,11 +29,15 @@ export function EmailTemplatesForm({ settings }: Props) {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        values: {
+        defaultValues: {
             registrationEmailMessage: settings.registrationEmailMessage,
             membershipEmailMessage: settings.membershipEmailMessage,
         },
     });
+
+    useEffect(() => {
+        form.reset(settings);
+    }, [settings, form]);
 
     async function onSubmit(data: FormValues) {
         await updateSettings(data);
@@ -40,7 +45,6 @@ export function EmailTemplatesForm({ settings }: Props) {
             title: "Configuración Guardada",
             description: "Las plantillas de email han sido actualizadas.",
         });
-        form.reset(data);
     }
 
     return (

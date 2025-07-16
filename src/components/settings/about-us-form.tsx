@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { useSettings } from "@/context/settings-context";
 import type { AcademySettings } from "@/lib/types";
+import { useEffect } from "react";
 
 const formSchema = z.object({
   aboutUsTitle: z.string().min(1, "El título es obligatorio."),
@@ -34,7 +35,7 @@ export function AboutUsSettingsForm({ settings }: Props) {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        values: {
+        defaultValues: {
             aboutUsTitle: settings.aboutUsTitle,
             aboutUsStory: settings.aboutUsStory,
             aboutUsMission: settings.aboutUsMission,
@@ -45,13 +46,16 @@ export function AboutUsSettingsForm({ settings }: Props) {
         },
     });
 
+    useEffect(() => {
+        form.reset(settings);
+    }, [settings, form]);
+
     async function onSubmit(data: FormValues) {
         await updateSettings(data);
         toast({
             title: "Configuración Guardada",
             description: "El contenido de la página 'Acerca de' ha sido actualizado.",
         });
-        form.reset(data);
     }
 
     return (

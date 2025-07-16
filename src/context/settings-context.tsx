@@ -95,8 +95,10 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         });
         if (response.ok) {
             const data = await response.json();
-            setSettings(prev => ({...prev!, ...data}));
-            window.location.reload();
+            // Correctly merge the partial update with the previous state
+            setSettings(prev => ({...(prev ?? initialSettings), ...data}));
+            // Reload the page to ensure all components get the new settings
+            window.location.reload(); 
         } else {
             console.error("Failed to save settings to the server.");
         }

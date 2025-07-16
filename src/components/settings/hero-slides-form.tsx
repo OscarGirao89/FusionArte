@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { useSettings } from "@/context/settings-context";
-import React from "react";
+import React, { useEffect } from "react";
 import Image from "next/image";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -42,7 +42,7 @@ export function HeroSlidesForm({ settings }: Props) {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        values: {
+        defaultValues: {
             heroSlides: settings.heroSlides,
         },
     });
@@ -51,6 +51,10 @@ export function HeroSlidesForm({ settings }: Props) {
         control: form.control,
         name: "heroSlides",
     });
+
+    useEffect(() => {
+        form.reset({ heroSlides: settings.heroSlides });
+    }, [settings, form]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, fieldName: `heroSlides.${number}.heroImageUrl`) => {
         const file = event.target.files?.[0];
@@ -73,7 +77,6 @@ export function HeroSlidesForm({ settings }: Props) {
             title: "Configuración Guardada",
             description: "Las diapositivas de la página principal han sido actualizadas.",
         });
-        form.reset(data);
     }
 
     return (

@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/context/settings-context";
-import React from "react";
+import React, { useEffect } from "react";
 import Image from "next/image";
 import { PlusCircle, Trash2 } from "lucide-react";
 import type { AcademySettings } from "@/lib/types";
@@ -36,7 +36,7 @@ export function ScheduleImagesForm({ settings }: Props) {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        values: {
+        defaultValues: {
             scheduleImages: settings.scheduleImages || [],
         },
     });
@@ -45,6 +45,10 @@ export function ScheduleImagesForm({ settings }: Props) {
         control: form.control,
         name: "scheduleImages",
     });
+
+    useEffect(() => {
+        form.reset({ scheduleImages: settings.scheduleImages || [] });
+    }, [settings, form]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, fieldName: `scheduleImages.${number}.url`) => {
         const file = event.target.files?.[0];
@@ -67,7 +71,6 @@ export function ScheduleImagesForm({ settings }: Props) {
             title: "Configuración Guardada",
             description: "Las imágenes de horario han sido actualizadas.",
         });
-        form.reset(data);
     }
 
     return (

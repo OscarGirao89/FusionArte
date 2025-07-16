@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useSettings } from "@/context/settings-context";
 import type { AcademySettings } from "@/lib/types";
+import { useEffect } from "react";
 
 const formSchema = z.object({
   enableNewSignups: z.boolean(),
@@ -28,11 +29,15 @@ export function AppSettingsForm({ settings }: Props) {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        values: {
+        defaultValues: {
             enableNewSignups: settings.enableNewSignups,
             maintenanceMode: settings.maintenanceMode,
         },
     });
+    
+    useEffect(() => {
+        form.reset(settings);
+    }, [settings, form]);
 
     async function onSubmit(data: FormValues) {
         await updateSettings(data);
@@ -40,7 +45,6 @@ export function AppSettingsForm({ settings }: Props) {
             title: "Configuración Guardada",
             description: "Los ajustes de la aplicación han sido actualizados.",
         });
-        form.reset(data);
     }
 
     return (

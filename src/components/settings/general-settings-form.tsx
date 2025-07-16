@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { useSettings } from "@/context/settings-context";
 import type { AcademySettings } from "@/lib/types";
+import { useEffect } from "react";
 
 const formSchema = z.object({
   academyName: z.string().min(1, "El nombre de la academia es obligatorio."),
@@ -29,11 +30,15 @@ export function GeneralSettingsForm({ settings }: Props) {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        values: {
+        defaultValues: {
             academyName: settings.academyName,
             welcomeMessage: settings.welcomeMessage,
         },
     });
+    
+    useEffect(() => {
+        form.reset(settings);
+    }, [settings, form]);
 
     async function onSubmit(data: FormValues) {
         await updateSettings(data);
@@ -41,7 +46,6 @@ export function GeneralSettingsForm({ settings }: Props) {
             title: "Configuración Guardada",
             description: "Los ajustes generales han sido actualizados.",
         });
-        form.reset(data);
     }
 
     return (

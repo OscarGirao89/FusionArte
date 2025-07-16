@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { useSettings } from "@/context/settings-context";
 import type { AcademySettings } from "@/lib/types";
+import { useEffect } from "react";
 
 const formSchema = z.object({
   contactEmail: z.string().email("Introduce un email válido."),
@@ -35,7 +36,7 @@ export function ContactSettingsForm({ settings }: Props) {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        values: {
+        defaultValues: {
             contactEmail: settings.contactEmail,
             address: settings.address,
             phone: settings.phone,
@@ -47,13 +48,16 @@ export function ContactSettingsForm({ settings }: Props) {
         },
     });
 
+    useEffect(() => {
+        form.reset(settings);
+    }, [settings, form]);
+
     async function onSubmit(data: FormValues) {
         await updateSettings(data);
         toast({
             title: "Configuración Guardada",
             description: "Los datos de contacto han sido actualizados.",
         });
-        form.reset(data);
     }
 
     return (
