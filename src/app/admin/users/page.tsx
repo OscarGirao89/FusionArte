@@ -34,6 +34,7 @@ const userFormSchema = z.object({
     id: z.number().optional(),
     name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
     email: z.string().email("Email inválido."),
+    password: z.string().optional(),
     role: userRolesEnum,
     bio: z.string().optional(),
     specialties: z.string().optional(),
@@ -92,6 +93,7 @@ export default function AdminUsersPage() {
     const canManageRoles = userRole === 'Admin' || userRole === 'Socio';
     const canCreateUser = userRole === 'Admin' || userRole === 'Socio';
     const canDeleteUser = userRole === 'Admin' || userRole === 'Socio';
+    const canManagePassword = userRole === 'Admin' || userRole === 'Socio';
     const canEditUser = (userToEdit: User) => {
         if (userRole === 'Admin' || userRole === 'Socio') {
             return true;
@@ -122,6 +124,7 @@ export default function AdminUsersPage() {
             id: user.id,
             name: user.name,
             email: user.email,
+            password: '',
             role: user.role as UserFormValues['role'],
             bio: user.bio,
             specialties: user.specialties?.join(', '),
@@ -133,6 +136,7 @@ export default function AdminUsersPage() {
           form.reset({
             name: '',
             email: '',
+            password: '',
             role: 'Estudiante',
             bio: '',
             specialties: '',
@@ -428,6 +432,20 @@ export default function AdminUsersPage() {
                     )} />
                 </div>
 
+                {editingUser && canManagePassword && (
+                    <div className="space-y-4 p-4 border rounded-md bg-muted/50">
+                        <h3 className="text-lg font-medium">Seguridad</h3>
+                        <FormField control={form.control} name="password" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Nueva Contraseña</FormLabel>
+                            <FormControl><Input type="password" {...field} /></FormControl>
+                            <FormDescription>Dejar en blanco para no cambiar la contraseña actual.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )} />
+                    </div>
+                )}
+
                 {(watchedRole === 'Profesor' || watchedRole === 'Socio') && (
                     <div className="space-y-4 p-4 border rounded-md">
                         <h3 className="text-lg font-medium">Detalles del Profesor/Socio</h3>
@@ -497,4 +515,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-

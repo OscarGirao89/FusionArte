@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, parseISO, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
-import { Printer, TicketPercent, User as UserIcon, Calendar, BadgeCheck, XCircle, Clock, Pencil, Save, HandHelping, CalendarClock, Sparkles, UserPlus } from "lucide-react";
+import { Printer, TicketPercent, User as UserIcon, Calendar, BadgeCheck, XCircle, Clock, Pencil, Save, HandHelping, CalendarClock, Sparkles, UserPlus, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -38,7 +38,19 @@ const profileFormSchema = z.object({
   email: z.string().email("Email inválido."),
   mobile: z.string().optional(),
   avatar: z.string().optional(),
+  password: z.string().optional(),
+  confirmPassword: z.string().optional()
+}).refine(data => {
+    if (data.password && data.password.length > 0) {
+        if(data.password.length < 8) return false;
+        return data.password === data.confirmPassword;
+    }
+    return true;
+}, {
+    message: "Las contraseñas no coinciden o tienen menos de 8 caracteres.",
+    path: ["confirmPassword"],
 });
+
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfilePage() {
@@ -90,6 +102,7 @@ export default function ProfilePage() {
         form.reset({
           name: currentUser.name || '', email: currentUser.email || '',
           mobile: currentUser.mobile || '', avatar: currentUser.avatar || '',
+          password: '', confirmPassword: '',
         });
       }
     }, [currentUser, form]);
@@ -119,11 +132,22 @@ export default function ProfilePage() {
 
     const onSubmit = async (data: ProfileFormValues) => {
         if (currentUser) {
+            const dataToSubmit: Partial<User> & { password?: string } = {
+                name: data.name,
+                email: data.email,
+                mobile: data.mobile,
+                avatar: data.avatar
+            };
+
+            if (data.password && data.password.length > 0) {
+                dataToSubmit.password = data.password;
+            }
+
             try {
                 const response = await fetch(`/api/users/${currentUser.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
+                    body: JSON.stringify(dataToSubmit),
                 });
                  if (!response.ok) {
                     const errorData = await response.json();
@@ -232,7 +256,7 @@ export default function ProfilePage() {
                     <TabsContent value="details" className="mt-6">
                         <Form {...form}>
                             <form id="profile-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                <div className="lg:col-span-1">
+                                <div className="lg:col-span-1 space-y-6">
                                     <Card>
                                         <CardHeader><div className="flex w-full items-start justify-between"><CardTitle className="font-headline text-xl">Mis Datos</CardTitle><Button variant="ghost" size="icon" className="h-7 w-7" type="button" onClick={isEditing ? handleSaveSubmit : handleEditToggle}>{isEditing ? <Save className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}<span className="sr-only">{isEditing ? 'Guardar' : 'Editar'}</span></Button></div></CardHeader>
                                         <CardContent>
@@ -257,6 +281,16 @@ export default function ProfilePage() {
                                         </CardContent>
                                         {isEditing && <CardFooter><Button type="submit" className="w-full">Guardar Cambios</Button></CardFooter>}
                                     </Card>
+                                    
+                                     {isEditing && (
+                                        <Card>
+                                            <CardHeader><CardTitle className="font-headline text-xl flex items-center gap-2"><Shield className="h-5 w-5"/>Seguridad</CardTitle></CardHeader>
+                                            <CardContent className="space-y-4">
+                                                <FormField control={form.control} name="password" render={({ field }) => ( <FormItem><FormLabel>Nueva Contraseña</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                                <FormField control={form.control} name="confirmPassword" render={({ field }) => ( <FormItem><FormLabel>Confirmar Contraseña</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                            </CardContent>
+                                        </Card>
+                                    )}
                                 </div>
                                 <div className="lg:col-span-2">
                                     <Card className="flex flex-col h-full">

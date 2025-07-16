@@ -25,7 +25,7 @@ const userUpdateSchema = z.object({
     specialties: z.string().optional().nullable(),
     avatar: z.string().optional().nullable(),
     isVisibleToStudents: z.boolean().optional(),
-    password: z.string().min(8).optional().nullable(),
+    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres.").optional().or(z.literal('')),
     paymentDetails: paymentDetailsSchema.nullable().optional(),
 });
 
@@ -93,7 +93,7 @@ export async function PUT(
       dataToUpdate.isPartner = validatedData.role === 'Socio';
     }
 
-    if (validatedData.password) {
+    if (validatedData.password && validatedData.password.length > 0) {
         dataToUpdate.password = await bcrypt.hash(validatedData.password, 10);
     }
     
