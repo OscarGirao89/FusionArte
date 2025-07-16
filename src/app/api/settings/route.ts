@@ -96,34 +96,29 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const json = await request.json();
-    const validatedData = settingsSchema.parse(json);
-    
-    const settings = await prisma.settings.upsert({
-      where: { id: SETTINGS_ID },
-      update: validatedData,
-      create: {
-        id: SETTINGS_ID,
-        // Start with all required defaults to satisfy Prisma's create input type
-        academyName: 'FusionArte',
-        contactEmail: 'change@me.com',
-        enableNewSignups: true,
-        maintenanceMode: false,
-        aboutUsTitle: '',
-        aboutUsStory: '',
-        aboutUsMission: '',
-        aboutUsVision: '',
-        aboutUsValues: '',
-        aboutUsTeamTitle: '',
-        aboutUsTeamDescription: '',
-        heroSlides: [],
-        scheduleImages: [],
-        // Then, apply any validated data that was actually sent in the request
-        ...validatedData,
-      },
+    const partialData = await request.json();
+    const validatedPartialData = settingsSchema.parse(partialData);
+
+    // 1. Fetch the current settings from the database
+    const currentSettings = await prisma.settings.findUnique({
+        where: { id: SETTINGS_ID },
     });
 
-    return NextResponse.json(settings);
+    if (!currentSettings) {
+        return NextResponse.json({ error: 'Settings not found. Cannot update.' }, { status: 404 });
+    }
+
+    // 2. Merge the incoming partial data with the existing data
+    const mergedSettings = { ...currentSettings, ...validatedPartialData };
+
+    // 3. Update the database with the complete, merged object
+    const updatedSettings = await prisma.settings.update({
+        where: { id: SETTINGS_ID },
+        data: mergedSettings,
+    });
+
+    return NextResponse.json(updatedSettings);
+
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid data', details: error.errors }, { status: 400 });
