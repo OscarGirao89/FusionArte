@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useFieldArray } from "react-hook-form"
 import { z } from "zod"
-import type { MembershipPlan, DanceClass, PriceTier } from '@/lib/types';
+import type { MembershipPlan, PriceTier } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,10 +29,42 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { membershipPlanZodSchema } from '@/lib/types';
 
 
-const formCompatibleSchema = membershipPlanZodSchema.extend({
+// This schema is specifically for the form, where `features` is a single string from a textarea.
+const formSchema = z.object({
+    id: z.string().optional(),
+    title: z.string().min(1, "El título es obligatorio."),
+    description: z.string().min(1, "La descripción es obligatoria."),
+    accessType: z.enum(['unlimited', 'class_pack', 'trial_class', 'course_pass', 'custom_pack']),
+    price: z.coerce.number().optional(),
+    classCount: z.coerce.number().optional(),
+    priceTiersJson: z.array(z.object({ classCount: z.number(), price: z.number() })).optional(),
+    durationUnit: z.enum(['days', 'weeks', 'months']),
+    durationValue: z.coerce.number().int().min(1, "La duración debe ser al menos 1."),
     features: z.string().optional(),
-});
-type MembershipFormValues = z.infer<typeof formCompatibleSchema>;
+    isPopular: z.boolean().default(false),
+    visibility: z.enum(['public', 'unlisted']).default('public'),
+    allowedClasses: z.array(z.string()).optional(),
+}).refine(data => {
+    if (data.accessType === 'custom_pack') {
+        return data.priceTiersJson && data.priceTiersJson.length > 0;
+    }
+    return true;
+}, { message: 'Debes definir al menos un tramo de precio para bonos personalizados.', path: ['priceTiersJson']})
+.refine(data => {
+    if (data.accessType === 'class_pack' || data.accessType === 'trial_class') {
+        return data.classCount !== undefined && data.classCount > 0;
+    }
+    return true;
+}, { message: 'Debes especificar un número de clases.', path: ['classCount']})
+.refine(data => {
+    if (data.accessType === 'unlimited' || data.accessType === 'course_pass') {
+        return data.price !== undefined && data.price >= 0;
+    }
+    return true;
+}, { message: 'Debes especificar un precio.', path: ['price'] });
+
+
+type MembershipFormValues = z.infer<typeof formSchema>;
 
 // Helper to convert plan data from DB to a form-compatible format
 const planToForm = (plan: MembershipPlan): MembershipFormValues => {
@@ -97,7 +129,7 @@ export default function AdminMembershipsPage() {
   }, []);
 
   const form = useForm<MembershipFormValues>({
-    resolver: zodResolver(formCompatibleSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       accessType: 'unlimited',
       title: '',
