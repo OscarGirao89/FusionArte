@@ -457,8 +457,8 @@ export default function AdminMembershipsPage() {
                         ))}
                       </div>
                       <Button type="button" size="sm" variant="outline" className="mt-4" onClick={() => append({ classCount: 8, price: 80 })}> <PlusCircle className="mr-2 h-4 w-4" /> Añadir Tramo </Button>
-                       {accessType === 'custom_pack' && (
-                          <FormField name="priceTiersJson" render={() => <FormMessage />} />
+                       {form.formState.errors.priceTiersJson && (
+                          <p className="text-sm font-medium text-destructive">{form.formState.errors.priceTiersJson.message}</p>
                         )}
                     </div>
                 </div>

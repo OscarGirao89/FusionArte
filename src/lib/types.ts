@@ -269,5 +269,3 @@ export const SendEmailInputSchema = z.object({
   bcc: z.string().email().optional().describe("The BCC recipient's email address."),
 });
 export type SendEmailInput = z.infer<typeof SendEmailInputSchema>;
-
-    
