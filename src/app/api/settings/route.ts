@@ -103,6 +103,8 @@ export async function PUT(request: Request) {
     const dataToUpdate: Prisma.SettingsUpdateInput = {};
 
     // Map through the keys of the validated data and add them to the update object
+    // This is the safe way to do a partial update with Prisma, especially with JSON fields.
+    // It only includes fields that are present in the request body.
     for (const key in validatedPartialData) {
         if (Object.prototype.hasOwnProperty.call(validatedPartialData, key)) {
             const value = validatedPartialData[key as keyof typeof validatedPartialData];
