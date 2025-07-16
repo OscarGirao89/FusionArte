@@ -84,7 +84,7 @@ export default function MembershipsPage() {
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { userRole, userId, isAuthenticated, addStudentPayment, updateStudentMembership } = useAuth();
+  const { userRole, userId, isAuthenticated } = useAuth();
   const { settings } = useSettings();
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
@@ -151,31 +151,7 @@ export default function MembershipsPage() {
             const errorData = await response.json();
             throw new Error(errorData.error || 'No se pudo completar la compra.');
         }
-
-        const finalPrice = customConfig?.totalPrice ?? planToPurchase.price ?? 0;
         
-        // 1. Update StudentPayment state
-        addStudentPayment({
-            id: `inv-${Date.now()}`, // Temporary ID, real one is in DB
-            studentId: userId,
-            planId: planToPurchase.id,
-            invoiceDate: new Date().toISOString(),
-            totalAmount: finalPrice,
-            status: 'pending',
-            amountPaid: 0,
-            amountDue: finalPrice,
-        });
-
-        // 2. Update StudentMembership state
-        const startDate = new Date();
-        const endDate = add(startDate, { [planToPurchase.durationUnit]: planToPurchase.durationValue });
-        updateStudentMembership(userId, {
-            planId: planToPurchase.id,
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            classesRemaining: customConfig?.classCount ?? ('classCount' in planToPurchase ? planToPurchase.classCount : undefined),
-        });
-
         toast({
             title: "¡Membresía adquirida con éxito!",
             description: "Se ha generado tu factura. Revisa tu perfil para más detalles.",
