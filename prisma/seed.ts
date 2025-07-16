@@ -36,6 +36,36 @@ async function main() {
       });
   }
   console.log('Roles seeded.');
+  
+  // Seed Dance Levels
+  const levelsData = [
+      { id: 'inicio', name: 'Inicio', description: 'Para alumnos que nunca han bailado antes y quieren aprender los fundamentos desde cero.' },
+      { id: 'principiante', name: 'Básico / Principiante', description: 'Para alumnos con algo de experiencia o que han completado el nivel de inicio.' },
+      { id: 'intermedio', name: 'Intermedio', description: 'Para alumnos que dominan los pasos básicos y quieren aprender combinaciones más complejas.' },
+      { id: 'avanzado', name: 'Avanzado', description: 'Para alumnos con amplia experiencia, enfocados en técnica, musicalidad y figuras complejas.' },
+      { id: 'todos', name: 'Todos los niveles', description: 'Clase abierta a todos los alumnos, sin importar su experiencia previa. Ideal para practicar.' },
+  ];
+  for (const level of levelsData) {
+      await prisma.danceLevel.create({ data: level });
+  }
+  console.log('Dance levels seeded.');
+  
+  // Seed Dance Styles
+  const stylesData = [
+      { id: 'salsa', name: 'Salsa', description: 'Ritmos latinos vibrantes con raíces cubanas y puertorriqueñas.' },
+      { id: 'bachata', name: 'Bachata', description: 'Baile sensual y romántico originario de la República Dominicana.' },
+      { id: 'zouk', name: 'Zouk', description: 'Baile brasileño moderno y fluido, conocido por sus movimientos de cabeza y cuerpo.' },
+      { id: 'aeroyoga', name: 'Aeroyoga', description: 'Fusión de yoga, pilates y acrobacias en una hamaca suspendida.' },
+      { id: 'elongacion', name: 'Elongación', description: 'Clases enfocadas en mejorar la flexibilidad, el rango de movimiento y la postura corporal.' },
+      { id: 'gimnasia-ritmica', name: 'Gimnasia Rítmica', description: 'Disciplina que combina elementos de ballet, gimnasia, danza y el uso de aparatos.' },
+      { id: 'urbano', name: 'Urbano', description: 'Engloba estilos de baile callejero como Hip Hop, Popping, Locking y Breaking.' },
+      { id: 'practica', name: 'Práctica Libre', description: 'Espacio para práctica libre o alquiler de sala.' },
+  ];
+  for (const style of stylesData) {
+      await prisma.danceStyle.create({ data: style });
+  }
+  console.log('Dance styles seeded.');
+
 
   // Create one user for each role
   const hashedPassword = await bcrypt.hash('password123', 10);
