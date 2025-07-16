@@ -87,8 +87,6 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const updateSettings = useCallback(async (newSettings: Partial<AcademySettings>) => {
-    setSettings(prev => prev ? { ...prev, ...newSettings } : null);
-    
     try {
         const response = await fetch('/api/settings', {
             method: 'PUT',
@@ -98,6 +96,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         if (response.ok) {
             const data = await response.json();
             setSettings(prev => ({...prev!, ...data}));
+            window.location.reload();
         } else {
             console.error("Failed to save settings to the server.");
         }
