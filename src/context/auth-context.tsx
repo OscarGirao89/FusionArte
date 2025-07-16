@@ -18,10 +18,10 @@ export interface AuthContextType {
   logout: () => void;
   currentUser: User | null;
   updateCurrentUser: (data: Partial<User>) => void;
-  // studentPayments: StudentPayment[];
-  // addStudentPayment: (payment: StudentPayment, isUpdate?: boolean) => void;
-  // studentMemberships: StudentMembership[];
-  // updateStudentMembership: (userId: number, membership: Omit<StudentMembership, 'userId'>) => void;
+  studentPayments: StudentPayment[];
+  addStudentPayment: (payment: StudentPayment, isUpdate?: boolean) => void;
+  studentMemberships: StudentMembership[];
+  updateStudentMembership: (userId: number, membership: Omit<StudentMembership, 'userId'>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -67,6 +67,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { resetAttendance } = useAttendance();
+  const [studentPayments, setStudentPayments] = useState<StudentPayment[]>([]);
+  const [studentMemberships, setStudentMemberships] = useState<StudentMembership[]>([]);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -171,9 +173,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
+  const addStudentPayment = useCallback((payment: StudentPayment, isUpdate = false) => {
+    setStudentPayments(prev => {
+      if (isUpdate) {
+        return prev.map(p => p.id === payment.id ? payment : p);
+      }
+      return [...prev, payment];
+    });
+  }, []);
+
+  const updateStudentMembership = useCallback((userIdToUpdate: number, membership: Omit<StudentMembership, 'userId'>) => {
+    setStudentMemberships(prev => {
+      const otherMemberships = prev.filter(m => m.userId !== userIdToUpdate);
+      return [...otherMemberships, { ...membership, userId: userIdToUpdate }];
+    });
+  }, []);
+
+
   const value = {
     userRole, userId, isAuthenticated: !!userRole,
     isLoading, login, logout, currentUser, updateCurrentUser,
+    studentPayments, addStudentPayment, studentMemberships, updateStudentMembership,
   };
   
   if (isLoading) {
