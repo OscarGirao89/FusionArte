@@ -46,6 +46,11 @@ const passwordFormSchema = z.object({
 
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
+const paymentStatusLabels: Record<StudentPayment['status'], string> = {
+    paid: 'Pagado',
+    pending: 'Pendiente',
+    deposit: 'Adelanto'
+};
 
 export default function ProfilePage() {
     const { currentUser, updateCurrentUser } = useAuth();
@@ -336,5 +341,3 @@ export default function ProfilePage() {
             </div>
         )
 }
-
-    
