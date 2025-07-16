@@ -79,11 +79,11 @@ export async function PUT(
     
     if (validatedData.name) dataToUpdate.name = validatedData.name;
     if (validatedData.email) dataToUpdate.email = validatedData.email;
-    if (validatedData.mobile) dataToUpdate.mobile = validatedData.mobile;
-    if (validatedData.dob) dataToUpdate.dob = validatedData.dob;
-    if (validatedData.bio) dataToUpdate.bio = validatedData.bio;
-    if (validatedData.specialties) dataToUpdate.specialties = validatedData.specialties.split(',').map(s => s.trim());
-    if (validatedData.avatar) dataToUpdate.avatar = validatedData.avatar;
+    if (validatedData.mobile !== undefined) dataToUpdate.mobile = validatedData.mobile;
+    if (validatedData.dob !== undefined) dataToUpdate.dob = validatedData.dob;
+    if (validatedData.bio !== undefined) dataToUpdate.bio = validatedData.bio;
+    if (validatedData.specialties !== undefined) dataToUpdate.specialties = validatedData.specialties?.split(',').map(s => s.trim()) || [];
+    if (validatedData.avatar !== undefined) dataToUpdate.avatar = validatedData.avatar;
     if (validatedData.isVisibleToStudents !== undefined) dataToUpdate.isVisibleToStudents = validatedData.isVisibleToStudents;
     
     if (validatedData.role) {
@@ -95,9 +95,11 @@ export async function PUT(
         dataToUpdate.password = await bcrypt.hash(validatedData.password, 10);
     }
     
-    if (validatedData.paymentDetailsJson) {
+    // Check if paymentDetailsJson is explicitly passed, even if null
+    if (validatedData.hasOwnProperty('paymentDetailsJson')) {
         dataToUpdate.paymentDetailsJson = validatedData.paymentDetailsJson;
     }
+
 
     const updatedUser = await prisma.$transaction(async (tx) => {
       const user = await tx.user.update({
@@ -168,5 +170,3 @@ export async function DELETE(
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-
-    
