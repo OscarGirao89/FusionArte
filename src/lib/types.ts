@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 
 export type DanceStyle = {
@@ -116,13 +117,13 @@ export type AttendanceRecord = {
   status: 'presente' | 'ausente';
 };
 
-export const paymentDetailsSchema = z.discriminatedUnion("type", [
+export const paymentDetailsJsonSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("per_class"), payRate: z.coerce.number().optional().nullable(), cancelledClassPay: z.coerce.number().optional().nullable() }),
   z.object({ type: z.literal("monthly"), monthlySalary: z.coerce.number().optional().nullable(), cancelledClassPay: z.coerce.number().optional().nullable() }),
   z.object({ type: z.literal("percentage"), payRate: z.coerce.number().optional().nullable(), cancelledClassPay: z.coerce.number().optional().nullable() })
 ]);
 
-export type PaymentDetails = z.infer<typeof paymentDetailsSchema>;
+export type PaymentDetails = z.infer<typeof paymentDetailsJsonSchema>;
 
 
 export type User = {
@@ -141,7 +142,7 @@ export type User = {
     // Teacher-specific fields
     bio?: string;
     specialties?: string[];
-    paymentDetails?: PaymentDetails;
+    paymentDetailsJson?: PaymentDetails;
 };
 
 export type Transaction = {
@@ -268,3 +269,5 @@ export const SendEmailInputSchema = z.object({
   bcc: z.string().email().optional().describe("The BCC recipient's email address."),
 });
 export type SendEmailInput = z.infer<typeof SendEmailInputSchema>;
+
+    

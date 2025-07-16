@@ -106,7 +106,7 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
 
             const classesTaughtInstances = classInstances.filter(c => c.teacherIds.includes(teacher.id));
             let totalIncome = 0;
-            const paymentDetails = teacher.paymentDetails;
+            const paymentDetails = teacher.paymentDetailsJson;
             
             const incomeDetailsByClassId: Record<string, PayrollClassInfo> = {};
 
@@ -399,3 +399,5 @@ export const TeacherPayroll = React.memo(function TeacherPayroll({ mode, partner
 
     return null;
 });
+
+    

@@ -3,31 +3,29 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { paymentDetailsSchema } from '@/lib/types';
+import { paymentDetailsJsonSchema } from '@/lib/types';
 
 
 const userUpdateSchema = z.object({
     id: z.number().optional(),
-    name: z.string().min(3),
-    email: z.string().email(),
+    name: z.string().min(3).optional(),
+    email: z.string().email().optional(),
     mobile: z.string().optional().nullable(),
     dob: z.string().optional().nullable(),
-    role: z.string().optional(), // Role might not always be updated from student page
+    role: z.string().optional(),
     
-    // Membership fields
     membershipPlanId: z.string().optional().nullable(),
     membershipStartDate: z.date().optional().nullable(),
     membershipEndDate: z.date().optional().nullable(),
     membershipClassesRemaining: z.number().optional().nullable(),
 
-    // Teacher/Admin specific fields that might come from other forms
     bio: z.string().optional().nullable(),
     specialties: z.string().optional().nullable(),
     avatar: z.string().optional().nullable(),
     isVisibleToStudents: z.boolean().optional(),
     password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres.").optional().or(z.literal('')),
-    paymentDetails: paymentDetailsSchema.nullable().optional(),
-});
+    paymentDetailsJson: paymentDetailsJsonSchema.nullable().optional(),
+}).partial();
 
 
 export async function GET(
@@ -77,16 +75,16 @@ export async function PUT(
     if (json.membershipEndDate) json.membershipEndDate = new Date(json.membershipEndDate);
     const validatedData = userUpdateSchema.parse(json);
 
-    const dataToUpdate: any = {
-        name: validatedData.name,
-        email: validatedData.email,
-        mobile: validatedData.mobile,
-        dob: validatedData.dob,
-        bio: validatedData.bio,
-        specialties: validatedData.specialties?.split(',').map(s => s.trim()),
-        avatar: validatedData.avatar,
-        isVisibleToStudents: validatedData.isVisibleToStudents,
-    };
+    const dataToUpdate: any = {};
+    
+    if (validatedData.name) dataToUpdate.name = validatedData.name;
+    if (validatedData.email) dataToUpdate.email = validatedData.email;
+    if (validatedData.mobile) dataToUpdate.mobile = validatedData.mobile;
+    if (validatedData.dob) dataToUpdate.dob = validatedData.dob;
+    if (validatedData.bio) dataToUpdate.bio = validatedData.bio;
+    if (validatedData.specialties) dataToUpdate.specialties = validatedData.specialties.split(',').map(s => s.trim());
+    if (validatedData.avatar) dataToUpdate.avatar = validatedData.avatar;
+    if (validatedData.isVisibleToStudents !== undefined) dataToUpdate.isVisibleToStudents = validatedData.isVisibleToStudents;
     
     if (validatedData.role) {
       dataToUpdate.role = validatedData.role;
@@ -97,13 +95,11 @@ export async function PUT(
         dataToUpdate.password = await bcrypt.hash(validatedData.password, 10);
     }
     
-    // Only include paymentDetailsJson if it's not null/undefined
-    if (validatedData.paymentDetails) {
-        dataToUpdate.paymentDetailsJson = validatedData.paymentDetails;
+    if (validatedData.paymentDetailsJson) {
+        dataToUpdate.paymentDetailsJson = validatedData.paymentDetailsJson;
     }
 
     const updatedUser = await prisma.$transaction(async (tx) => {
-      // 1. Update user profile data
       const user = await tx.user.update({
         where: { id: userId },
         data: dataToUpdate,
@@ -113,23 +109,22 @@ export async function PUT(
       const startDate = validatedData.membershipStartDate;
       const endDate = validatedData.membershipEndDate;
 
-      // 2. Manage student membership: Delete any existing, then create if a new plan is provided.
-      // This is safer than upsert with compound keys.
-      await tx.studentMembership.deleteMany({
-        where: { userId: userId },
-      });
-
-      if (planId && planId !== 'none' && startDate && endDate) {
-        // Create the new membership record
-        await tx.studentMembership.create({
-          data: {
-            userId: userId,
-            planId: planId,
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            classesRemaining: validatedData.membershipClassesRemaining,
-          }
+      if (planId !== undefined && startDate !== undefined && endDate !== undefined) {
+        await tx.studentMembership.deleteMany({
+          where: { userId: userId },
         });
+
+        if (planId && planId !== 'none' && startDate && endDate) {
+          await tx.studentMembership.create({
+            data: {
+              userId: userId,
+              planId: planId,
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+              classesRemaining: validatedData.membershipClassesRemaining,
+            }
+          });
+        }
       }
       
       return user;
@@ -157,15 +152,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
     }
     
-    // Use transaction to delete user and related data
     await prisma.$transaction(async (tx) => {
       
       await tx.studentMembership.deleteMany({ where: { userId } });
       await tx.studentPayment.deleteMany({ where: { studentId: userId } });
       
-      // You may need to handle other relations like taughtClasses, enrolledClasses etc.
-      // For now, we assume cascade deletes or manual cleanup is handled elsewhere if needed.
-      // The relation to TaskNote assignees is handled by the database schema.
       await tx.user.delete({
         where: { id: userId },
       });
@@ -174,7 +165,8 @@ export async function DELETE(
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error(`Error deleting user ${params.id}:`, error);
-    // Prisma error for foreign key constraint can be caught here
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+    

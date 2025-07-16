@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -23,10 +23,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { MoreVertical, UserPlus, Pencil, Trash2, ShieldCheck, Download, Printer } from 'lucide-react';
+import { MoreVertical, UserPlus, Pencil, Trash2, ShieldCheck, Download, Printer, KeyRound } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { paymentDetailsSchema } from '@/lib/types';
+import { paymentDetailsJsonSchema } from '@/lib/types';
 
 const userRolesEnum = z.enum(['Estudiante', 'Profesor', 'Admin', 'Administrativo', 'Socio']);
 
@@ -34,16 +34,22 @@ const userFormSchema = z.object({
     id: z.number().optional(),
     name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
     email: z.string().email("Email inválido."),
-    password: z.string().optional(),
     role: userRolesEnum,
     bio: z.string().optional(),
     specialties: z.string().optional(),
-    paymentDetails: paymentDetailsSchema.optional().nullable(),
+    paymentDetailsJson: paymentDetailsJsonSchema.optional().nullable(),
     avatar: z.string().optional(),
     isVisibleToStudents: z.boolean().default(false).optional(),
   });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
+
+const passwordFormSchema = z.object({
+    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
+});
+
+type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+
 
 const roleVariant: { [key: string]: "default" | "secondary" | "destructive" } = {
     'Admin': 'destructive',
@@ -59,6 +65,7 @@ export default function AdminUsersPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const { toast } = useToast();
     const router = useRouter();
@@ -71,7 +78,6 @@ export default function AdminUsersPage() {
             const res = await fetch('/api/users');
             if (res.ok) {
                 const fetchedUsers = await res.json();
-                // Fetch full details for each user since the main endpoint is now leaner
                 const detailedUsers = await Promise.all(
                     fetchedUsers.map((u: User) => fetch(`/api/users/${u.id}`).then(res => res.json()))
                 );
@@ -112,8 +118,12 @@ export default function AdminUsersPage() {
         }
     });
 
+    const passwordForm = useForm<PasswordFormValues>({
+        resolver: zodResolver(passwordFormSchema),
+    });
+
     const watchedRole = form.watch('role');
-    const watchedPaymentType = form.watch('paymentDetails.type');
+    const watchedPaymentType = form.watch('paymentDetailsJson.type');
     const watchedAvatar = form.watch('avatar');
     const watchedName = form.watch('name');
     
@@ -124,11 +134,10 @@ export default function AdminUsersPage() {
             id: user.id,
             name: user.name,
             email: user.email,
-            password: '',
             role: user.role as UserFormValues['role'],
             bio: user.bio,
             specialties: user.specialties?.join(', '),
-            paymentDetails: user.paymentDetails,
+            paymentDetailsJson: user.paymentDetailsJson,
             avatar: user.avatar,
             isVisibleToStudents: user.isVisibleToStudents,
           });
@@ -136,23 +145,27 @@ export default function AdminUsersPage() {
           form.reset({
             name: '',
             email: '',
-            password: '',
             role: 'Estudiante',
             bio: '',
             specialties: '',
-            paymentDetails: { type: 'per_class' },
+            paymentDetailsJson: { type: 'per_class' },
             avatar: '',
             isVisibleToStudents: false,
           });
         }
         setIsDialogOpen(true);
       };
+      
+    const handleOpenPasswordDialog = (user: User) => {
+        setEditingUser(user);
+        passwordForm.reset();
+        setIsPasswordDialogOpen(true);
+    };
 
     const onSubmit = async (data: UserFormValues) => {
         const url = editingUser ? `/api/users/${editingUser.id}` : '/api/users';
         const method = editingUser ? 'PUT' : 'POST';
 
-        // Add a default password only when creating a new user
         const bodyPayload = editingUser ? data : { ...data, password: 'password123' };
 
         try {
@@ -189,6 +202,30 @@ export default function AdminUsersPage() {
             setEditingUser(null);
         }
     };
+    
+    const onPasswordSubmit = async (data: PasswordFormValues) => {
+        if (!editingUser) return;
+        
+        try {
+            const response = await fetch(`/api/users/${editingUser.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: data.password }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'No se pudo cambiar la contraseña.');
+            }
+            toast({ title: "Contraseña actualizada", description: `La contraseña para ${editingUser.name} ha sido cambiada.` });
+        } catch (error) {
+            toast({ title: "Error", description: (error as Error).message, variant: 'destructive' });
+        } finally {
+            setIsPasswordDialogOpen(false);
+            setEditingUser(null);
+        }
+    };
+
 
     const handleDelete = async (userId: number) => {
         try {
@@ -352,9 +389,16 @@ export default function AdminUsersPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => handleOpenDialog(user)} disabled={!canEditUser(user)}>
-                                  <Pencil className="mr-2 h-4 w-4" /> Editar
+                                  <Pencil className="mr-2 h-4 w-4" /> Editar Perfil
                               </DropdownMenuItem>
+                              {canManagePassword && (
+                                <DropdownMenuItem onClick={() => handleOpenPasswordDialog(user)}>
+                                    <KeyRound className="mr-2 h-4 w-4" /> Cambiar Contraseña
+                                </DropdownMenuItem>
+                              )}
                                {canDeleteUser && (
+                                <>
+                                 <DropdownMenuSeparator />
                                 <AlertDialog>
                                    <AlertDialogTrigger asChild>
                                       <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
@@ -374,6 +418,7 @@ export default function AdminUsersPage() {
                                      </AlertDialogFooter>
                                    </AlertDialogContent>
                                  </AlertDialog>
+                                </>
                                )}
                           </DropdownMenuContent>
                       </DropdownMenu>
@@ -432,20 +477,6 @@ export default function AdminUsersPage() {
                     )} />
                 </div>
 
-                {editingUser && canManagePassword && (
-                    <div className="space-y-4 p-4 border rounded-md bg-muted/50">
-                        <h3 className="text-lg font-medium">Seguridad</h3>
-                        <FormField control={form.control} name="password" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nueva Contraseña</FormLabel>
-                            <FormControl><Input type="password" {...field} /></FormControl>
-                            <FormDescription>Dejar en blanco para no cambiar la contraseña actual.</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                        )} />
-                    </div>
-                )}
-
                 {(watchedRole === 'Profesor' || watchedRole === 'Socio') && (
                     <div className="space-y-4 p-4 border rounded-md">
                         <h3 className="text-lg font-medium">Detalles del Profesor/Socio</h3>
@@ -458,7 +489,7 @@ export default function AdminUsersPage() {
                         
                         <div className="space-y-2 p-3 border rounded-md">
                            <FormLabel>Detalles de Pago (Opcional)</FormLabel>
-                            <FormField control={form.control} name="paymentDetails.type" render={({ field }) => (
+                            <FormField control={form.control} name="paymentDetailsJson.type" render={({ field }) => (
                                 <FormItem><FormLabel>Tipo de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                     <SelectContent>
@@ -469,21 +500,21 @@ export default function AdminUsersPage() {
                                 </Select><FormMessage /></FormItem>
                             )} />
                             {watchedPaymentType === 'per_class' && (
-                                <FormField control={form.control} name="paymentDetails.payRate" render={({ field }) => (
+                                <FormField control={form.control} name="paymentDetailsJson.payRate" render={({ field }) => (
                                     <FormItem><FormLabel>Tarifa por Hora (€)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )} />
                             )}
                              {watchedPaymentType === 'monthly' && (
-                                <FormField control={form.control} name="paymentDetails.monthlySalary" render={({ field }) => (
+                                <FormField control={form.control} name="paymentDetailsJson.monthlySalary" render={({ field }) => (
                                     <FormItem><FormLabel>Salario Mensual (€)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )} />
                             )}
                              {watchedPaymentType === 'percentage' && (
-                                <FormField control={form.control} name="paymentDetails.payRate" render={({ field }) => (
+                                <FormField control={form.control} name="paymentDetailsJson.payRate" render={({ field }) => (
                                     <FormItem><FormLabel>Porcentaje (%)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                                 )} />
                             )}
-                             <FormField control={form.control} name="paymentDetails.cancelledClassPay" render={({ field }) => (
+                             <FormField control={form.control} name="paymentDetailsJson.cancelledClassPay" render={({ field }) => (
                                 <FormItem><FormLabel>Pago por Clase Cancelada (€)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Poner 0 si no se paga.</FormDescription><FormMessage /></FormItem>
                             )} />
                         </div>
@@ -512,6 +543,41 @@ export default function AdminUsersPage() {
             </Form>
         </DialogContent>
       </Dialog>
+      
+      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Cambiar Contraseña</DialogTitle>
+                <DialogDescription>
+                    Establece una nueva contraseña para {editingUser?.name}. El usuario será notificado del cambio.
+                </DialogDescription>
+            </DialogHeader>
+            <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 py-4">
+                    <FormField
+                        control={passwordForm.control}
+                        name="password"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Nueva Contraseña</FormLabel>
+                                <FormControl>
+                                    <Input type="password" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <DialogFooter>
+                        <Button type="button" variant="ghost" onClick={() => setIsPasswordDialogOpen(false)}>Cancelar</Button>
+                        <Button type="submit">Guardar Contraseña</Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+
+    

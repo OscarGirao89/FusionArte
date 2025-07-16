@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { paymentDetailsSchema } from '@/lib/types';
+import { paymentDetailsJsonSchema } from '@/lib/types';
 
 
 const userCreateSchema = z.object({
@@ -14,7 +14,7 @@ const userCreateSchema = z.object({
     role: z.string(),
     bio: z.string().optional(),
     specialties: z.string().optional(),
-    paymentDetails: paymentDetailsSchema.optional().nullable(),
+    paymentDetailsJson: paymentDetailsJsonSchema.optional().nullable(),
     avatar: z.string().optional(),
     isVisibleToStudents: z.boolean().default(false).optional(),
 });
@@ -24,11 +24,8 @@ export async function GET() {
   try {
     const users = await prisma.user.findMany({
       include: {
-        // Omitting related fields for general user list to improve performance
-        // and avoid overly large responses. Specific user details are fetched by ID.
       }
     });
-    // Omit password from the response
     const usersWithoutPassword = users.map(({ password, ...user }) => user);
     return NextResponse.json(usersWithoutPassword);
   } catch (error) {
@@ -61,7 +58,7 @@ export async function POST(request: Request) {
             avatar: avatarUrl,
             bio: validatedData.bio,
             specialties: validatedData.specialties?.split(',').map(s => s.trim()) || [],
-            ...(validatedData.paymentDetails && { paymentDetailsJson: validatedData.paymentDetails }),
+            ...(validatedData.paymentDetailsJson && { paymentDetailsJson: validatedData.paymentDetailsJson }),
             isVisibleToStudents: validatedData.isVisibleToStudents,
             isPartner: validatedData.role === 'Socio',
         }
@@ -77,3 +74,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+    
