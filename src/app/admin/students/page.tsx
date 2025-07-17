@@ -255,13 +255,14 @@ export default function AdminStudentsPage() {
             printWindow.document.write('<table>');
             printWindow.document.write(`<tr><td><strong>Alumno:</strong></td><td>${selectedStudent.name}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Plan:</strong></td><td>${currentPlan.title}</td></tr>`);
-            if (typeof currentPlan.price === 'number') {
+            if ('price' in currentPlan && typeof currentPlan.price === 'number') {
               printWindow.document.write(`<tr><td><strong>Precio:</strong></td><td>€${currentPlan.price.toFixed(2)}</td></tr>`);
             }
             printWindow.document.write(`<tr><td><strong>Fecha de Inicio:</strong></td><td>${format(parseISO(currentMembership.startDate), 'PPP', { locale: es })}</td></tr>`);
             printWindow.document.write(`<tr><td><strong>Fecha de Vencimiento:</strong></td><td>${format(parseISO(currentMembership.endDate), 'PPP', { locale: es })}</td></tr>`);
-            if (currentPlan.accessType === 'class_pack') {
-                printWindow.document.write(`<tr><td><strong>Clases Incluidas:</strong></td><td>${currentMembership.classesRemaining || 0}</td></tr>`);
+            if (currentPlan.accessType === 'class_pack' && 'classCount' in currentPlan) {
+                printWindow.document.write(`<tr><td><strong>Clases Incluidas:</strong></td><td>${currentPlan.classCount}</td></tr>`);
+                printWindow.document.write(`<tr><td><strong>Clases Restantes:</strong></td><td>${currentMembership.classesRemaining ?? currentPlan.classCount}</td></tr>`);
             }
             printWindow.document.write('</table>');
             printWindow.document.write('<p style="margin-top: 2rem; text-align: center; font-size: 0.8rem; color: #666;">¡Gracias por ser parte de nuestra comunidad!</p>');
@@ -567,4 +568,3 @@ export default function AdminStudentsPage() {
     </div>
   );
 }
-
