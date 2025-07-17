@@ -107,7 +107,7 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
     const classOccurrencesByDate = useMemo(() => {
         if (plan.accessType === 'unlimited') return {};
         let eligibleClasses: DanceClass[] = [];
-        if (plan.allowedClasses && plan.allowedClasses.length > 0) {
+        if (Array.isArray(plan.allowedClasses) && plan.allowedClasses.length > 0) {
             eligibleClasses = allClasses.filter(c => plan.allowedClasses.includes(c.id));
         } else {
             eligibleClasses = allClasses;
