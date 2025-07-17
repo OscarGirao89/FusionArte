@@ -106,12 +106,15 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
 
     const classOccurrencesByDate = useMemo(() => {
         if (plan.accessType === 'unlimited') return {};
+        
+        const allowed = plan.allowedClasses;
         let eligibleClasses: DanceClass[] = [];
-        if (Array.isArray(plan.allowedClasses) && plan.allowedClasses.length > 0) {
-            eligibleClasses = allClasses.filter(c => plan.allowedClasses.includes(c.id));
+        if (Array.isArray(allowed) && allowed.length > 0) {
+            eligibleClasses = allClasses.filter(c => allowed.includes(c.id));
         } else {
             eligibleClasses = allClasses;
         }
+
         const visibleClasses = eligibleClasses.filter(c => c.type !== 'rental' && !c.isCancelledAndHidden);
         const occurrences: Record<string, DanceClass[]> = {};
         const interval = { start: new Date(), end: membershipEndDate };
