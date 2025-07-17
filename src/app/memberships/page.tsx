@@ -21,7 +21,7 @@ import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const getPlanPriceDisplay = (plan: MembershipPlan) => {
-  if (plan.accessType === 'unlimited' || plan.accessType === 'course_pass') {
+  if (plan.accessType === 'time_pass' && plan.durationUnit && plan.durationValue) {
     const unitMap = {
       days: plan.durationValue === 1 ? 'día' : 'días',
       weeks: plan.durationValue === 1 ? 'semana' : 'semanas',
@@ -39,7 +39,7 @@ const getPlanPriceDisplay = (plan: MembershipPlan) => {
 };
 
 function PlanCard({ plan, onPurchaseRequest }: { plan: MembershipPlan, onPurchaseRequest: (plan: MembershipPlan) => void }) {
-  const price = 'price' in plan ? plan.price : 0;
+  const price = 'price' in plan && typeof plan.price === 'number' ? plan.price : 0;
   return (
     <Card className={cn(
       "flex flex-col",
@@ -125,7 +125,7 @@ export default function MembershipsPage() {
     
     setSelectedPlan(plan);
 
-    if (plan.accessType === 'unlimited' || plan.accessType === 'class_pack' || plan.accessType === 'trial_class' || plan.accessType === 'course_pass') {
+    if (plan.accessType === 'time_pass' || plan.accessType === 'class_pack') {
         setPlanToConfirm(plan);
     } else if (plan.accessType === 'custom_pack') {
         setIsCustomPackOpen(true);
@@ -177,14 +177,11 @@ export default function MembershipsPage() {
   const handleCustomPackTierSelected = (tier: PriceTier) => {
     if (!selectedPlan || selectedPlan.accessType !== 'custom_pack') return;
 
-    // For custom packs, we now directly process the purchase with the selected tier info
     processPurchase(selectedPlan, { classCount: tier.classCount, totalPrice: tier.price });
     setIsCustomPackOpen(false);
     setSelectedPlan(null);
   };
   
-  const coursePassPlan = membershipPlans.find(p => p.id === 'course-salsa-1');
-
   return (
     <>
       <div className="container mx-auto p-4 md:p-8">
@@ -204,31 +201,6 @@ export default function MembershipsPage() {
               {membershipPlans.map(plan => (
                 <PlanCard key={plan.id} plan={plan} onPurchaseRequest={handlePurchaseRequest}/>
               ))}
-              {coursePassPlan && (
-                  <Card className="flex flex-col border-dashed border-primary">
-                    <CardHeader className="text-center">
-                        <CardTitle className="font-headline text-2xl">{coursePassPlan.title}</CardTitle>
-                        <CardDescription>
-                            <span className="text-muted-foreground">{coursePassPlan.description}</span>
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                        <ul className="space-y-3">
-                            {coursePassPlan.features.map((feature, i) => (
-                                <li key={i} className="flex items-start">
-                                    <Check className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5" />
-                                    <span className="text-sm text-muted-foreground">{feature}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
-                    <CardFooter>
-                        <Button className="w-full" asChild>
-                            <Link href="/schedule">Elegir Clase y Suscribir</Link>
-                        </Button>
-                    </CardFooter>
-                  </Card>
-              )}
             </div>
         )}
       </div>
