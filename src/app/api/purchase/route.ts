@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { add, startOfMonth, endOfMonth, addMonths, subDays } from 'date-fns';
+import { membershipPlanZodSchema } from '@/lib/types';
 
 const purchaseSchema = z.object({
   userId: z.number(),
@@ -22,12 +23,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    const plan = await prisma.membershipPlan.findUnique({ where: { id: planId } });
-    if (!plan) {
+    const planData = await prisma.membershipPlan.findUnique({ where: { id: planId } });
+    if (!planData) {
       return NextResponse.json({ error: 'Plan no encontrado' }, { status: 404 });
     }
+    
+    // Validate the plan data with the Zod schema to ensure all fields are present and correctly typed
+    const plan = membershipPlanZodSchema.parse(planData);
 
-    const finalPrice = totalPrice ?? ('price' in plan ? plan.price : 0);
+    const finalPrice = totalPrice ?? ('price' in plan && plan.price ? plan.price : 0);
     const classesRemaining = classCount ?? (plan.accessType === 'class_pack' ? plan.classCount : undefined);
 
     let startDate: Date;
