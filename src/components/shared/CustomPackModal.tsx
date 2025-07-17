@@ -42,6 +42,10 @@ export function CustomPackModal({ plan, isOpen, onClose, onConfirm }: CustomPack
             onConfirm(selectedTier);
         }
     };
+    
+    const priceTiers = Array.isArray(plan.priceTiersJson)
+        ? (plan.priceTiersJson as PriceTier[])
+        : [];
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -55,7 +59,7 @@ export function CustomPackModal({ plan, isOpen, onClose, onConfirm }: CustomPack
 
                 <div className="py-6 space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {plan.priceTiersJson?.map(tier => (
+                        {priceTiers.map(tier => (
                             <Card 
                                 key={tier.classCount}
                                 className={cn("cursor-pointer transition-all hover:shadow-lg", selectedTier?.classCount === tier.classCount && "border-primary ring-2 ring-primary")}

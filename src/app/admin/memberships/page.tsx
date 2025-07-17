@@ -32,6 +32,7 @@ import { membershipPlanZodSchema } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { Prisma } from '@prisma/client';
 
 
 // This schema is specifically for the form, where `features` is a single string from a textarea.
@@ -48,7 +49,7 @@ const formSchema = z.object({
     classCount: z.coerce.number().optional(),
     
     // Fields for custom_pack
-    priceTiers: z.array(z.object({ classCount: z.number(), price: z.number() })).optional(),
+    priceTiersJson: z.array(z.object({ classCount: z.number(), price: z.number() })).optional(),
 
     // --- Validity Section ---
     validityType: z.enum(['relative', 'monthly', 'fixed']),
@@ -95,7 +96,7 @@ type MembershipFormValues = z.infer<typeof formSchema>;
 const planToForm = (plan: MembershipPlan): MembershipFormValues => {
     const featuresAsString = Array.isArray(plan.features) ? plan.features.join('\n') : '';
 
-    const baseData = {
+    const baseData: Partial<MembershipFormValues> = {
         ...plan,
         features: featuresAsString,
         isPopular: plan.isPopular ?? false,
@@ -103,6 +104,7 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
         allowedClasses: plan.allowedClasses || [],
         startDate: plan.startDate ? parseISO(plan.startDate) : undefined,
         endDate: plan.endDate ? parseISO(plan.endDate) : undefined,
+        priceTiersJson: Array.isArray(plan.priceTiersJson) ? plan.priceTiersJson : [],
     };
     
     return baseData as MembershipFormValues;
@@ -156,7 +158,7 @@ export default function AdminMembershipsPage() {
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "priceTiers",
+    name: "priceTiersJson",
   });
 
   const accessType = form.watch('accessType');
@@ -180,6 +182,7 @@ export default function AdminMembershipsPage() {
         durationValue: 1,
         allowedClasses: [],
         visibility: 'public',
+        priceTiersJson: [],
       });
     }
     setIsDialogOpen(true);
@@ -194,6 +197,7 @@ export default function AdminMembershipsPage() {
         features: typeof data.features === 'string' ? data.features.split('\n').filter(f => f.trim() !== '') : [],
         startDate: data.startDate?.toISOString(),
         endDate: data.endDate?.toISOString(),
+        priceTiersJson: data.priceTiersJson as Prisma.JsonValue,
     };
     
     try {
@@ -240,8 +244,9 @@ export default function AdminMembershipsPage() {
     if (plan.accessType === 'time_pass' || plan.accessType === 'class_pack') {
         return `€${plan.price}`;
     }
-    if (plan.accessType === 'custom_pack' && plan.priceTiers && plan.priceTiers.length > 0) {
-        return `Desde €${plan.priceTiers[0].price}`;
+    if (plan.accessType === 'custom_pack' && Array.isArray(plan.priceTiersJson) && plan.priceTiersJson.length > 0) {
+        const firstTier = plan.priceTiersJson[0] as PriceTier;
+        return `Desde €${firstTier.price}`;
     }
     return 'Ver detalles';
   };
@@ -399,8 +404,8 @@ export default function AdminMembershipsPage() {
                       {fields.map((item, index) => (
                         <div key={item.id} className="flex items-end gap-3 p-2 border rounded-md">
                             <GripVertical className="h-5 w-5 text-muted-foreground" />
-                            <FormField control={form.control} name={`priceTiers.${index}.classCount`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Nº Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiersJson.${index}.classCount`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Nº Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiersJson.${index}.price`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem> )} />
                           <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}> <Trash2 className="h-4 w-4 text-destructive" /> </Button>
                         </div>
                       ))}
