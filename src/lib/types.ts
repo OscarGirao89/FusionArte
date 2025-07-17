@@ -32,56 +32,31 @@ export type PriceTier = {
 };
 
 // Base schema for all membership plans
-const membershipPlanBaseSchema = z.object({
+export const membershipPlanZodSchema = z.object({
   id: z.string().optional(),
   title: z.string(),
   description: z.string(),
+  accessType: z.enum(['time_pass', 'class_pack', 'custom_pack']),
+  
+  price: z.number().optional(), // Used for time_pass and class_pack
+  classCount: z.number().int().optional(), // Used for class_pack
+  priceTiersJson: z.array(z.object({ classCount: z.number(), price: z.number() })).optional(), // Used for custom_pack
+
+  validityType: z.enum(['relative', 'monthly', 'fixed']),
+  durationValue: z.number().int().optional(),
+  durationUnit: z.enum(['days', 'weeks', 'months']).optional(),
+  validityMonths: z.number().int().optional(),
+  monthlyStartType: z.enum(['from_purchase', 'next_month']).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  
   features: z.array(z.string()),
   isPopular: z.boolean().optional(),
-  durationUnit: z.enum(['days', 'weeks', 'months']),
-  durationValue: z.number().int(),
   visibility: z.enum(['public', 'unlisted']),
   allowedClasses: z.array(z.string()).optional(),
 });
 
-const unlimitedPlanSchema = membershipPlanBaseSchema.extend({
-  accessType: z.literal('unlimited'),
-  price: z.number(),
-});
-
-const classPackPlanSchema = membershipPlanBaseSchema.extend({
-  accessType: z.literal('class_pack'),
-  price: z.number(),
-  classCount: z.number().int(),
-});
-
-const trialClassPlanSchema = membershipPlanBaseSchema.extend({
-  accessType: z.literal('trial_class'),
-  price: z.number(),
-  classCount: z.number().int(),
-});
-
-const coursePassPlanSchema = membershipPlanBaseSchema.extend({
-  accessType: z.literal('course_pass'),
-  price: z.number(),
-});
-
-const customPackPlanSchema = membershipPlanBaseSchema.extend({
-  accessType: z.literal('custom_pack'),
-  priceTiersJson: z.array(z.object({ classCount: z.number(), price: z.number() })),
-});
-
-// The final discriminated union type for MembershipPlan
-export const membershipPlanZodSchema = z.discriminatedUnion("accessType", [
-  unlimitedPlanSchema,
-  classPackPlanSchema,
-  trialClassPlanSchema,
-  coursePassPlanSchema,
-  customPackPlanSchema,
-]);
-
 export type MembershipPlan = z.infer<typeof membershipPlanZodSchema>;
-
 
 export type ClassType = 'recurring' | 'one-time' | 'workshop' | 'rental';
 

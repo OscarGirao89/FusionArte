@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useFieldArray } from "react-hook-form"
 import { z } from "zod"
 import type { MembershipPlan, PriceTier } from '@/lib/types';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,12 +23,15 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { MoreHorizontal, PlusCircle, Pencil, Trash2, TicketPercent, InfinityIcon, Settings, GripVertical } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Pencil, Trash2, TicketPercent, InfinityIcon, Settings, GripVertical, CalendarIcon as Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Skeleton } from '@/components/ui/skeleton';
 import { membershipPlanZodSchema } from '@/lib/types';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 
 // This schema is specifically for the form, where `features` is a single string from a textarea.
@@ -34,69 +39,73 @@ const formSchema = z.object({
     id: z.string().optional(),
     title: z.string().min(1, "El título es obligatorio."),
     description: z.string().min(1, "La descripción es obligatoria."),
-    accessType: z.enum(['unlimited', 'class_pack', 'trial_class', 'course_pass', 'custom_pack']),
+    accessType: z.enum(['time_pass', 'class_pack', 'custom_pack']),
+    
+    // Fields for time_pass
     price: z.coerce.number().optional(),
+
+    // Fields for class_pack
     classCount: z.coerce.number().optional(),
+    
+    // Fields for custom_pack
     priceTiersJson: z.array(z.object({ classCount: z.number(), price: z.number() })).optional(),
-    durationUnit: z.enum(['days', 'weeks', 'months']),
-    durationValue: z.coerce.number().int().min(1, "La duración debe ser al menos 1."),
+
+    // --- Validity Section ---
+    validityType: z.enum(['relative', 'monthly', 'fixed']),
+    
+    // Fields for 'relative'
+    durationValue: z.coerce.number().optional(),
+    durationUnit: z.enum(['days', 'weeks', 'months']).optional(),
+    
+    // Fields for 'monthly'
+    validityMonths: z.coerce.number().optional(),
+    monthlyStartType: z.enum(['from_purchase', 'next_month']).optional(),
+
+    // Fields for 'fixed'
+    startDate: z.date().optional(),
+    endDate: z.date().optional(),
+
+    // --- Common fields ---
     features: z.string().optional(),
     isPopular: z.boolean().default(false),
     visibility: z.enum(['public', 'unlisted']).default('public'),
     allowedClasses: z.array(z.string()).optional(),
 }).refine(data => {
-    if (data.accessType === 'custom_pack') {
-        return data.priceTiersJson && data.priceTiersJson.length > 0;
+    if (data.accessType === 'class_pack') {
+        return data.classCount !== undefined && data.classCount > 0 && data.price !== undefined;
     }
     return true;
-}, { message: 'Debes definir al menos un tramo de precio para bonos personalizados.', path: ['priceTiersJson']})
+}, { message: 'El precio y el número de clases son obligatorios.', path: ['classCount']})
 .refine(data => {
-    if (data.accessType === 'class_pack' || data.accessType === 'trial_class') {
-        return data.classCount !== undefined && data.classCount > 0;
+    if (data.accessType === 'time_pass') {
+        return data.price !== undefined;
     }
     return true;
-}, { message: 'Debes especificar un número de clases.', path: ['classCount']})
+}, { message: 'Debes especificar un precio.', path: ['price']})
 .refine(data => {
-    if (data.accessType === 'unlimited' || data.accessType === 'course_pass') {
-        return data.price !== undefined && data.price >= 0;
-    }
-    return true;
-}, { message: 'Debes especificar un precio.', path: ['price'] });
+    if (data.validityType === 'relative') return !!data.durationValue && !!data.durationUnit;
+    if (data.validityType === 'monthly') return !!data.validityMonths && !!data.monthlyStartType;
+    if (data.validityType === 'fixed') return !!data.startDate && !!data.endDate;
+    return false;
+}, { message: 'Debes completar la configuración de validez.', path: ['validityType']});
 
 
 type MembershipFormValues = z.infer<typeof formSchema>;
 
-// Helper to convert plan data from DB to a form-compatible format
 const planToForm = (plan: MembershipPlan): MembershipFormValues => {
     const featuresAsString = Array.isArray(plan.features) ? plan.features.join('\n') : '';
 
     const baseData = {
-        id: plan.id,
-        title: plan.title,
-        description: plan.description,
+        ...plan,
         features: featuresAsString,
         isPopular: plan.isPopular ?? false,
-        durationUnit: plan.durationUnit,
-        durationValue: plan.durationValue,
         visibility: plan.visibility || 'public',
         allowedClasses: plan.allowedClasses || [],
+        startDate: plan.startDate ? parseISO(plan.startDate) : undefined,
+        endDate: plan.endDate ? parseISO(plan.endDate) : undefined,
     };
-
-    switch (plan.accessType) {
-        case 'unlimited':
-            return { ...baseData, accessType: 'unlimited', price: plan.price };
-        case 'class_pack':
-            return { ...baseData, accessType: 'class_pack', price: plan.price, classCount: plan.classCount };
-        case 'trial_class':
-            return { ...baseData, accessType: 'trial_class', price: plan.price, classCount: plan.classCount };
-        case 'course_pass':
-            return { ...baseData, accessType: 'course_pass', price: plan.price };
-        case 'custom_pack':
-            return { ...baseData, accessType: 'custom_pack', priceTiersJson: plan.priceTiersJson || [] };
-        default:
-             // Fallback for safety, though it shouldn't be reached with a discriminated union
-            return { ...baseData, accessType: 'unlimited', price: 0 } as MembershipFormValues;
-    }
+    
+    return baseData as MembershipFormValues;
 };
 
 export default function AdminMembershipsPage() {
@@ -131,7 +140,8 @@ export default function AdminMembershipsPage() {
   const form = useForm<MembershipFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      accessType: 'unlimited',
+      accessType: 'time_pass',
+      validityType: 'relative',
       title: '',
       price: 0,
       description: '',
@@ -150,6 +160,7 @@ export default function AdminMembershipsPage() {
   });
 
   const accessType = form.watch('accessType');
+  const validityType = form.watch('validityType');
   const allClassIds = danceClasses.map(c => c.id);
 
   const handleOpenDialog = (plan: MembershipPlan | null = null) => {
@@ -158,7 +169,8 @@ export default function AdminMembershipsPage() {
       form.reset(planToForm(plan));
     } else {
       form.reset({
-        accessType: 'unlimited',
+        accessType: 'time_pass',
+        validityType: 'relative',
         title: '',
         price: 0,
         description: '',
@@ -177,14 +189,14 @@ export default function AdminMembershipsPage() {
     const url = editingPlan ? `/api/memberships/${editingPlan.id}` : '/api/memberships';
     const method = editingPlan ? 'PUT' : 'POST';
 
-    // Before sending to API, convert features string back to string array
     const planToSave = {
         ...data,
         features: typeof data.features === 'string' ? data.features.split('\n').filter(f => f.trim() !== '') : [],
-    }
-
+        startDate: data.startDate?.toISOString(),
+        endDate: data.endDate?.toISOString(),
+    };
+    
     try {
-      // We use the original membershipPlanZodSchema for API validation
       const validatedDataForApi = membershipPlanZodSchema.parse(planToSave);
 
       const response = await fetch(url, {
@@ -195,7 +207,6 @@ export default function AdminMembershipsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("API Error:", errorData);
         throw new Error(errorData.error || `Failed to ${method} plan.`);
       }
 
@@ -225,14 +236,15 @@ export default function AdminMembershipsPage() {
     }
   }
 
-  const allowedClassesDescription = (
-    <>
-      Si no marcas ninguna clase, se permitirá el acceso a todas las clases aplicables al tipo de plan. Si marcas una o más, el acceso se limitará solo a esas clases.
-      {accessType === 'course_pass' && (
-        <span className="font-bold block"> Es obligatorio seleccionar al menos una clase para este tipo de pase.</span>
-      )}
-    </>
-  );
+  const getPlanPriceDisplay = (plan: MembershipPlan) => {
+    if (plan.accessType === 'time_pass' || plan.accessType === 'class_pack') {
+        return `€${plan.price}`;
+    }
+    if (plan.accessType === 'custom_pack' && plan.priceTiersJson && plan.priceTiersJson.length > 0) {
+        return `Desde €${plan.priceTiersJson[0].price}`;
+    }
+    return 'Ver detalles';
+  };
 
   if (isLoading) {
       return <div className="p-8"><Skeleton className="h-96 w-full" /></div>
@@ -279,15 +291,13 @@ export default function AdminMembershipsPage() {
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                         <div className="flex items-center gap-2">
-                        {plan.accessType === 'unlimited' ? <InfinityIcon className="h-4 w-4" /> : <TicketPercent className="h-4 w-4" />}
+                        {plan.accessType === 'time_pass' ? <InfinityIcon className="h-4 w-4" /> : <TicketPercent className="h-4 w-4" />}
                         <span>
-                            { { 'unlimited': 'Pase Ilimitado', 'class_pack': 'Bono de Clases', 'trial_class': 'Clase de Prueba', 'course_pass': 'Pase por Curso', 'custom_pack': 'Bono Personalizado' }[plan.accessType] }
+                            { { 'time_pass': 'Pase por Tiempo', 'class_pack': 'Bono de Clases', 'custom_pack': 'Bono Personalizado' }[plan.accessType] }
                         </span>
                         </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {plan.accessType === 'custom_pack' ? `Desde €${(plan.priceTiersJson && plan.priceTiersJson.length > 0) ? plan.priceTiersJson[0].price : 0}` : `€${'price' in plan ? plan.price : 0}`}
-                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{getPlanPriceDisplay(plan)}</TableCell>
                     <TableCell className="hidden lg:table-cell">
                         <Badge variant={plan.visibility === 'public' ? 'default' : 'outline'}>
                             {plan.visibility === 'public' ? 'Público' : 'No Listado'}
@@ -343,127 +353,97 @@ export default function AdminMembershipsPage() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-               <FormField control={form.control} name="accessType" render={({ field }) => (
-                  <FormItem><FormLabel>Tipo de Acceso</FormLabel>
+               
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={form.control} name="title" render={({ field }) => (
+                  <FormItem className="md:col-span-2"><FormLabel>Título del Plan</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="description" render={({ field }) => (
+                  <FormItem className="md:col-span-2"><FormLabel>Descripción Corta</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
+
+              <div className="p-4 border rounded-md space-y-4">
+                <FormLabel className="text-base font-semibold">Tipo de Acceso</FormLabel>
+                <FormField control={form.control} name="accessType" render={({ field }) => (
+                    <FormItem><FormLabel>Elige cómo funciona este plan</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="time_pass">Pase por Tiempo (Acceso Ilimitado)</SelectItem>
+                          <SelectItem value="class_pack">Bono de Clases (Cantidad Fija)</SelectItem>
+                          <SelectItem value="custom_pack">Bono Personalizado (Alumno Elige)</SelectItem>
+                        </SelectContent>
+                      </Select><FormMessage />
+                    </FormItem>
+                  )} />
+                  
+                  {accessType === 'time_pass' && (
+                     <FormField control={form.control} name="price" render={({ field }) => (
+                        <FormItem><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                      )} />
+                  )}
+                  {accessType === 'class_pack' && (
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="price" render={({ field }) => (
+                            <FormItem><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="classCount" render={({ field }) => (
+                           <FormItem><FormLabel>Nº de Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem>
+                       )} />
+                    </div>
+                  )}
+                  {accessType === 'custom_pack' && (
+                    <div className="space-y-3">
+                      <FormLabel>Tramos de Precios</FormLabel>
+                      {fields.map((item, index) => (
+                        <div key={item.id} className="flex items-end gap-3 p-2 border rounded-md">
+                            <GripVertical className="h-5 w-5 text-muted-foreground" />
+                            <FormField control={form.control} name={`priceTiersJson.${index}.classCount`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Nº Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiersJson.${index}.price`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                          <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}> <Trash2 className="h-4 w-4 text-destructive" /> </Button>
+                        </div>
+                      ))}
+                      <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => append({ classCount: 8, price: 80 })}> <PlusCircle className="mr-2 h-4 w-4" /> Añadir Tramo </Button>
+                    </div>
+                  )}
+              </div>
+
+              <div className="p-4 border rounded-md space-y-4">
+                 <FormLabel className="text-base font-semibold">Validez del Plan</FormLabel>
+                 <FormField control={form.control} name="validityType" render={({ field }) => (
+                  <FormItem><FormLabel>Elige cómo se calcula la caducidad</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un tipo" /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="unlimited">Pase Ilimitado / Por Curso</SelectItem>
-                        <SelectItem value="class_pack">Bono de Clases</SelectItem>
-                        <SelectItem value="custom_pack">Bono Personalizado</SelectItem>
-                        <SelectItem value="trial_class">Clase de Prueba</SelectItem>
-                        <SelectItem value="course_pass">Pase por Curso (Legado)</SelectItem>
+                          <SelectItem value="relative">Relativa (desde la compra)</SelectItem>
+                          <SelectItem value="monthly">Mensual (Automático)</SelectItem>
+                          <SelectItem value="fixed">Fechas Fijas (Manual)</SelectItem>
                       </SelectContent>
                     </Select><FormMessage />
                   </FormItem>
                 )} />
-              
-              <FormField control={form.control} name="title" render={({ field }) => (
-                <FormItem><FormLabel>Título del Plan</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem><FormLabel>Descripción Corta</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              
-              { (accessType === 'unlimited' || accessType === 'class_pack' || accessType === 'trial_class' || accessType === 'course_pass') && (
-                <FormField control={form.control} name="price" render={({ field }) => (
-                  <FormItem><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-              )}
-              
-              <div className="p-4 border rounded-md space-y-4">
-                  <FormLabel>Validez del Plan</FormLabel>
-                  <div className="grid grid-cols-2 gap-4">
-                      <FormField control={form.control} name="durationValue" render={({ field }) => (
-                          <FormItem><FormLabel>Duración</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem>
-                      )} />
-                      <FormField control={form.control} name="durationUnit" render={({ field }) => (
-                          <FormItem><FormLabel>Unidad</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                              <SelectContent>
-                                  <SelectItem value="days">Días</SelectItem>
-                                  <SelectItem value="weeks">Semanas</SelectItem>
-                                  <SelectItem value="months">Meses</SelectItem>
-                              </SelectContent>
-                          </Select><FormMessage /></FormItem>
-                      )} />
-                  </div>
-              </div>
 
-              {(accessType === 'class_pack' || accessType === 'trial_class') && (
-                  <div className="space-y-4 p-4 border rounded-md">
-                      <FormField control={form.control} name="classCount" render={({ field }) => (
-                           <FormItem>
-                             <FormLabel>Cantidad de Clases</FormLabel>
-                             <FormControl><Input type="number" min="1" {...field} /></FormControl>
-                             <FormDescription>
-                               {accessType === 'trial_class' ? 'Normalmente 1.' : 'Número de clases incluidas.'}
-                             </FormDescription>
-                             <FormMessage />
-                           </FormItem>
-                       )} />
-                  </div>
-              )}
-
-              <div className="space-y-4 p-4 border rounded-md">
-                 <FormField
-                   control={form.control} name="allowedClasses"
-                   render={({ field }) => (
-                     <FormItem>
-                       <div className="mb-4">
-                         <FormLabel className="text-base">Restringir Clases (Opcional)</FormLabel>
-                         <FormDescription>{allowedClassesDescription}</FormDescription>
-                       </div>
-                       <ScrollArea className="h-40 rounded-md border p-4">
-                       <div className="flex items-center space-x-2 mb-4">
-                          <Checkbox id="select-all-classes" checked={form.watch('allowedClasses')?.length === allClassIds.length}
-                               onCheckedChange={(checked) => form.setValue('allowedClasses', checked ? allClassIds : [])} />
-                           <label htmlFor="select-all-classes" className="text-sm font-medium leading-none">Seleccionar todas</label>
-                       </div>
-                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                       {danceClasses.map((item) => (
-                         <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                            <Checkbox checked={field.value?.includes(item.id)}
-                                onCheckedChange={(checked) => {
-                                return checked ? field.onChange([...(field.value || []), item.id])
-                                    : field.onChange((field.value || []).filter((v) => v !== item.id))
-                                }} />
-                            </FormControl>
-                            <label htmlFor={`class-${item.id}`} className="font-normal text-sm">{item.name} ({item.day} - {item.time})</label>
-                         </FormItem>
-                       ))}
-                       </div>
-                       </ScrollArea>
-                       <FormMessage />
-                     </FormItem>
-                   )}
-                 />
-              </div>
-
-              {accessType === 'custom_pack' && (
-                <div className="space-y-4 p-4 border rounded-md">
-                    <div>
-                      <h3 className="font-medium mb-2">Tramos de Precios</h3>
-                      <div className="space-y-3">
-                        {fields.map((item, index) => (
-                          <div key={item.id} className="flex items-end gap-3 p-2 border rounded-md">
-                              <GripVertical className="h-5 w-5 text-muted-foreground" />
-                              <FormField control={form.control} name={`priceTiersJson.${index}.classCount`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Nº Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                              <FormField control={form.control} name={`priceTiersJson.${index}.price`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}> <Trash2 className="h-4 w-4 text-destructive" /> </Button>
-                          </div>
-                        ))}
-                      </div>
-                      <Button type="button" size="sm" variant="outline" className="mt-4" onClick={() => append({ classCount: 8, price: 80 })}> <PlusCircle className="mr-2 h-4 w-4" /> Añadir Tramo </Button>
-                       {form.formState.errors.priceTiersJson && (
-                          <p className="text-sm font-medium text-destructive">{form.formState.errors.priceTiersJson.message}</p>
-                        )}
+                {validityType === 'relative' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField control={form.control} name="durationValue" render={({ field }) => ( <FormItem><FormLabel>Duración</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="durationUnit" render={({ field }) => ( <FormItem><FormLabel>Unidad</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="days">Días</SelectItem><SelectItem value="weeks">Semanas</SelectItem><SelectItem value="months">Meses</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                     </div>
-                </div>
-              )}
-
-
+                )}
+                {validityType === 'monthly' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField control={form.control} name="validityMonths" render={({ field }) => ( <FormItem><FormLabel>Duración (Meses)</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="monthlyStartType" render={({ field }) => ( <FormItem><FormLabel>Inicio</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="from_purchase">Mes de la compra</SelectItem><SelectItem value="next_month">Próximo mes</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                    </div>
+                )}
+                 {validityType === 'fixed' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField control={form.control} name="startDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha Inicio</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Elegir fecha</span>)}<Calendar className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="endDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha Fin</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Elegir fecha</span>)}<Calendar className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                    </div>
+                )}
+              </div>
+              
               <FormField control={form.control} name="features" render={({ field }) => (
                 <FormItem><FormLabel>Características (una por línea)</FormLabel><FormControl><Textarea rows={4} {...field} /></FormControl><FormMessage /></FormItem>
               )} />
@@ -493,6 +473,39 @@ export default function AdminMembershipsPage() {
                             <FormMessage />
                         </FormItem>
                     )} />
+                    <FormField
+                      control={form.control} name="allowedClasses"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="mb-4">
+                            <FormLabel className="text-base">Restringir Clases (Opcional)</FormLabel>
+                            <FormDescription>Si no marcas ninguna, se aplica a todas. Si marcas alguna, solo se aplica a esas.</FormDescription>
+                          </div>
+                          <ScrollArea className="h-40 rounded-md border p-4">
+                          <div className="flex items-center space-x-2 mb-4">
+                             <Checkbox id="select-all-classes" checked={form.watch('allowedClasses')?.length === allClassIds.length}
+                                  onCheckedChange={(checked) => form.setValue('allowedClasses', checked ? allClassIds : [])} />
+                              <label htmlFor="select-all-classes" className="text-sm font-medium leading-none">Seleccionar todas</label>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {danceClasses.map((item) => (
+                            <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                               <FormControl>
+                               <Checkbox checked={field.value?.includes(item.id)}
+                                   onCheckedChange={(checked) => {
+                                   return checked ? field.onChange([...(field.value || []), item.id])
+                                       : field.onChange((field.value || []).filter((v) => v !== item.id))
+                                   }} />
+                               </FormControl>
+                               <label htmlFor={`class-${item.id}`} className="font-normal text-sm">{item.name} ({item.day} - {item.time})</label>
+                            </FormItem>
+                          ))}
+                          </div>
+                          </ScrollArea>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                 </CollapsibleContent>
               </Collapsible>
 
@@ -507,3 +520,4 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
+
