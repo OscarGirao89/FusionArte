@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -88,7 +87,7 @@ export default function AdminPaymentsPage() {
       const plan = membershipPlans.find(mp => mp.id === p.planId);
       if (!plan) return true;
 
-      if (plan.accessType === 'unlimited') return true; 
+      if (plan.accessType === 'time_pass') return true; 
 
       if (plan.allowedClasses && plan.allowedClasses.length > 0) {
         return plan.allowedClasses.some(classId => !partnerClassIds.has(classId));
@@ -123,7 +122,7 @@ export default function AdminPaymentsPage() {
         return;
       }
       
-      const totalAmount = 'price' in plan ? plan.price : 0;
+      const totalAmount = 'price' in plan && typeof plan.price === 'number' ? plan.price : 0;
 
       const newPayment: StudentPayment = {
           id: `inv-${Date.now()}`,
@@ -202,7 +201,7 @@ export default function AdminPaymentsPage() {
                                 <SelectContent>
                                   {membershipPlans.filter(p => p.id).map(p => (
                                     <SelectItem key={p.id} value={p.id!} disabled={p.accessType === 'custom_pack'}>
-                                      {p.title} {'price' in p ? `(€${p.price})` : '(Bono personalizado)'}
+                                      {p.title} {p.price ? `(€${p.price})` : '(Bono personalizado)'}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
