@@ -101,7 +101,7 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
 
 export default function AdminMembershipsPage() {
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
-  const [danceClasses, setDanceClasses] = useState<DanceClass[]>([]);
+  const [danceClasses, setDanceClasses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
