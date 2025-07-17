@@ -337,7 +337,7 @@ export default function AdminCouponsPage() {
                           <FormItem>
                             <FormLabel>Seleccionar Membresías</FormLabel>
                             <ScrollArea className="h-40 rounded-md border p-4">
-                                {membershipPlans.filter(plan => plan.id).map((plan) => (
+                                {membershipPlans.filter(plan => !!plan.id).map((plan) => (
                                     <FormItem key={plan.id} className="flex flex-row items-start space-x-3 space-y-0 mb-2">
                                         <FormControl>
                                             <Checkbox
@@ -409,3 +409,5 @@ export default function AdminCouponsPage() {
     </div>
   );
 }
+
+    
