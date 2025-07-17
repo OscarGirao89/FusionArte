@@ -429,7 +429,7 @@ export default function AdminStudentsPage() {
                                                     <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="none">Sin membresía</SelectItem>
-                                                        {membershipPlans.map(plan => <SelectItem key={plan.id} value={plan.id}>{plan.title}</SelectItem>)}
+                                                        {membershipPlans.filter(plan => !!plan.id).map(plan => <SelectItem key={plan.id} value={plan.id!}>{plan.title}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
