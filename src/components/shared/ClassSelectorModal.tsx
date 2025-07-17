@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO, getDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isBefore, isAfter, isWithinInterval } from 'date-fns';
+import { format, parseISO, getDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isBefore, isAfter, isWithinInterval, add } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +34,7 @@ const daysOfWeekMap = [
 ];
 
 const DayContent = memo(function DayContent({ date, displayMonth, isSelected, onClick, classesOnDay }: { date: Date, displayMonth?: Date, isSelected: boolean, onClick: (date: Date) => void, classesOnDay: DanceClass[] }) {
-    const dateStr = format(date, 'yyyy-MM-dd');
+    const dateStr = format(date, 'd');
     const isCurrentDisplayMonth = displayMonth && displayMonth.getMonth() === date.getMonth();
 
     if (!isCurrentDisplayMonth) {
@@ -93,20 +93,23 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
     }, [isOpen]);
 
     const membershipEndDate = useMemo(() => {
-        const endDate = new Date();
-        if (plan.durationUnit === 'months') {
-            endDate.setMonth(endDate.getMonth() + plan.durationValue);
-        } else if (plan.durationUnit === 'weeks') {
-            endDate.setDate(endDate.getDate() + plan.durationValue * 7);
-        } else {
-            endDate.setDate(endDate.getDate() + plan.durationValue);
+        const now = new Date();
+        if (plan.validityType === 'fixed' && plan.endDate) {
+            return parseISO(plan.endDate);
         }
-        return endOfMonth(endDate);
-    }, [plan.durationUnit, plan.durationValue]);
+        if (plan.validityType === 'monthly' && plan.validityMonths) {
+            const startMonth = plan.monthlyStartType === 'next_month' ? addMonths(now, 1) : now;
+            const startDate = plan.monthlyStartType === 'next_month' ? startOfMonth(startMonth) : now;
+            return subMonths(addMonths(startDate, plan.validityMonths), 1);
+        }
+        if (plan.validityType === 'relative' && plan.durationUnit && plan.durationValue) {
+            return add(now, { [plan.durationUnit]: plan.durationValue });
+        }
+        // Default fallback: 3 months from now
+        return add(now, { months: 3 });
+    }, [plan]);
 
     const classOccurrencesByDate = useMemo(() => {
-        if (plan.accessType === 'unlimited') return {};
-        
         const allowed = plan.allowedClasses;
         let eligibleClasses: DanceClass[] = [];
         if (Array.isArray(allowed) && allowed.length > 0) {
@@ -142,8 +145,8 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
 
     const classCount = useMemo(() => {
         if (overrideClassCount) return overrideClassCount;
-        if (plan.accessType === 'class_pack' || plan.accessType === 'trial_class') {
-            return plan.classCount;
+        if (plan.accessType === 'class_pack') {
+            return plan.classCount || 0;
         }
         return 0;
     }, [plan, overrideClassCount]);
@@ -164,7 +167,7 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
 
     const classesLeftToSelect = classCount - selectedClasses.length;
 
-    if (plan.accessType === 'unlimited' || plan.accessType === 'course_pass') return null;
+    if (plan.accessType === 'time_pass') return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
