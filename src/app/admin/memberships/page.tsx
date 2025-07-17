@@ -48,7 +48,7 @@ const formSchema = z.object({
     classCount: z.coerce.number().optional(),
     
     // Fields for custom_pack
-    priceTiersJson: z.array(z.object({ classCount: z.number(), price: z.number() })).optional(),
+    priceTiers: z.array(z.object({ classCount: z.number(), price: z.number() })).optional(),
 
     // --- Validity Section ---
     validityType: z.enum(['relative', 'monthly', 'fixed']),
@@ -156,7 +156,7 @@ export default function AdminMembershipsPage() {
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "priceTiersJson",
+    name: "priceTiers",
   });
 
   const accessType = form.watch('accessType');
@@ -240,8 +240,8 @@ export default function AdminMembershipsPage() {
     if (plan.accessType === 'time_pass' || plan.accessType === 'class_pack') {
         return `€${plan.price}`;
     }
-    if (plan.accessType === 'custom_pack' && plan.priceTiersJson && plan.priceTiersJson.length > 0) {
-        return `Desde €${plan.priceTiersJson[0].price}`;
+    if (plan.accessType === 'custom_pack' && plan.priceTiers && plan.priceTiers.length > 0) {
+        return `Desde €${plan.priceTiers[0].price}`;
     }
     return 'Ver detalles';
   };
@@ -399,8 +399,8 @@ export default function AdminMembershipsPage() {
                       {fields.map((item, index) => (
                         <div key={item.id} className="flex items-end gap-3 p-2 border rounded-md">
                             <GripVertical className="h-5 w-5 text-muted-foreground" />
-                            <FormField control={form.control} name={`priceTiersJson.${index}.classCount`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Nº Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name={`priceTiersJson.${index}.price`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiers.${index}.classCount`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Nº Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem> )} />
                           <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}> <Trash2 className="h-4 w-4 text-destructive" /> </Button>
                         </div>
                       ))}
@@ -520,4 +520,3 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
-
