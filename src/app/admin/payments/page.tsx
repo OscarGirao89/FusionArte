@@ -113,8 +113,8 @@ export default function AdminPaymentsPage() {
       const student = users.find(u => u.id === Number(data.studentId));
       const plan = membershipPlans.find(p => p.id === data.planId);
 
-      if (!student || !plan) {
-          toast({ title: "Error", description: "Alumno o plan no encontrado.", variant: "destructive" });
+      if (!student || !plan || !plan.id) {
+          toast({ title: "Error", description: "Alumno o plan no válido.", variant: "destructive" });
           return;
       }
 
@@ -200,8 +200,8 @@ export default function AdminPaymentsPage() {
                               <FormItem><FormLabel>Plan de Membresía</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                  {membershipPlans.map(p => (
-                                    <SelectItem key={p.id} value={p.id} disabled={p.accessType === 'custom_pack'}>
+                                  {membershipPlans.filter(p => p.id).map(p => (
+                                    <SelectItem key={p.id} value={p.id!} disabled={p.accessType === 'custom_pack'}>
                                       {p.title} {'price' in p ? `(€${p.price})` : '(Bono personalizado)'}
                                     </SelectItem>
                                   ))}
