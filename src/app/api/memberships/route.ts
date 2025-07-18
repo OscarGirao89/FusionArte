@@ -30,20 +30,33 @@ export async function POST(request: Request) {
     // Prisma expects JSON fields to be passed as strings or Prisma.JsonNull
     const dataToCreate: any = { ...validatedData };
     
-    if (validatedData.priceTiersJson) {
+    if (validatedData.priceTiersJson && Array.isArray(validatedData.priceTiersJson)) {
       dataToCreate.priceTiersJson = JSON.stringify(validatedData.priceTiersJson);
+    } else {
+      dataToCreate.priceTiersJson = Prisma.JsonNull;
     }
     
     const newPlan = await prisma.membershipPlan.create({
       data: dataToCreate,
     });
-    return NextResponse.json(newPlan, { status: 201 });
+
+    // Parse the JSON string back into an array for the response
+    const response = {
+        ...newPlan,
+        priceTiersJson: (newPlan.priceTiersJson && typeof newPlan.priceTiersJson === 'string')
+            ? JSON.parse(newPlan.priceTiersJson)
+            : (newPlan.priceTiersJson || [])
+    };
+
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('[API_CREATE_MEMBERSHIP_ZOD_ERROR]', error.errors);
-      return NextResponse.json({ error: 'Datos inválidos', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Datos de membresía inválidos.', details: error.errors }, { status: 400 });
     }
     console.error('[API_CREATE_MEMBERSHIP_ERROR]', error);
     return NextResponse.json({ error: 'Error interno del servidor al crear el plan.' }, { status: 500 });
   }
 }
+
+    

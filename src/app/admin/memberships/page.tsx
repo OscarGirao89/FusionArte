@@ -203,8 +203,6 @@ export default function AdminMembershipsPage() {
     };
     
     try {
-      // The API will handle zod validation and Prisma conversion.
-      // We are sending a clean object from the form.
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -213,7 +211,7 @@ export default function AdminMembershipsPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to ${method} plan.`);
+        throw new Error(errorData.error || `Error ${method === 'POST' ? 'al crear' : 'al actualizar'} el plan.`);
       }
 
       toast({
@@ -527,3 +525,5 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
+
+    

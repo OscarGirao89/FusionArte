@@ -23,11 +23,20 @@ export async function PUT(
       where: { id: params.id },
       data: dataToUpdate,
     });
-    return NextResponse.json(updatedPlan);
+    
+    // Parse the JSON string back into an array for the response
+    const response = {
+        ...updatedPlan,
+        priceTiersJson: (updatedPlan.priceTiersJson && typeof updatedPlan.priceTiersJson === 'string')
+            ? JSON.parse(updatedPlan.priceTiersJson)
+            : (updatedPlan.priceTiersJson || [])
+    };
+    
+    return NextResponse.json(response);
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('[API_UPDATE_MEMBERSHIP_ZOD_ERROR]', { id: params.id, errors: error.errors });
-      return NextResponse.json({ error: 'Datos de membresía inválidos', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Datos de membresía inválidos.', details: error.errors }, { status: 400 });
     }
     console.error(`[API_UPDATE_MEMBERSHIP_ERROR] ID: ${params.id}`, error);
     return NextResponse.json({ error: 'Error interno del servidor al actualizar el plan.' }, { status: 500 });
@@ -48,3 +57,5 @@ export async function DELETE(
         return NextResponse.json({ error: 'Error interno del servidor al eliminar el plan.' }, { status: 500 });
     }
 }
+
+    
