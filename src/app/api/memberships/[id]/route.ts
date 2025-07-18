@@ -12,12 +12,17 @@ export async function PUT(
     const json = await request.json();
     const validatedData = membershipPlanZodSchema.parse(json);
 
-    // Prisma doesn't support discriminated union updates directly in a type-safe way
-    // without manual casting, so we cast to `any` to update the JSON field
-    // and other properties. The zod schema ensures the data is correct.
+    // Prisma expects JSON fields to be passed as strings or Prisma.JsonNull
+    const dataToUpdate = {
+        ...validatedData,
+        priceTiersJson: validatedData.priceTiersJson
+         ? (JSON.stringify(validatedData.priceTiersJson) as any)
+         : undefined,
+    };
+
     const updatedPlan = await prisma.membershipPlan.update({
       where: { id: params.id },
-      data: validatedData as any,
+      data: dataToUpdate as any,
     });
     return NextResponse.json(updatedPlan);
   } catch (error) {

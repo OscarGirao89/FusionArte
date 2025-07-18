@@ -153,6 +153,7 @@ export default function AdminMembershipsPage() {
       durationValue: 1,
       allowedClasses: [],
       visibility: 'public',
+      priceTiersJson: [],
     },
   });
 
