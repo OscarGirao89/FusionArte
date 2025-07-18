@@ -54,7 +54,7 @@ function PlanCard({ plan, onPurchaseRequest }: { plan: MembershipPlan, onPurchas
       <CardHeader className="text-center">
         <CardTitle className="font-headline text-2xl">{plan.title}</CardTitle>
         <CardDescription>
-          {plan.accessType === 'custom_pack' && plan.priceTiers && plan.priceTiers.length > 0
+          {plan.accessType === 'custom_pack' && Array.isArray(plan.priceTiers) && plan.priceTiers.length > 0
             ? <span className="text-4xl font-bold text-foreground">Desde €{plan.priceTiers[0].price}</span>
             : <span className="text-4xl font-bold text-foreground">€{price}</span>
           }

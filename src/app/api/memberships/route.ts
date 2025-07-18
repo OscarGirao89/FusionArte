@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     // Prisma expects JSON fields to be passed as strings or Prisma.JsonNull
     const dataToCreate: any = { ...validatedData };
     
-    if (validatedData.priceTiers && Array.isArray(validatedData.priceTiers)) {
+    if (validatedData.priceTiers && Array.isArray(validatedData.priceTiers) && validatedData.priceTiers.length > 0) {
       dataToCreate.priceTiers = JSON.stringify(validatedData.priceTiers);
     } else {
       dataToCreate.priceTiers = Prisma.JsonNull;
