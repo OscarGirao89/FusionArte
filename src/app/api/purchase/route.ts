@@ -58,13 +58,13 @@ export async function POST(request: NextRequest) {
         data: {
           studentId: userId,
           planId: planId,
-          invoiceDate: now,
+          invoiceDate: now.toISOString(),
           totalAmount: finalPrice,
           status: 'pending',
           amountPaid: 0,
           amountDue: finalPrice,
           lastUpdatedBy: 'Sistema',
-          lastUpdatedDate: new Date(),
+          lastUpdatedDate: new Date().toISOString(),
         },
       });
 
