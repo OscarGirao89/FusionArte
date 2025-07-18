@@ -17,6 +17,8 @@ export async function PUT(
 
     if (validatedData.priceTiersJson) {
       dataToUpdate.priceTiersJson = JSON.stringify(validatedData.priceTiersJson);
+    } else {
+      dataToUpdate.priceTiersJson = Prisma.JsonNull;
     }
 
     const updatedPlan = await prisma.membershipPlan.update({
@@ -57,5 +59,3 @@ export async function DELETE(
         return NextResponse.json({ error: 'Error interno del servidor al eliminar el plan.' }, { status: 500 });
     }
 }
-
-    
