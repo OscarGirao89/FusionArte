@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { membershipPlanZodSchema } from '@/lib/types';
+import { Prisma } from '@prisma/client';
 
 export async function PUT(
   request: NextRequest,
@@ -12,17 +13,15 @@ export async function PUT(
     const json = await request.json();
     const validatedData = membershipPlanZodSchema.parse(json);
 
-    // Prisma expects JSON fields to be passed as strings or Prisma.JsonNull
-    const dataToUpdate = {
-        ...validatedData,
-        priceTiersJson: validatedData.priceTiersJson
-         ? (JSON.stringify(validatedData.priceTiersJson) as any)
-         : undefined,
-    };
+    const dataToUpdate: any = { ...validatedData };
+
+    if (validatedData.priceTiersJson) {
+      dataToUpdate.priceTiersJson = validatedData.priceTiersJson as Prisma.JsonValue;
+    }
 
     const updatedPlan = await prisma.membershipPlan.update({
       where: { id: params.id },
-      data: dataToUpdate as any,
+      data: dataToUpdate,
     });
     return NextResponse.json(updatedPlan);
   } catch (error) {

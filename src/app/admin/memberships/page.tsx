@@ -104,6 +104,7 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
         allowedClasses: plan.allowedClasses || [],
         startDate: plan.startDate ? parseISO(plan.startDate) : undefined,
         endDate: plan.endDate ? parseISO(plan.endDate) : undefined,
+        // Ensure priceTiersJson is always an array for the form
         priceTiersJson: Array.isArray(plan.priceTiersJson) ? plan.priceTiersJson : [],
     };
     
@@ -193,21 +194,21 @@ export default function AdminMembershipsPage() {
     const url = editingPlan ? `/api/memberships/${editingPlan.id}` : '/api/memberships';
     const method = editingPlan ? 'PUT' : 'POST';
 
+    // This data structure is what will be sent to the API
     const planToSave = {
         ...data,
         features: typeof data.features === 'string' ? data.features.split('\n').filter(f => f.trim() !== '') : [],
         startDate: data.startDate?.toISOString(),
         endDate: data.endDate?.toISOString(),
-        priceTiersJson: data.priceTiersJson as Prisma.JsonValue,
     };
     
     try {
-      const validatedDataForApi = membershipPlanZodSchema.parse(planToSave);
-
+      // The API will handle zod validation and Prisma conversion.
+      // We are sending a clean object from the form.
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(validatedDataForApi),
+        body: JSON.stringify(planToSave),
       });
 
       if (!response.ok) {
