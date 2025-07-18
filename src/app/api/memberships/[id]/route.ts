@@ -15,10 +15,10 @@ export async function PUT(
 
     const dataToUpdate: any = { ...validatedData };
 
-    if (validatedData.priceTiersJson) {
-      dataToUpdate.priceTiersJson = JSON.stringify(validatedData.priceTiersJson);
+    if (validatedData.priceTiers) {
+      dataToUpdate.priceTiers = JSON.stringify(validatedData.priceTiers);
     } else {
-      dataToUpdate.priceTiersJson = Prisma.JsonNull;
+      dataToUpdate.priceTiers = Prisma.JsonNull;
     }
 
     const updatedPlan = await prisma.membershipPlan.update({
@@ -29,9 +29,9 @@ export async function PUT(
     // Parse the JSON string back into an array for the response
     const response = {
         ...updatedPlan,
-        priceTiersJson: (updatedPlan.priceTiersJson && typeof updatedPlan.priceTiersJson === 'string')
-            ? JSON.parse(updatedPlan.priceTiersJson)
-            : (updatedPlan.priceTiersJson || [])
+        priceTiers: (updatedPlan.priceTiers && typeof updatedPlan.priceTiers === 'string')
+            ? JSON.parse(updatedPlan.priceTiers)
+            : (updatedPlan.priceTiers || [])
     };
     
     return NextResponse.json(response);
@@ -41,7 +41,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Datos de membresía inválidos.', details: error.errors }, { status: 400 });
     }
     console.error(`[API_UPDATE_MEMBERSHIP_ERROR] ID: ${params.id}`, error);
-    return NextResponse.json({ error: 'Error interno del servidor al actualizar el plan.' }, { status: 500 });
+    return NextResponse.json({ error: 'Error interno del servidor al actualizar el plan.', details: (error as Error).message }, { status: 500 });
   }
 }
 
@@ -56,6 +56,6 @@ export async function DELETE(
         return new NextResponse(null, { status: 204 });
     } catch (error) {
         console.error(`[API_DELETE_MEMBERSHIP_ERROR] ID: ${params.id}:`, error);
-        return NextResponse.json({ error: 'Error interno del servidor al eliminar el plan.' }, { status: 500 });
+        return NextResponse.json({ error: 'Error interno del servidor al eliminar el plan.', details: (error as Error).message }, { status: 500 });
     }
 }

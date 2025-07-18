@@ -49,7 +49,7 @@ const formSchema = z.object({
     classCount: z.coerce.number().optional(),
     
     // Fields for custom_pack
-    priceTiersJson: z.array(z.object({ classCount: z.number(), price: z.number() })).optional(),
+    priceTiers: z.array(z.object({ classCount: z.number(), price: z.number() })).optional(),
 
     // --- Validity Section ---
     validityType: z.enum(['relative', 'monthly', 'fixed']),
@@ -104,8 +104,8 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
         allowedClasses: plan.allowedClasses || [],
         startDate: plan.startDate ? parseISO(plan.startDate) : undefined,
         endDate: plan.endDate ? parseISO(plan.endDate) : undefined,
-        // Ensure priceTiersJson is always an array for the form
-        priceTiersJson: Array.isArray(plan.priceTiersJson) ? plan.priceTiersJson : [],
+        // Ensure priceTiers is always an array for the form
+        priceTiers: Array.isArray(plan.priceTiers) ? plan.priceTiers : [],
     };
     
     return baseData as MembershipFormValues;
@@ -154,13 +154,13 @@ export default function AdminMembershipsPage() {
       durationValue: 1,
       allowedClasses: [],
       visibility: 'public',
-      priceTiersJson: [],
+      priceTiers: [],
     },
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "priceTiersJson",
+    name: "priceTiers",
   });
 
   const accessType = form.watch('accessType');
@@ -184,7 +184,7 @@ export default function AdminMembershipsPage() {
         durationValue: 1,
         allowedClasses: [],
         visibility: 'public',
-        priceTiersJson: [],
+        priceTiers: [],
       });
     }
     setIsDialogOpen(true);
@@ -244,8 +244,8 @@ export default function AdminMembershipsPage() {
     if (plan.accessType === 'time_pass' || plan.accessType === 'class_pack') {
         return `€${plan.price}`;
     }
-    if (plan.accessType === 'custom_pack' && Array.isArray(plan.priceTiersJson) && plan.priceTiersJson.length > 0) {
-        const firstTier = plan.priceTiersJson[0] as PriceTier;
+    if (plan.accessType === 'custom_pack' && Array.isArray(plan.priceTiers) && plan.priceTiers.length > 0) {
+        const firstTier = plan.priceTiers[0] as PriceTier;
         return `Desde €${firstTier.price}`;
     }
     return 'Ver detalles';
@@ -404,8 +404,8 @@ export default function AdminMembershipsPage() {
                       {fields.map((item, index) => (
                         <div key={item.id} className="flex items-end gap-3 p-2 border rounded-md">
                             <GripVertical className="h-5 w-5 text-muted-foreground" />
-                            <FormField control={form.control} name={`priceTiersJson.${index}.classCount`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Nº Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name={`priceTiersJson.${index}.price`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiers.${index}.classCount`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Nº Clases</FormLabel><FormControl><Input type="number" min="1" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field }) => ( <FormItem className="flex-1"><FormLabel>Precio (€)</FormLabel><FormControl><Input type="number" min="0" {...field} /></FormControl><FormMessage /></FormItem> )} />
                           <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}> <Trash2 className="h-4 w-4 text-destructive" /> </Button>
                         </div>
                       ))}
@@ -443,8 +443,8 @@ export default function AdminMembershipsPage() {
                 )}
                  {validityType === 'fixed' && (
                     <div className="grid grid-cols-2 gap-4">
-                      <FormField control={form.control} name="startDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha Inicio</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Elegir fecha</span>)}<Calendar className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} />
-                      <FormField control={form.control} name="endDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha Fin</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Elegir fecha</span>)}<Calendar className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="startDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha Inicio</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Elegir fecha</span>)}<Calendar className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarComponent mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="endDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha Fin</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Elegir fecha</span>)}<Calendar className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarComponent mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} />
                     </div>
                 )}
               </div>
@@ -525,5 +525,3 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
-
-    

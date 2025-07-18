@@ -43,8 +43,8 @@ export function CustomPackModal({ plan, isOpen, onClose, onConfirm }: CustomPack
         }
     };
     
-    const priceTiers = Array.isArray(plan.priceTiersJson)
-        ? (plan.priceTiersJson as PriceTier[])
+    const priceTiers = Array.isArray(plan.priceTiers)
+        ? (plan.priceTiers as PriceTier[])
         : [];
 
     return (

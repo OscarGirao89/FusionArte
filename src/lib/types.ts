@@ -40,7 +40,7 @@ export const membershipPlanZodSchema = z.object({
   
   price: z.number().optional(), // Used for time_pass and class_pack
   classCount: z.number().int().optional(), // Used for class_pack
-  priceTiersJson: z.array(z.object({ classCount: z.number(), price: z.number() })).optional(), // Used for custom_pack
+  priceTiers: z.array(z.object({ classCount: z.number(), price: z.number() })).optional(), // Used for custom_pack
 
   validityType: z.enum(['relative', 'monthly', 'fixed']),
   durationValue: z.number().int().optional(),
