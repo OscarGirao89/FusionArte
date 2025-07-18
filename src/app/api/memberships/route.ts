@@ -11,14 +11,14 @@ export async function GET() {
     // Ensure priceTiersJson is always an array when sent to client
     const parsedPlans = plans.map(plan => ({
       ...plan,
-      priceTiersJson: plan.priceTiersJson && typeof plan.priceTiersJson === 'string' 
+      priceTiersJson: (plan.priceTiersJson && typeof plan.priceTiersJson === 'string' 
         ? JSON.parse(plan.priceTiersJson) 
-        : (plan.priceTiersJson || []),
+        : plan.priceTiersJson) || [],
     }));
     return NextResponse.json(parsedPlans);
   } catch (error) {
-    console.error('Error fetching membership plans:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('[API_GET_MEMBERSHIPS_ERROR]', error);
+    return NextResponse.json({ error: 'Error interno del servidor al obtener los planes.' }, { status: 500 });
   }
 }
 
@@ -29,8 +29,9 @@ export async function POST(request: Request) {
 
     const dataToCreate: any = { ...validatedData };
     
+    // Prisma expects JSON fields to be passed as strings or Prisma.JsonNull
     if (validatedData.priceTiersJson) {
-      dataToCreate.priceTiersJson = validatedData.priceTiersJson as Prisma.JsonValue;
+      dataToCreate.priceTiersJson = JSON.stringify(validatedData.priceTiersJson);
     }
     
     const newPlan = await prisma.membershipPlan.create({
@@ -39,10 +40,10 @@ export async function POST(request: Request) {
     return NextResponse.json(newPlan, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.log(error.errors);
-      return NextResponse.json({ error: 'Invalid data', details: error.errors }, { status: 400 });
+      console.error('[API_CREATE_MEMBERSHIP_ZOD_ERROR]', error.errors);
+      return NextResponse.json({ error: 'Datos inválidos', details: error.errors }, { status: 400 });
     }
-    console.error('Error creating membership plan:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('[API_CREATE_MEMBERSHIP_ERROR]', error);
+    return NextResponse.json({ error: 'Error interno del servidor al crear el plan.' }, { status: 500 });
   }
 }

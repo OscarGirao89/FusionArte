@@ -11,12 +11,14 @@ export async function PUT(
 ) {
   try {
     const json = await request.json();
+    // We parse with the base schema first
     const validatedData = membershipPlanZodSchema.parse(json);
 
+    // Prepare data for Prisma, ensuring JSON fields are handled correctly
     const dataToUpdate: any = { ...validatedData };
 
     if (validatedData.priceTiersJson) {
-      dataToUpdate.priceTiersJson = validatedData.priceTiersJson as Prisma.JsonValue;
+      dataToUpdate.priceTiersJson = JSON.stringify(validatedData.priceTiersJson);
     }
 
     const updatedPlan = await prisma.membershipPlan.update({
@@ -26,11 +28,11 @@ export async function PUT(
     return NextResponse.json(updatedPlan);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.log(error.errors);
-      return NextResponse.json({ error: 'Invalid data', details: error.errors }, { status: 400 });
+      console.error('[API_UPDATE_MEMBERSHIP_ZOD_ERROR]', { id: params.id, errors: error.errors });
+      return NextResponse.json({ error: 'Datos de membresía inválidos', details: error.errors }, { status: 400 });
     }
-    console.error('Error updating membership plan:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error(`[API_UPDATE_MEMBERSHIP_ERROR] ID: ${params.id}`, error);
+    return NextResponse.json({ error: 'Error interno del servidor al actualizar el plan.' }, { status: 500 });
   }
 }
 
@@ -44,7 +46,7 @@ export async function DELETE(
         });
         return new NextResponse(null, { status: 204 });
     } catch (error) {
-        console.error(`Error deleting membership plan ${params.id}:`, error);
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        console.error(`[API_DELETE_MEMBERSHIP_ERROR] ID: ${params.id}:`, error);
+        return NextResponse.json({ error: 'Error interno del servidor al eliminar el plan.' }, { status: 500 });
     }
 }
