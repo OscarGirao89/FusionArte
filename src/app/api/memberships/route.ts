@@ -11,9 +11,9 @@ export async function GET() {
     // Ensure priceTiersJson is always an array when sent to client
     const parsedPlans = plans.map(plan => ({
       ...plan,
-      priceTiersJson: (plan.priceTiersJson && typeof plan.priceTiersJson === 'string' 
+      priceTiersJson: (plan.priceTiersJson && typeof plan.priceTiersJson === 'string') 
         ? JSON.parse(plan.priceTiersJson) 
-        : plan.priceTiersJson) || [],
+        : (plan.priceTiersJson || []),
     }));
     return NextResponse.json(parsedPlans);
   } catch (error) {
@@ -27,9 +27,9 @@ export async function POST(request: Request) {
     const json = await request.json();
     const validatedData = membershipPlanZodSchema.parse(json);
 
+    // Prisma expects JSON fields to be passed as strings or Prisma.JsonNull
     const dataToCreate: any = { ...validatedData };
     
-    // Prisma expects JSON fields to be passed as strings or Prisma.JsonNull
     if (validatedData.priceTiersJson) {
       dataToCreate.priceTiersJson = JSON.stringify(validatedData.priceTiersJson);
     }

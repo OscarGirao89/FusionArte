@@ -11,10 +11,8 @@ export async function PUT(
 ) {
   try {
     const json = await request.json();
-    // We parse with the base schema first
     const validatedData = membershipPlanZodSchema.parse(json);
 
-    // Prepare data for Prisma, ensuring JSON fields are handled correctly
     const dataToUpdate: any = { ...validatedData };
 
     if (validatedData.priceTiersJson) {
