@@ -35,7 +35,7 @@ export async function PUT(
       data: {
           ...validatedData,
           amountDue: paymentToUpdate.totalAmount - validatedData.amountPaid,
-          lastUpdatedDate: new Date(),
+          lastUpdatedDate: new Date().toISOString(),
           // lastUpdatedBy: 'Admin', // In a real app, get this from the session
       },
     });
