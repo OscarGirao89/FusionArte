@@ -1,4 +1,6 @@
 
+'use server';
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
@@ -9,11 +11,12 @@ export async function GET() {
   try {
     const plans = await prisma.membershipPlan.findMany();
     
-    // Use a safe parsing loop to ensure data integrity
     const parsedPlans = [];
     for (const plan of plans) {
       let parsedTiers = [];
-      if (plan.priceTiers && typeof plan.priceTiers === 'string') {
+      
+      // Safely parse priceTiers
+      if (typeof plan.priceTiers === 'string' && plan.priceTiers.trim().startsWith('[')) {
         try {
           parsedTiers = JSON.parse(plan.priceTiers);
         } catch (e) {
@@ -23,7 +26,7 @@ export async function GET() {
       } else if (Array.isArray(plan.priceTiers)) {
         parsedTiers = plan.priceTiers; // Already in correct format
       }
-      
+
       parsedPlans.push({
         ...plan,
         priceTiers: parsedTiers,
@@ -33,7 +36,7 @@ export async function GET() {
     return NextResponse.json(parsedPlans);
   } catch (error) {
     console.error('[API_GET_MEMBERSHIPS_ERROR]', error);
-    return NextResponse.json({ error: 'Error interno del servidor al obtener los planes.' }, { status: 500 });
+    return NextResponse.json({ error: 'Error interno del servidor al obtener los planes.', details: (error as Error).message }, { status: 500 });
   }
 }
 

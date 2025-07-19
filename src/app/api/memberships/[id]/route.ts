@@ -1,4 +1,6 @@
 
+'use server';
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
@@ -27,7 +29,7 @@ export async function PUT(
     });
     
     let parsedTiers = [];
-    if (updatedPlan.priceTiers && typeof updatedPlan.priceTiers === 'string') {
+    if (typeof updatedPlan.priceTiers === 'string') {
         try {
           parsedTiers = JSON.parse(updatedPlan.priceTiers);
         } catch (e) {
