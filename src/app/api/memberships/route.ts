@@ -28,6 +28,7 @@ export async function GET() {
       }
 
       // Explicitly construct the response object to ensure all fields are present
+      // and prevent corrupted data from being sent to the client.
       const planResponse = {
         id: plan.id,
         title: plan.title,
