@@ -123,6 +123,11 @@ export default function MembershipsPage() {
         return;
     }
     
+    if (!plan.id) {
+        toast({ title: "Error", description: "No se pudo identificar el plan. Por favor, recarga la página.", variant: "destructive" });
+        return;
+    }
+
     setSelectedPlan(plan);
 
     if (plan.accessType === 'time_pass' || plan.accessType === 'class_pack') {

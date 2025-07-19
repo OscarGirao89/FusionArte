@@ -9,13 +9,13 @@ import { Prisma } from '@prisma/client';
 
 export async function GET() {
   try {
-    const plans = await prisma.membershipPlan.findMany();
+    const plansFromDb = await prisma.membershipPlan.findMany();
     
     const parsedPlans = [];
-    for (const plan of plans) {
+    for (const plan of plansFromDb) {
       let parsedTiers = [];
       
-      // Safely parse priceTiers
+      // Safely parse priceTiers, ensuring it's always an array.
       if (typeof plan.priceTiers === 'string' && plan.priceTiers.trim().startsWith('[')) {
         try {
           parsedTiers = JSON.parse(plan.priceTiers);
@@ -27,10 +27,29 @@ export async function GET() {
         parsedTiers = plan.priceTiers; // Already in correct format
       }
 
-      parsedPlans.push({
-        ...plan,
-        priceTiers: parsedTiers,
-      });
+      // Explicitly construct the response object to ensure all fields are present
+      const planResponse = {
+        id: plan.id,
+        title: plan.title,
+        description: plan.description,
+        accessType: plan.accessType,
+        price: plan.price,
+        classCount: plan.classCount,
+        validityType: plan.validityType,
+        durationValue: plan.durationValue,
+        durationUnit: plan.durationUnit,
+        validityMonths: plan.validityMonths,
+        monthlyStartType: plan.monthlyStartType,
+        startDate: plan.startDate,
+        endDate: plan.endDate,
+        features: plan.features,
+        isPopular: plan.isPopular,
+        visibility: plan.visibility,
+        allowedClasses: plan.allowedClasses,
+        priceTiers: parsedTiers, // Use the safely parsed value
+      };
+
+      parsedPlans.push(planResponse);
     }
 
     return NextResponse.json(parsedPlans);
