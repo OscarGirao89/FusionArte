@@ -26,11 +26,21 @@ export async function PUT(
       data: dataToUpdate,
     });
     
+    let parsedTiers = [];
+    if (updatedPlan.priceTiers && typeof updatedPlan.priceTiers === 'string') {
+        try {
+          parsedTiers = JSON.parse(updatedPlan.priceTiers);
+        } catch (e) {
+          console.error(`Failed to parse priceTiers for updated plan ${updatedPlan.id}:`, e);
+          parsedTiers = [];
+        }
+    } else if (Array.isArray(updatedPlan.priceTiers)) {
+        parsedTiers = updatedPlan.priceTiers;
+    }
+
     const response = {
         ...updatedPlan,
-        priceTiers: (updatedPlan.priceTiers && typeof updatedPlan.priceTiers === 'string')
-            ? JSON.parse(updatedPlan.priceTiers)
-            : (updatedPlan.priceTiers || [])
+        priceTiers: parsedTiers
     };
     
     return NextResponse.json(response);

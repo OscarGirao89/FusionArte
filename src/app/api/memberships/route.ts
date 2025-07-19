@@ -8,13 +8,28 @@ import { Prisma } from '@prisma/client';
 export async function GET() {
   try {
     const plans = await prisma.membershipPlan.findMany();
-    // Ensure priceTiers is always an array when sent to client
-    const parsedPlans = plans.map(plan => ({
-      ...plan,
-      priceTiers: (plan.priceTiers && typeof plan.priceTiers === 'string') 
-        ? JSON.parse(plan.priceTiers) 
-        : (plan.priceTiers || []),
-    }));
+    
+    // Use a safe parsing loop to ensure data integrity
+    const parsedPlans = [];
+    for (const plan of plans) {
+      let parsedTiers = [];
+      if (plan.priceTiers && typeof plan.priceTiers === 'string') {
+        try {
+          parsedTiers = JSON.parse(plan.priceTiers);
+        } catch (e) {
+          console.error(`Failed to parse priceTiers for plan ${plan.id}:`, e);
+          parsedTiers = []; // Default to empty array on parsing error
+        }
+      } else if (Array.isArray(plan.priceTiers)) {
+        parsedTiers = plan.priceTiers; // Already in correct format
+      }
+      
+      parsedPlans.push({
+        ...plan,
+        priceTiers: parsedTiers,
+      });
+    }
+
     return NextResponse.json(parsedPlans);
   } catch (error) {
     console.error('[API_GET_MEMBERSHIPS_ERROR]', error);
@@ -43,7 +58,7 @@ export async function POST(request: Request) {
         ...newPlan,
         priceTiers: (newPlan.priceTiers && typeof newPlan.priceTiers === 'string')
             ? JSON.parse(newPlan.priceTiers)
-            : (newPlan.priceTiers || [])
+            : []
     };
 
     return NextResponse.json(response, { status: 201 });
