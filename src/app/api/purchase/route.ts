@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
         data: {
           userId: userId,
           planId: planId,
-          startDate: startDate,
-          endDate: endDate,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
           classesRemaining: classesRemaining,
         },
       });
