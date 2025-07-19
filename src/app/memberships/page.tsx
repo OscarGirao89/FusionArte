@@ -55,7 +55,7 @@ function PlanCard({ plan, onPurchaseRequest }: { plan: MembershipPlan, onPurchas
         <CardTitle className="font-headline text-2xl">{plan.title}</CardTitle>
         <CardDescription>
           {plan.accessType === 'custom_pack' && Array.isArray(plan.priceTiers) && plan.priceTiers.length > 0
-            ? <span className="text-4xl font-bold text-foreground">Desde €{plan.priceTiers[0].price}</span>
+            ? <span className="text-4xl font-bold text-foreground">Desde €{(plan.priceTiers[0] as PriceTier).price}</span>
             : <span className="text-4xl font-bold text-foreground">€{price}</span>
           }
           <span className="text-muted-foreground">{getPlanPriceDisplay(plan)}</span>
@@ -134,6 +134,15 @@ export default function MembershipsPage() {
 
   const processPurchase = async (planToPurchase: MembershipPlan, customConfig?: { classCount: number, totalPrice: number }) => {
     if (!userId) return;
+
+    if (!planToPurchase.id) {
+        toast({
+            title: "Error en la compra",
+            description: "No se pudo identificar el plan seleccionado. Por favor, recarga la página e inténtalo de nuevo.",
+            variant: "destructive",
+        });
+        return;
+    }
     
     try {
         const response = await fetch('/api/purchase', {
