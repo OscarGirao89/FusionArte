@@ -27,7 +27,6 @@ export async function POST(request: Request) {
     const json = await request.json();
     const validatedData = membershipPlanZodSchema.parse(json);
 
-    // Prisma expects JSON fields to be passed as strings or Prisma.JsonNull
     const dataToCreate: any = { ...validatedData };
     
     if (validatedData.priceTiers && Array.isArray(validatedData.priceTiers) && validatedData.priceTiers.length > 0) {
@@ -40,7 +39,6 @@ export async function POST(request: Request) {
       data: dataToCreate,
     });
 
-    // Parse the JSON string back into an array for the response
     const response = {
         ...newPlan,
         priceTiers: (newPlan.priceTiers && typeof newPlan.priceTiers === 'string')
@@ -51,7 +49,7 @@ export async function POST(request: Request) {
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('[API_CREATE_MEMBERSHIP_ZOD_ERROR]', error.errors);
+      console.error('[API_CREATE_MEMBERSHIP_ZOD_ERROR]', { errors: error.errors });
       return NextResponse.json({ error: 'Datos de membresía inválidos.', details: error.errors }, { status: 400 });
     }
     console.error('[API_CREATE_MEMBERSHIP_ERROR]', error);

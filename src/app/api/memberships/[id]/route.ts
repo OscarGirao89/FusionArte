@@ -15,7 +15,7 @@ export async function PUT(
 
     const dataToUpdate: any = { ...validatedData };
 
-    if (validatedData.priceTiers) {
+    if (validatedData.priceTiers && Array.isArray(validatedData.priceTiers)) {
       dataToUpdate.priceTiers = JSON.stringify(validatedData.priceTiers);
     } else {
       dataToUpdate.priceTiers = Prisma.JsonNull;
@@ -26,7 +26,6 @@ export async function PUT(
       data: dataToUpdate,
     });
     
-    // Parse the JSON string back into an array for the response
     const response = {
         ...updatedPlan,
         priceTiers: (updatedPlan.priceTiers && typeof updatedPlan.priceTiers === 'string')
