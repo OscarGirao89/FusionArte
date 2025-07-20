@@ -12,7 +12,7 @@ export async function GET() {
     const plansFromDb = await prisma.membershipPlan.findMany();
     
     const safeParsedPlans = plansFromDb.map(plan => {
-      let priceTiersArray = [];
+      let priceTiersArray: any[] = [];
       if (typeof plan.priceTiers === 'string') {
         try {
           priceTiersArray = JSON.parse(plan.priceTiers);
@@ -37,8 +37,8 @@ export async function GET() {
         durationUnit: plan.durationUnit as 'days' | 'weeks' | 'months' | undefined,
         validityMonths: plan.validityMonths ?? undefined,
         monthlyStartType: plan.monthlyStartType as 'from_purchase' | 'next_month' | undefined,
-        startDate: plan.startDate?.toISOString() ?? undefined,
-        endDate: plan.endDate?.toISOString() ?? undefined,
+        startDate: plan.startDate?.toISOString(),
+        endDate: plan.endDate?.toISOString(),
         features: Array.isArray(plan.features) ? plan.features : [],
         isPopular: plan.isPopular ?? false,
         visibility: plan.visibility as 'public' | 'unlisted',
