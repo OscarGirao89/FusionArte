@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useFieldArray } from "react-hook-form"
 import { z } from "zod"
-import type { MembershipPlan, PriceTier } from '@/lib/types';
-import { format, parseISO } from 'date-fns';
+import type { MembershipPlan, PriceTier, DanceClass } from '@/lib/types';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,6 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Skeleton } from '@/components/ui/skeleton';
-import { membershipPlanZodSchema } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -102,8 +101,8 @@ const planToForm = (plan: MembershipPlan): MembershipFormValues => {
         isPopular: plan.isPopular ?? false,
         visibility: plan.visibility || 'public',
         allowedClasses: plan.allowedClasses || [],
-        startDate: plan.startDate ? parseISO(plan.startDate) : undefined,
-        endDate: plan.endDate ? parseISO(plan.endDate) : undefined,
+        startDate: plan.startDate || undefined,
+        endDate: plan.endDate || undefined,
         // Ensure priceTiers is always an array for the form
         priceTiers: Array.isArray(plan.priceTiers) ? plan.priceTiers : [],
     };

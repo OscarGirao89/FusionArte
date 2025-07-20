@@ -119,8 +119,8 @@ export default function AdminStudentsPage() {
             mobile: student.mobile || '',
             dob: student.dob || '',
             membershipPlanId: membership?.planId || 'none',
-            membershipStartDate: membership ? parseISO(membership.startDate) : null,
-            membershipEndDate: membership ? parseISO(membership.endDate) : null,
+            membershipStartDate: membership ? new Date(membership.startDate) : null,
+            membershipEndDate: membership ? new Date(membership.endDate) : null,
             membershipClassesRemaining: membership?.classesRemaining ?? undefined,
         });
 
