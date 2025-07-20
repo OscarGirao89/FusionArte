@@ -163,7 +163,7 @@ export default function MembershipsPage() {
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || 'No se pudo completar la compra.');
+            throw new Error(errorData.details || errorData.error || 'No se pudo completar la compra.');
         }
         
         toast({

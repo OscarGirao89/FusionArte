@@ -8,7 +8,7 @@ import { membershipPlanZodSchema } from '@/lib/types';
 
 const purchaseSchema = z.object({
   userId: z.number(),
-  planId: z.string(),
+  planId: z.string().min(1, { message: "El ID del plan es obligatorio." }),
   classCount: z.number().optional(), // For custom packs
   totalPrice: z.number().optional(), // For custom packs
 });
@@ -39,7 +39,6 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     if (plan.validityType === 'fixed') {
-        // Correctly handle potentially null dates
         startDate = plan.startDate ? new Date(plan.startDate) : now;
         endDate = plan.endDate ? new Date(plan.endDate) : add(startDate, { months: 1 }); // Fallback to 1 month
     } else if (plan.validityType === 'monthly') {
@@ -89,7 +88,10 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Datos de solicitud inválidos', details: error.errors }, { status: 400 });
+      // Provide detailed validation errors
+      const errorDetails = error.issues.map(issue => `${issue.path.join('.')} - ${issue.message}`).join(', ');
+      console.error('Validation error:', error.issues);
+      return NextResponse.json({ error: 'Datos de solicitud inválidos', details: errorDetails }, { status: 400 });
     }
     console.error('Purchase error:', error);
     return NextResponse.json({ error: 'Error interno del servidor al procesar la compra' }, { status: 500 });
