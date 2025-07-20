@@ -11,39 +11,47 @@ export async function GET() {
   try {
     const plansFromDb = await prisma.membershipPlan.findMany();
     
-    const parsedPlans = [];
-    for (const plan of plansFromDb) {
-      // 1. Create a raw object with the data from the DB
-      const rawPlanData = {
-        ...plan,
-        priceTiers: plan.priceTiers,
-      };
-
-      // 2. Safely parse priceTiers, ensuring it's always an array.
-      if (typeof rawPlanData.priceTiers === 'string') {
+    // Procesa de forma segura cada plan para asegurar que la estructura sea correcta
+    // antes de enviarlo al cliente. Esto previene errores tanto en la vista de admin como en la de compra.
+    const safeParsedPlans = plansFromDb.map(plan => {
+      let priceTiersArray = [];
+      if (typeof plan.priceTiers === 'string') {
         try {
-          rawPlanData.priceTiers = JSON.parse(rawPlanData.priceTiers);
+          priceTiersArray = JSON.parse(plan.priceTiers);
         } catch (e) {
-          console.error(`Failed to parse priceTiers for plan ${plan.id}:`, e);
-          rawPlanData.priceTiers = []; // Default to empty array on parsing error
+          console.error(`Error al parsear priceTiers para el plan ${plan.id}:`, e);
+          priceTiersArray = []; // Default a array vacío si el JSON es inválido
         }
-      } else if (rawPlanData.priceTiers === null) {
-         rawPlanData.priceTiers = []; // Handle null from DB
+      } else if (Array.isArray(plan.priceTiers)) {
+        priceTiersArray = plan.priceTiers;
       }
 
-      // 3. Validate the processed object against the Zod schema before sending it.
-      const validationResult = membershipPlanZodSchema.safeParse(rawPlanData);
+      // Construye un objeto de respuesta con los datos procesados y saneados
+      const planResponse: z.infer<typeof membershipPlanZodSchema> = {
+        id: plan.id,
+        title: plan.title,
+        description: plan.description,
+        accessType: plan.accessType,
+        price: plan.price ?? undefined,
+        classCount: plan.classCount ?? undefined,
+        priceTiers: priceTiersArray,
+        validityType: plan.validityType,
+        durationValue: plan.durationValue ?? undefined,
+        durationUnit: plan.durationUnit ?? undefined,
+        validityMonths: plan.validityMonths ?? undefined,
+        monthlyStartType: plan.monthlyStartType ?? undefined,
+        startDate: plan.startDate?.toISOString() ?? undefined,
+        endDate: plan.endDate?.toISOString() ?? undefined,
+        features: Array.isArray(plan.features) ? plan.features : [],
+        isPopular: plan.isPopular ?? false,
+        visibility: plan.visibility,
+        allowedClasses: Array.isArray(plan.allowedClasses) ? plan.allowedClasses : [],
+      };
       
-      if (validationResult.success) {
-        // Only add the plan to the response if it's valid
-        parsedPlans.push(validationResult.data);
-      } else {
-        // Log the error on the server for debugging, but don't send the corrupted plan
-        console.error(`[API_GET_MEMBERSHIPS_VALIDATION_ERROR] Invalid data in DB for plan ID: ${plan.id}. Errors:`, validationResult.error.flatten());
-      }
-    }
+      return planResponse;
+    });
 
-    return NextResponse.json(parsedPlans);
+    return NextResponse.json(safeParsedPlans);
   } catch (error) {
     console.error('[API_GET_MEMBERSHIPS_ERROR]', error);
     return NextResponse.json({ error: 'Error interno del servidor al obtener los planes.', details: (error as Error).message }, { status: 500 });
