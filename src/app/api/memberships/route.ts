@@ -24,7 +24,8 @@ export async function GET() {
         priceTiersArray = plan.priceTiers;
       }
 
-      const planResponse: z.infer<typeof membershipPlanZodSchema> = {
+      // Construct a valid response object, ensuring types match the Zod schema
+      const planResponse = {
         id: plan.id,
         title: plan.title,
         description: plan.description,
@@ -37,8 +38,8 @@ export async function GET() {
         durationUnit: plan.durationUnit as 'days' | 'weeks' | 'months' | undefined,
         validityMonths: plan.validityMonths ?? undefined,
         monthlyStartType: plan.monthlyStartType as 'from_purchase' | 'next_month' | undefined,
-        startDate: plan.startDate?.toISOString(),
-        endDate: plan.endDate?.toISOString(),
+        startDate: plan.startDate ?? undefined,
+        endDate: plan.endDate ?? undefined,
         features: Array.isArray(plan.features) ? plan.features : [],
         isPopular: plan.isPopular ?? false,
         visibility: plan.visibility as 'public' | 'unlisted',
@@ -58,6 +59,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const json = await request.json();
+    
+    // Convert date strings to Date objects before validation
+    if (json.startDate) json.startDate = new Date(json.startDate);
+    if (json.endDate) json.endDate = new Date(json.endDate);
+
     const validatedData = membershipPlanZodSchema.parse(json);
 
     const dataToCreate: any = { ...validatedData };

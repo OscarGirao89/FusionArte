@@ -47,8 +47,8 @@ export const membershipPlanZodSchema = z.object({
   durationUnit: z.enum(['days', 'weeks', 'months']).optional(),
   validityMonths: z.number().int().optional(),
   monthlyStartType: z.enum(['from_purchase', 'next_month']).optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
   
   features: z.array(z.string()),
   isPopular: z.boolean().optional(),

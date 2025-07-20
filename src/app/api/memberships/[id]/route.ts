@@ -13,6 +13,11 @@ export async function PUT(
 ) {
   try {
     const json = await request.json();
+    
+    // Convert date strings to Date objects before validation
+    if (json.startDate) json.startDate = new Date(json.startDate);
+    if (json.endDate) json.endDate = new Date(json.endDate);
+
     const validatedData = membershipPlanZodSchema.parse(json);
 
     const dataToUpdate: any = { ...validatedData };

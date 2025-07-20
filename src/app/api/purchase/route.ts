@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     if (plan.validityType === 'fixed') {
-        startDate = plan.startDate ? new Date(plan.startDate) : now;
-        endDate = plan.endDate ? new Date(plan.endDate) : add(startDate, { months: 1 }); // Fallback to 1 month
+        startDate = plan.startDate ? plan.startDate : now;
+        endDate = plan.endDate ? plan.endDate : add(startDate, { months: 1 }); // Fallback to 1 month
     } else if (plan.validityType === 'monthly') {
         const startMonth = plan.monthlyStartType === 'next_month' ? addMonths(now, 1) : now;
         startDate = plan.monthlyStartType === 'next_month' ? startOfMonth(startMonth) : now;
