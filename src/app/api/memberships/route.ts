@@ -11,8 +11,6 @@ export async function GET() {
   try {
     const plansFromDb = await prisma.membershipPlan.findMany();
     
-    // Procesa de forma segura cada plan para asegurar que la estructura sea correcta
-    // antes de enviarlo al cliente. Esto previene errores tanto en la vista de admin como en la de compra.
     const safeParsedPlans = plansFromDb.map(plan => {
       let priceTiersArray = [];
       if (typeof plan.priceTiers === 'string') {
@@ -20,31 +18,30 @@ export async function GET() {
           priceTiersArray = JSON.parse(plan.priceTiers);
         } catch (e) {
           console.error(`Error al parsear priceTiers para el plan ${plan.id}:`, e);
-          priceTiersArray = []; // Default a array vacío si el JSON es inválido
+          priceTiersArray = [];
         }
       } else if (Array.isArray(plan.priceTiers)) {
         priceTiersArray = plan.priceTiers;
       }
 
-      // Construye un objeto de respuesta con los datos procesados y saneados
       const planResponse: z.infer<typeof membershipPlanZodSchema> = {
         id: plan.id,
         title: plan.title,
         description: plan.description,
-        accessType: plan.accessType,
+        accessType: plan.accessType as 'time_pass' | 'class_pack' | 'custom_pack',
         price: plan.price ?? undefined,
         classCount: plan.classCount ?? undefined,
         priceTiers: priceTiersArray,
-        validityType: plan.validityType,
+        validityType: plan.validityType as 'relative' | 'monthly' | 'fixed',
         durationValue: plan.durationValue ?? undefined,
-        durationUnit: plan.durationUnit ?? undefined,
+        durationUnit: plan.durationUnit as 'days' | 'weeks' | 'months' | undefined,
         validityMonths: plan.validityMonths ?? undefined,
-        monthlyStartType: plan.monthlyStartType ?? undefined,
+        monthlyStartType: plan.monthlyStartType as 'from_purchase' | 'next_month' | undefined,
         startDate: plan.startDate?.toISOString() ?? undefined,
         endDate: plan.endDate?.toISOString() ?? undefined,
         features: Array.isArray(plan.features) ? plan.features : [],
         isPopular: plan.isPopular ?? false,
-        visibility: plan.visibility,
+        visibility: plan.visibility as 'public' | 'unlisted',
         allowedClasses: Array.isArray(plan.allowedClasses) ? plan.allowedClasses : [],
       };
       
@@ -75,7 +72,6 @@ export async function POST(request: Request) {
       data: dataToCreate,
     });
 
-    // Safely parse the response to ensure consistency
     let parsedTiers = [];
     if (newPlan.priceTiers && typeof newPlan.priceTiers === 'string') {
         try {
@@ -87,7 +83,12 @@ export async function POST(request: Request) {
     
     const response = {
         ...newPlan,
-        priceTiers: parsedTiers
+        priceTiers: parsedTiers,
+        accessType: newPlan.accessType as 'time_pass' | 'class_pack' | 'custom_pack',
+        validityType: newPlan.validityType as 'relative' | 'monthly' | 'fixed',
+        durationUnit: newPlan.durationUnit as 'days' | 'weeks' | 'months' | undefined,
+        monthlyStartType: newPlan.monthlyStartType as 'from_purchase' | 'next_month' | undefined,
+        visibility: newPlan.visibility as 'public' | 'unlisted'
     };
 
     return NextResponse.json(response, { status: 201 });
