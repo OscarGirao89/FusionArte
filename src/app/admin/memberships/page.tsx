@@ -218,8 +218,9 @@ export default function AdminMembershipsPage() {
         title: `Plan ${editingPlan ? 'actualizado' : 'creado'} con éxito`,
         description: `El plan "${data.title}" ha sido guardado.`,
       });
-
+      
       await fetchData();
+
     } catch (error) {
        toast({ title: "Error", description: (error as Error).message, variant: "destructive" });
     } finally {
@@ -525,5 +526,3 @@ export default function AdminMembershipsPage() {
     </div>
   );
 }
-
-    
