@@ -13,44 +13,34 @@ export async function GET() {
     
     const parsedPlans = [];
     for (const plan of plansFromDb) {
-      let parsedTiers = [];
-      
-      // Safely parse priceTiers, ensuring it's always an array.
-      if (typeof plan.priceTiers === 'string' && plan.priceTiers.trim().startsWith('[')) {
-        try {
-          parsedTiers = JSON.parse(plan.priceTiers);
-        } catch (e) {
-          console.error(`Failed to parse priceTiers for plan ${plan.id}:`, e);
-          parsedTiers = []; // Default to empty array on parsing error
-        }
-      } else if (Array.isArray(plan.priceTiers)) {
-        parsedTiers = plan.priceTiers; // Already in correct format
-      }
-
-      // Explicitly construct the response object to ensure all fields are present
-      // and prevent corrupted data from being sent to the client.
-      const planResponse = {
-        id: plan.id,
-        title: plan.title,
-        description: plan.description,
-        accessType: plan.accessType,
-        price: plan.price,
-        classCount: plan.classCount,
-        validityType: plan.validityType,
-        durationValue: plan.durationValue,
-        durationUnit: plan.durationUnit,
-        validityMonths: plan.validityMonths,
-        monthlyStartType: plan.monthlyStartType,
-        startDate: plan.startDate,
-        endDate: plan.endDate,
-        features: plan.features,
-        isPopular: plan.isPopular,
-        visibility: plan.visibility,
-        allowedClasses: plan.allowedClasses,
-        priceTiers: parsedTiers, // Use the safely parsed value
+      // 1. Create a raw object with the data from the DB
+      const rawPlanData = {
+        ...plan,
+        priceTiers: plan.priceTiers,
       };
 
-      parsedPlans.push(planResponse);
+      // 2. Safely parse priceTiers, ensuring it's always an array.
+      if (typeof rawPlanData.priceTiers === 'string') {
+        try {
+          rawPlanData.priceTiers = JSON.parse(rawPlanData.priceTiers);
+        } catch (e) {
+          console.error(`Failed to parse priceTiers for plan ${plan.id}:`, e);
+          rawPlanData.priceTiers = []; // Default to empty array on parsing error
+        }
+      } else if (rawPlanData.priceTiers === null) {
+         rawPlanData.priceTiers = []; // Handle null from DB
+      }
+
+      // 3. Validate the processed object against the Zod schema before sending it.
+      const validationResult = membershipPlanZodSchema.safeParse(rawPlanData);
+      
+      if (validationResult.success) {
+        // Only add the plan to the response if it's valid
+        parsedPlans.push(validationResult.data);
+      } else {
+        // Log the error on the server for debugging, but don't send the corrupted plan
+        console.error(`[API_GET_MEMBERSHIPS_VALIDATION_ERROR] Invalid data in DB for plan ID: ${plan.id}. Errors:`, validationResult.error.flatten());
+      }
     }
 
     return NextResponse.json(parsedPlans);
@@ -77,11 +67,19 @@ export async function POST(request: Request) {
       data: dataToCreate,
     });
 
+    // Safely parse the response to ensure consistency
+    let parsedTiers = [];
+    if (newPlan.priceTiers && typeof newPlan.priceTiers === 'string') {
+        try {
+            parsedTiers = JSON.parse(newPlan.priceTiers);
+        } catch (e) {
+            parsedTiers = [];
+        }
+    }
+    
     const response = {
         ...newPlan,
-        priceTiers: (newPlan.priceTiers && typeof newPlan.priceTiers === 'string')
-            ? JSON.parse(newPlan.priceTiers)
-            : []
+        priceTiers: parsedTiers
     };
 
     return NextResponse.json(response, { status: 201 });
