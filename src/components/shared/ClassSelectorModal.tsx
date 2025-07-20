@@ -95,7 +95,7 @@ export function ClassSelectorModal({ plan, isOpen, onClose, onConfirm, overrideC
     const membershipEndDate = useMemo(() => {
         const now = new Date();
         if (plan.validityType === 'fixed' && plan.endDate) {
-            return parseISO(plan.endDate);
+            return plan.endDate;
         }
         if (plan.validityType === 'monthly' && plan.validityMonths) {
             const startMonth = plan.monthlyStartType === 'next_month' ? addMonths(now, 1) : now;
