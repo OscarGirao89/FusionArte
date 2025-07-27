@@ -31,7 +31,24 @@ export async function POST(request: NextRequest) {
     }
     
     // 3. Validate the AUTHORITATIVE data with our strict schema.
-    const plan = membershipPlanZodSchema.parse(planDataFromDb);
+    let parsedTiers = [];
+    if (typeof planDataFromDb.priceTiers === 'string') {
+        try {
+          parsedTiers = JSON.parse(planDataFromDb.priceTiers);
+        } catch (e) {
+          console.error(`Failed to parse priceTiers for plan ${planDataFromDb.id}:`, e);
+          parsedTiers = [];
+        }
+    } else if (Array.isArray(planDataFromDb.priceTiers)) {
+        parsedTiers = planDataFromDb.priceTiers;
+    }
+
+    const planToValidate = {
+      ...planDataFromDb,
+      priceTiers: parsedTiers,
+    };
+
+    const plan = membershipPlanZodSchema.parse(planToValidate);
     // --- FIN DEL BLINDAJE ---
 
     // Use the fetched data from here on, not the client data.
