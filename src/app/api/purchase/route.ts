@@ -10,8 +10,6 @@ import { membershipPlanZodSchema } from '@/lib/types';
 const purchaseSchema = z.object({
   userId: z.number(),
   planId: z.string().min(1, { message: "El ID del plan es obligatorio." }),
-  classCount: z.number().optional().nullable(),
-  totalPrice: z.number().optional().nullable(), 
 }).passthrough(); // Use passthrough to allow other fields without validating them initially
 
 export async function POST(request: NextRequest) {
