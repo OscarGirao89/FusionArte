@@ -6,16 +6,18 @@ import { z } from 'zod';
 import { add, startOfMonth, endOfMonth, addMonths, subDays } from 'date-fns';
 import { membershipPlanZodSchema } from '@/lib/types';
 
+// This schema is now more lenient, only requiring the essentials to start the process.
 const purchaseSchema = z.object({
   userId: z.number(),
   planId: z.string().min(1, { message: "El ID del plan es obligatorio." }),
-  classCount: z.number().optional(), // For custom packs
-  totalPrice: z.number().optional(), // For custom packs
+  classCount: z.number().optional(),
+  totalPrice: z.number().optional(), 
 });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    // 1. Parse the lenient schema to get the IDs.
     const { userId, planId, classCount, totalPrice } = purchaseSchema.parse(body);
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -23,18 +25,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    // --- BLINDANDO LA API ---
-    // 1. Volver a cargar el plan desde la base de datos usando el ID. No confiar en los datos del cliente.
+    // 2. BLINDANDO LA API: Re-fetch the plan from the database using the ID. This is the authoritative data source.
     const planDataFromDb = await prisma.membershipPlan.findUnique({ where: { id: planId } });
     if (!planDataFromDb) {
       return NextResponse.json({ error: 'Plan no encontrado' }, { status: 404 });
     }
     
-    // 2. Validar los datos autorizados de la base de datos con nuestro schema.
+    // 3. Validate the AUTHORITATIVE data with our strict schema.
     const plan = membershipPlanZodSchema.parse(planDataFromDb);
     // --- FIN DEL BLINDAJE ---
 
-    const finalPrice = totalPrice ?? ('price' in plan && plan.price ? plan.price : 0);
+    // Use the fetched data from here on, not the client data.
+    const finalPrice = totalPrice ?? (plan.price ? plan.price : 0);
     const classesRemaining = classCount ?? (plan.accessType === 'class_pack' ? plan.classCount : undefined);
 
     let startDate: Date;
@@ -50,8 +52,10 @@ export async function POST(request: NextRequest) {
         endDate = subDays(addMonths(startDate, plan.validityMonths || 1), 1);
     } else { // relative
         startDate = now;
+        const durationValue = plan.durationValue || 1;
+        const durationUnit = plan.durationUnit || 'months';
         endDate = add(startDate, {
-            [plan.durationUnit!]: plan.durationValue!
+            [durationUnit]: durationValue
         });
     }
 
@@ -91,12 +95,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      // Provide detailed validation errors
+      // Provide detailed validation errors for debugging
       const errorDetails = error.issues.map(issue => `${issue.path.join('.')} - ${issue.message}`).join(', ');
       console.error('Validation error:', error.issues);
       return NextResponse.json({ error: 'Datos de solicitud inválidos', details: errorDetails }, { status: 400 });
     }
     console.error('Purchase error:', error);
-    return NextResponse.json({ error: 'Error interno del servidor al procesar la compra' }, { status: 500 });
+    return NextResponse.json({ error: 'Error interno del servidor al procesar la compra', details: (error as Error).message }, { status: 500 });
   }
 }
