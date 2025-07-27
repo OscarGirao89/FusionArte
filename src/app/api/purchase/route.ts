@@ -10,15 +10,16 @@ import { membershipPlanZodSchema } from '@/lib/types';
 const purchaseSchema = z.object({
   userId: z.number(),
   planId: z.string().min(1, { message: "El ID del plan es obligatorio." }),
-  classCount: z.number().optional(),
-  totalPrice: z.number().optional(), 
-});
+  classCount: z.number().optional().nullable(),
+  totalPrice: z.number().optional().nullable(), 
+}).passthrough(); // Use passthrough to allow other fields without validating them initially
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     // 1. Parse the lenient schema to get the IDs.
-    const { userId, planId, classCount, totalPrice } = purchaseSchema.parse(body);
+    const { userId, planId } = purchaseSchema.parse(body);
+    const { classCount, totalPrice } = body; // Get optional values directly from body
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
