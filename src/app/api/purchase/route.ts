@@ -23,13 +23,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    const planData = await prisma.membershipPlan.findUnique({ where: { id: planId } });
-    if (!planData) {
+    // --- BLINDANDO LA API ---
+    // 1. Volver a cargar el plan desde la base de datos usando el ID. No confiar en los datos del cliente.
+    const planDataFromDb = await prisma.membershipPlan.findUnique({ where: { id: planId } });
+    if (!planDataFromDb) {
       return NextResponse.json({ error: 'Plan no encontrado' }, { status: 404 });
     }
     
-    // Validate the plan data with the Zod schema to ensure all fields are present and correctly typed
-    const plan = membershipPlanZodSchema.parse(planData);
+    // 2. Validar los datos autorizados de la base de datos con nuestro schema.
+    const plan = membershipPlanZodSchema.parse(planDataFromDb);
+    // --- FIN DEL BLINDAJE ---
 
     const finalPrice = totalPrice ?? ('price' in plan && plan.price ? plan.price : 0);
     const classesRemaining = classCount ?? (plan.accessType === 'class_pack' ? plan.classCount : undefined);
