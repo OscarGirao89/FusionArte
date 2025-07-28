@@ -18,16 +18,16 @@ import type { AcademySettings } from "@/lib/types";
 
 const heroSlideSchema = z.object({
   id: z.string().optional(),
-  heroTitle: z.string().min(1, "El título es obligatorio."),
+  heroTitle: z.string().optional(),
   heroSubtitle: z.string().optional(),
   heroDescription: z.string().optional(),
-  heroButtonText: z.string().min(1, "El texto del botón es obligatorio."),
-  heroButtonLink: z.string().url("Debe ser una URL válida.").or(z.literal('')),
+  heroButtonText: z.string().optional(),
+  heroButtonLink: z.string().url("Debe ser una URL válida.").or(z.literal('')).optional(),
   heroImageUrl: z.string().optional(),
 });
 
 const formSchema = z.object({
-  heroSlides: z.array(heroSlideSchema).min(1, "Debe haber al menos una diapositiva."),
+  heroSlides: z.array(heroSlideSchema).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -96,11 +96,11 @@ export function HeroSlidesForm({ settings }: Props) {
                                     <div key={field.id} className="p-4 border rounded-lg space-y-4 relative">
                                         <div className="flex justify-between items-center">
                                             <h4 className="font-semibold">Diapositiva {index + 1}</h4>
-                                            {fields.length > 1 && (
+                                            
                                                 <Button type="button" variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => remove(index)}>
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
-                                            )}
+                                            
                                         </div>
                                         <Separator />
                                         <FormField control={form.control} name={`heroSlides.${index}.heroTitle`} render={({ field }) => (<FormItem><FormLabel>Título Principal</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -137,7 +137,7 @@ export function HeroSlidesForm({ settings }: Props) {
                         </Button>
                         <FormMessage>{form.formState.errors.heroSlides?.message}</FormMessage>
                     </CardContent>
-                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>Guardar Cambios</Button></CardFooter>
+                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Cambios</Button></CardFooter>
                 </Card>
             </form>
         </Form>

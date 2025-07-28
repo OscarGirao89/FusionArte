@@ -14,7 +14,7 @@ import type { AcademySettings } from "@/lib/types";
 import { useEffect } from "react";
 
 const formSchema = z.object({
-  contactEmail: z.string().email("Introduce un email válido."),
+  contactEmail: z.string().email("Introduce un email válido.").or(z.literal('')).optional(),
   address: z.string().optional(),
   phone: z.string().optional(),
   whatsappPhone: z.string().optional(),
@@ -98,7 +98,7 @@ export function ContactSettingsForm({ settings }: Props) {
                             )} />
                         </div>
                     </CardContent>
-                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>Guardar Cambios</Button></CardFooter>
+                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Cambios</Button></CardFooter>
                 </Card>
             </form>
         </Form>

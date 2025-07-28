@@ -14,13 +14,13 @@ import type { AcademySettings } from "@/lib/types";
 import { useEffect } from "react";
 
 const formSchema = z.object({
-  aboutUsTitle: z.string().min(1, "El título es obligatorio."),
-  aboutUsStory: z.string().min(1, "La historia es obligatoria."),
-  aboutUsMission: z.string().min(1, "La misión es obligatoria."),
-  aboutUsVision: z.string().min(1, "La visión es obligatoria."),
-  aboutUsValues: z.string().min(1, "Los valores son obligatorios."),
-  aboutUsTeamTitle: z.string().min(1, "El título del equipo es obligatorio."),
-  aboutUsTeamDescription: z.string().min(1, "La descripción del equipo es obligatoria."),
+  aboutUsTitle: z.string().optional(),
+  aboutUsStory: z.string().optional(),
+  aboutUsMission: z.string().optional(),
+  aboutUsVision: z.string().optional(),
+  aboutUsValues: z.string().optional(),
+  aboutUsTeamTitle: z.string().optional(),
+  aboutUsTeamDescription: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -75,7 +75,7 @@ export function AboutUsSettingsForm({ settings }: Props) {
                         <FormField control={form.control} name="aboutUsTeamTitle" render={({ field }) => (<FormItem><FormLabel>Título de la Sección de Equipo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="aboutUsTeamDescription" render={({ field }) => (<FormItem><FormLabel>Descripción de la Sección de Equipo</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </CardContent>
-                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>Guardar Cambios</Button></CardFooter>
+                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Cambios</Button></CardFooter>
                 </Card>
             </form>
         </Form>

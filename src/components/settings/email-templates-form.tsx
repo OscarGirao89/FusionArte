@@ -63,7 +63,7 @@ export function EmailTemplatesForm({ settings }: Props) {
                             <FormItem><FormLabel>Mensaje de Agradecimiento (Membresía)</FormLabel><FormControl><Textarea {...field} rows={5} /></FormControl><FormDescription>Este mensaje se incluirá en el email de confirmación de compra de membresía.</FormDescription><FormMessage /></FormItem>
                         )} />
                     </CardContent>
-                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>Guardar Cambios</Button></CardFooter>
+                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Cambios</Button></CardFooter>
                 </Card>
             </form>
         </Form>

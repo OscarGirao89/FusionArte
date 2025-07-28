@@ -14,7 +14,7 @@ import type { AcademySettings } from "@/lib/types";
 import { useEffect } from "react";
 
 const formSchema = z.object({
-  academyName: z.string().min(1, "El nombre de la academia es obligatorio."),
+  academyName: z.string().optional(),
   welcomeMessage: z.string().optional(),
 });
 

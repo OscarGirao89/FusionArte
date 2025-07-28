@@ -16,7 +16,7 @@ import type { AcademySettings } from "@/lib/types";
 
 const scheduleImageSchema = z.object({
     id: z.string().optional(),
-    url: z.string().min(1, "La URL de la imagen no puede estar vacía."),
+    url: z.string().optional(),
     alt: z.string().optional(),
 });
 
@@ -129,7 +129,7 @@ export function ScheduleImagesForm({ settings }: Props) {
                             </Button>
                         )}
                     </CardContent>
-                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>Guardar Cambios</Button></CardFooter>
+                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Cambios</Button></CardFooter>
                 </Card>
             </form>
         </Form>

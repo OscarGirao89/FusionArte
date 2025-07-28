@@ -13,8 +13,8 @@ import type { AcademySettings } from "@/lib/types";
 import { useEffect } from "react";
 
 const formSchema = z.object({
-  enableNewSignups: z.boolean(),
-  maintenanceMode: z.boolean(),
+  enableNewSignups: z.boolean().optional(),
+  maintenanceMode: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -69,7 +69,7 @@ export function AppSettingsForm({ settings }: Props) {
                             </FormItem>
                         )} />
                     </CardContent>
-                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>Guardar Cambios</Button></CardFooter>
+                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Cambios</Button></CardFooter>
                 </Card>
             </form>
         </Form>
