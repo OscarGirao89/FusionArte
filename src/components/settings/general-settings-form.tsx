@@ -64,7 +64,7 @@ export function GeneralSettingsForm({ settings }: Props) {
                             <FormItem><FormLabel>Mensaje de Bienvenida</FormLabel><FormControl><Textarea {...field} /></FormControl><FormDescription>Este mensaje podría aparecer en el dashboard.</FormDescription><FormMessage /></FormItem>
                         )} />
                     </CardContent>
-                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>Guardar Cambios</Button></CardFooter>
+                    <CardFooter><Button type="submit" disabled={form.formState.isSubmitting}>Guardar Cambios</Button></CardFooter>
                 </Card>
             </form>
         </Form>
